@@ -1,4 +1,8 @@
-# Sakko + Sazami
+# Sazami
+
+> [!WARNING]
+> Sazami is currently incomplete!!! I'm still working on adding basic library functionality, but the idea and design are in place.
+---
 
 **A zero-dependency UI engine for the web.**
 
