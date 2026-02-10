@@ -1,0 +1,26 @@
+name: Deploy Demo
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy Demo files
+        run: |
+          mkdir -p gh-pages-demo
+          cp -r Demo/* gh-pages-demo/
+
+      - name: Deploy demo to gh-pages under demo/
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: gh-pages-demo
+          destination_dir: demo
+          keep_files: true
+          commit_message: Deploy Demo
