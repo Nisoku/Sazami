@@ -25,7 +25,7 @@ jobs:
       - name: Prepare Playground output
         run: |
           mkdir -p gh-pages-playground/dist
-          cp Demo/playground.html gh-pages-playground/
+          cp Demo/playground.html gh-pages-playground/index.html
           cp -r Build/dist/* gh-pages-playground/dist/
 
       - name: Deploy playground to gh-pages under playground/

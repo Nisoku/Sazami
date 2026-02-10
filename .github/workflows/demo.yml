@@ -25,7 +25,7 @@ jobs:
       - name: Prepare Demo output
         run: |
           mkdir -p gh-pages-demo/dist
-          cp -r Demo/* gh-pages-demo/
+          cp -r Demo/index.html gh-pages-demo/index.html
           cp -r Build/dist/* gh-pages-demo/dist/
 
       - name: Deploy demo to gh-pages under demo/
