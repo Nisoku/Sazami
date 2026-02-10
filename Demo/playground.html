@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sazami Playground</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      /* Fix: Only reset padding/margin for html/body, not all elements */
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --pg-bg: #f8fafc;
+        --pg-surface: #fff;
+        --pg-border: #e2e8f0;
+        --pg-text: #1e293b;
+        --pg-dim: #64748b;
+        --pg-accent: #2563eb;
+        --pg-error-bg: #fef2f2;
+        --pg-error-border: #fca5a5;
+        --pg-error-text: #991b1b;
+        --pg-editor-bg: #1e293b;
+        --pg-editor-text: #e2e8f0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: var(--pg-bg);
+        color: var(--pg-text);
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        background: var(--pg-surface);
+        border-bottom: 1px solid var(--pg-border);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      header h1 {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      header h1 span {
+        color: var(--pg-accent);
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .toolbar select,
+      .toolbar button {
+        font-family: inherit;
+        font-size: 13px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--pg-border);
+        background: var(--pg-surface);
+        color: var(--pg-text);
+        cursor: pointer;
+      }
+      .toolbar button:hover {
+        border-color: var(--pg-accent);
+        background: rgba(37, 99, 235, 0.06);
+      }
+      .workspace {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+      .pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .pane-header {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--pg-dim);
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--pg-border);
+        background: var(--pg-surface);
+        flex-shrink: 0;
+      }
+      .divider {
+        width: 1px;
+        background: var(--pg-border);
+        flex-shrink: 0;
+        cursor: col-resize;
+      }
+      .divider:hover {
+        background: var(--pg-accent);
+      }
+      #editor {
+        flex: 1;
+        resize: none;
+        border: none;
+        outline: none;
+        padding: 16px;
+        font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas,
+          monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        background: var(--pg-editor-bg);
+        color: var(--pg-editor-text);
+        tab-size: 2;
+      }
+      #preview-frame {
+        flex: 1;
+        padding: 24px;
+        overflow: auto;
+        background: var(--pg-bg);
+      }
+      #error-panel {
+        display: none;
+        padding: 10px 16px;
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        background: var(--pg-error-bg);
+        border-top: 1px solid var(--pg-error-border);
+        color: var(--pg-error-text);
+        max-height: 120px;
+        overflow: auto;
+        flex-shrink: 0;
+      }
+      .status {
+        font-size: 11px;
+        color: var(--pg-dim);
+        padding: 4px 16px;
+        border-top: 1px solid var(--pg-border);
+        background: var(--pg-surface);
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><span>Sazami</span> Playground</h1>
+      <div class="toolbar">
+        <select id="examples">
+          <option value="">-- Load Example --</option>
+          <option value="hello">Hello World</option>
+          <option value="buttons">Button Variants</option>
+          <option value="form">Form Layout</option>
+          <option value="grid">Card Grid</option>
+          <option value="player">Media Player</option>
+          <option value="dashboard">Dashboard</option>
+          <option value="icons">Icon Gallery</option>
+        </select>
+        <button id="btn-clear">Clear</button>
+        <button id="btn-format">Format</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <div class="pane">
+        <div class="pane-header">Sakko Source</div>
+        <textarea
+          id="editor"
+          spellcheck="false"
+          placeholder='Write Sakko code here, e.g.&#10;<card {&#10;  heading: "Hello"&#10;  text: "World"&#10;}>'
+        ></textarea>
+      </div>
+      <div class="divider" id="divider"></div>
+      <div class="pane">
+        <div class="pane-header">Preview</div>
+        <div id="preview-frame"></div>
+        <div id="error-panel"></div>
+      </div>
+    </div>
+    <div class="status">
+      <span id="status-text">Ready</span>
+      <span id="status-info">Sazami</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+      eruda.init();
+    </script>
+    <script type="module">
+      import { compileSakko, injectThemeCSS } from "../Build/dist/index.mjs";
+
+      injectThemeCSS();
+
+      const editor = document.getElementById("editor");
+      const preview = document.getElementById("preview-frame");
+      const errorPanel = document.getElementById("error-panel");
+      const statusText = document.getElementById("status-text");
+      const exampleSelect = document.getElementById("examples");
+
+      const EXAMPLES = {
+        hello: `<card {\n  heading: "Hello, Sazami!"\n  text: "Write declarative Sakko markup and see it rendered live."\n  button(primary): "Click Me"\n}>`,
+
+        buttons: `<stack(gap medium) {\n  row(gap small center): [\n    button(primary): "Primary",\n    button(secondary): "Secondary",\n    button(accent): "Accent",\n    button(danger): "Danger",\n    button(success): "Success",\n    button(dim): "Dim"\n  ];\n  row(gap small center): [\n    button(primary small): "Small",\n    button(primary): "Medium",\n    button(primary large): "Large"\n  ]\n}>`,
+
+        form: `<card {\n  heading: "Sign Up"\n  stack(gap medium) {\n    input(placeholder "Full name"): "";\n    input(placeholder "Email address" type "email"): "";\n    input(placeholder "Password" type "password"): "";\n    checkbox: "I agree to the terms";\n    button(primary): "Create Account"\n  }\n}>`,
+
+        grid: `<grid(cols 3 gap medium) {\n  card { heading: "Analytics"; text: "Track your metrics." },\n  card(primary) { heading: "Reports"; text: "Generate exports." },\n  card { heading: "Settings"; text: "Configure prefs." },\n  card(accent) { heading: "Featured"; text(bold): "New!" },\n  card { heading: "Billing"; text: "Manage plans." },\n  card { heading: "Support"; text: "Get help." }\n}>`,
+
+        player: `<card {\n  row(center gap medium) {\n    stack(gap tiny) {\n      heading: "A Song"\n      text(dim): "An Artist"\n    }\n  };\n  row(center gap medium): [\n    icon-btn: "previous",\n    icon-btn(large primary): "play",\n    icon-btn: "next"\n  ];\n  divider;\n  row(center gap small): [\n    icon-btn(small): "heart",\n    icon-btn(small): "share",\n    icon-btn(small): "download"\n  ]\n}>`,
+
+        dashboard: `<stack(gap large) {\n  heading: "Dashboard"\n  grid(cols 3 gap medium) {\n    card(primary) {\n      text: "Users";\n      heading: "12,847"\n    },\n    card(success) {\n      text: "Revenue";\n      heading: "$48,290"\n    },\n    card(accent) {\n      text: "Growth";\n      heading: "+24.5%"\n    }\n  };\n  card {\n    heading: "Quick Actions"\n    row(gap small): [\n      button(primary): "New Report",\n      button: "Export Data",\n      button(dim): "Settings"\n    ]\n  }\n}>`,
+
+        icons: `<stack(gap medium) {\n  text(bold): "Media Controls"\n  row(gap medium center): [\n    icon: "previous",\n    icon: "play",\n    icon: "pause",\n    icon: "stop",\n    icon: "next"\n  ];\n  text(bold): "Actions"\n  row(gap medium center): [\n    icon: "search",\n    icon: "edit",\n    icon: "share",\n    icon: "download",\n    icon: "upload",\n    icon: "refresh"\n  ];\n  text(bold): "Navigation"\n  row(gap medium center): [\n    icon: "home",\n    icon: "back",\n    icon: "forward",\n    icon: "up",\n    icon: "down",\n    icon: "menu",\n    icon: "close"\n  ];\n  text(bold): "Sizes"\n  row(gap medium center): [\n    icon(small): "star",\n    icon: "star",\n    icon(large): "star"\n  ]\n}>`,
+      };
+
+      let debounceTimer = null;
+
+      function renderPreview() {
+        const source = editor.value.trim();
+        errorPanel.style.display = "none";
+        errorPanel.textContent = "";
+
+        if (!source) {
+          preview.innerHTML =
+            '<p style="color:var(--pg-dim);font-size:13px;">Type some Sakko code to see the preview...</p>';
+          statusText.textContent = "Ready";
+          return;
+        }
+
+        // Clear previous output
+        preview.innerHTML = "";
+
+        try {
+          compileSakko(source, preview);
+          statusText.textContent = "Rendered successfully";
+        } catch (err) {
+          errorPanel.style.display = "block";
+          errorPanel.textContent = err.message;
+          statusText.textContent = "Parse error";
+        }
+      }
+
+      editor.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(renderPreview, 300);
+      });
+
+      // Tab key inserts spaces
+      editor.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          const start = editor.selectionStart;
+          const end = editor.selectionEnd;
+          editor.value =
+            editor.value.substring(0, start) +
+            "  " +
+            editor.value.substring(end);
+          editor.selectionStart = editor.selectionEnd = start + 2;
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(renderPreview, 300);
+        }
+      });
+
+      exampleSelect.addEventListener("change", () => {
+        const key = exampleSelect.value;
+        if (key && EXAMPLES[key]) {
+          editor.value = EXAMPLES[key];
+          renderPreview();
+        }
+        exampleSelect.value = "";
+      });
+
+      document.getElementById("btn-clear").addEventListener("click", () => {
+        editor.value = "";
+        renderPreview();
+        editor.focus();
+      });
+
+      document.getElementById("btn-format").addEventListener("click", () => {
+        // Simple format: trim each line and normalize indentation
+        const lines = editor.value.split("\n");
+        let indent = 0;
+        const formatted = lines
+          .map((line) => {
+            const trimmed = line.trim();
+            if (!trimmed) return "";
+            if (trimmed.startsWith("}") || trimmed.startsWith("]"))
+              indent = Math.max(0, indent - 1);
+            const result = "  ".repeat(indent) + trimmed;
+            if (trimmed.endsWith("{") || trimmed.endsWith("[")) indent++;
+            return result;
+          })
+          .join("\n");
+        editor.value = formatted;
+        renderPreview();
+      });
+
+      // Resizable divider
+      const divider = document.getElementById("divider");
+      let isDragging = false;
+      divider.addEventListener("mousedown", () => {
+        isDragging = true;
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        const workspace = document.querySelector(".workspace");
+        const rect = workspace.getBoundingClientRect();
+        const pct = ((e.clientX - rect.left) / rect.width) * 100;
+        const panes = workspace.querySelectorAll(".pane");
+        panes[0].style.flex = "none";
+        panes[0].style.width = Math.max(20, Math.min(80, pct)) + "%";
+        panes[1].style.flex = "1";
+      });
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      // Load hello example on start
+      editor.value = EXAMPLES.hello;
+      renderPreview();
+    </script>
+  </body>
+</html>
