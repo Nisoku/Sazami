@@ -15,11 +15,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.19.0'
-    
-      - name: Copy Demo files
+
+      - name: Install dependencies and build library
         run: |
-          mkdir -p gh-pages-demo
+          cd Build
+          npm ci
+          npm run build
+          
+      - name: Prepare Demo output
+        run: |
+          mkdir -p gh-pages-demo/dist
           cp -r Demo/* gh-pages-demo/
+          cp -r Build/dist/* gh-pages-demo/dist/
 
       - name: Deploy demo to gh-pages under demo/
         uses: peaceiris/actions-gh-pages@v3

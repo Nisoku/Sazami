@@ -16,10 +16,17 @@ jobs:
         with:
           node-version: '20.19.0'
 
-      - name: Copy Playground files
+      - name: Install dependencies and build library
         run: |
-          mkdir -p gh-pages-playground
+          cd Build
+          npm ci
+          npm run build
+
+      - name: Prepare Playground output
+        run: |
+          mkdir -p gh-pages-playground/dist
           cp Demo/playground.html gh-pages-playground/
+          cp -r Build/dist/* gh-pages-playground/dist/
 
       - name: Deploy playground to gh-pages under playground/
         uses: peaceiris/actions-gh-pages@v3
