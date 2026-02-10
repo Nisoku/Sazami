@@ -11,6 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+
       - name: Copy Playground files
         run: |
           mkdir -p gh-pages-playground
