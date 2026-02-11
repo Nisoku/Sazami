@@ -6,16 +6,16 @@
 
 **A zero-dependency UI engine for the web.**
 
-Write concise, readable markup in the Sakko language. Get real web components, automatic theming, and a unique directional corner-rounding effect called *curvomorphism*: all without installing a single dependency.
+Write concise, readable markup in the Sakko language. Get real web components, automatic theming, and a unique directional corner-rounding effect called *[curvomorphism](https://github.com/NellowTCS/Curvomorphism/)*: all without installing a single dependency.
 
 ## What does it look like?
 
 ```sako
-card {
+<card {
   heading: "Hello, world"
   text: "This compiles to real web components."
   button(primary): "Get Started"
-}
+}>
 ```
 
 That is the entire source. No HTML boilerplate, no CSS classes, no imports. Sakko compiles it into a styled `<saz-card>` web component with a heading, a paragraph, and a themed button, all rendered into the DOM.
@@ -23,7 +23,7 @@ That is the entire source. No HTML boilerplate, no CSS classes, no imports. Sakk
 Here is a more realistic example:
 
 ```sako
-card(row center) {
+<card(row center) {
   image(src "album.jpg" round): ""
   stack(gap small) {
     heading: "Midnight City"
@@ -34,7 +34,7 @@ card(row center) {
     icon-btn(accent large): "play"
     icon-btn: "next"
   }
-}
+}>
 ```
 
 This produces a horizontal card with a round album cover, stacked song info, and SVG icon buttons.
@@ -57,11 +57,11 @@ injectThemeCSS();
 
 // Compile Sakko source and mount it
 const source = `
-  card {
+  <card {
     heading: "Welcome"
     text: "Built with Sakko + Sazami"
     button(accent): "Get Started"
-  }
+  }>
 `;
 
 compileSakko(source, document.getElementById("app"));
@@ -80,19 +80,23 @@ injectThemeCSS({
 });
 ```
 
-Tokens cover colors, spacing, typography, radii, shadows, and icon sizes. See the [theming docs](Docs/docs/config-theming.md) for the full list.
+Tokens cover colors, spacing, typography, radii, shadows, and icon sizes. See the [theming docs](https://nisoku.github.io/Sazami/config-theming/) for the full list.
 
 ## How it works
 
 Sakko is a three-layer system:
 
-1. **Sakko**: a bracket-based DSL you write in `.sako` files (or inline strings)
+1. **Sakko**: a bracket-based DSL you write in `.sako` files (or inline)
 2. **Sazami Primitives**: semantic web components (`saz-card`, `saz-button`, etc.)
 3. **Sazami Config**: a CSS-variable theme engine driven by design tokens
 
-The pipeline: source text -> tokenize -> parse -> AST -> transform -> VNode tree -> render to DOM.
+The pipeline: 
 
-Everything is compiled at runtime in the browser. No build step required. The library ships as ESM and CJS with TypeScript declarations.
+```text
+source text -> tokenize -> parse -> AST -> transform -> VNode tree -> render to DOM
+```
+
+Everything is compiled at runtime in the browser. No build step required. Additionally, the library ships as ESM and CJS with TypeScript declarations!
 
 ## Primitives
 
@@ -115,14 +119,14 @@ Every interactive primitive has:
 
 ## Icons
 
-Sazami ships with 37 SVG icons (no unicode glyphs, no external font). Icons inherit the current text color and scale with the `size` modifier:
+Sazami ships with 37 SVG icons. Icons inherit the current text color and scale with the `size` modifier:
 
 ```sako
-row(gap medium) {
+<row(gap medium) {
   icon: "play"
   icon(large primary): "heart"
   icon-btn: "settings"
-}
+}>
 ```
 
 Available: play, pause, stop, previous, next, skip, close, menu, search, settings, heart, star, check, plus, minus, edit, share, download, upload, refresh, home, back, forward, up, down.
@@ -142,71 +146,110 @@ Flags like `primary`, `large`, `center`, `bold`, `disabled`, and `checked` map t
 
 ## Curvomorphism
 
-Curvomorphism rounds corners directionally based on each element's position relative to a center point. Elements closer to the center round their inward-facing corners more. This gives layouts a smooth, organic feel.
+Curvomorphism rounds corners directionally based on each element's position relative to a center point. Elements closer to the center round their inward-facing corners more.
 
 Enable it per-node with the `curved` flag, and set the center point on a parent:
 
 ```sako
-grid(cols 2 gap medium center-point) {
-  card(curved): { text: "Top Left" },
-  card(curved): { text: "Top Right" },
-  card(curved): { text: "Bottom Left" },
-  card(curved): { text: "Bottom Right" }
-}
+<grid(cols 2 gap medium center-point) {
+  card(curved) {
+    text: "Top Left"
+  },
+  card(curved) {
+    text: "Top Right"
+  },
+  card(curved) {
+    text: "Bottom Left"
+  },
+  card(curved)
+  {
+    text: "Bottom Right"
+  }
+}>
 ```
 
 ## Playground
 
-Open `Demo/playground.html` in a browser for a live editor. Type Sakko code on the left, see rendered output on the right. Includes example presets and error display with line/column info.
+Open the [playground](https://nisoku.github.io/Sazami/playground/) in a browser to use the live editor. 
+
+Type your Sakko code on the left; see the rendered output on the right. Includes example presets and error display with line/column info.
 
 ## Project structure
 
-```
+```text
 Build/              Library source code
   src/
     parser/         Tokenizer, parser, AST types
-    primitives/     Web components (one file per primitive)
+    primitives/     Primitives (Web Components)
     config/         Design tokens and CSS variable generation
     runtime/        AST-to-VNode transformer and DOM renderer
     curvomorphism/  Directional corner rounding algorithm
-    icons/          SVG icon registry
-  icons/            Source SVG files (37 icons)
-  tests/            Test suites (309 tests, 10 suites)
-  dist/             Built output (ESM + CJS + .d.ts)
+    icons/          All icon stuff
+      svgs/         The minimal built-in icon library
+  tests/            Tests
 Demo/               Live demo and interactive playground
 Examples/           Example .sako source files
 Docs/               Documentation (powered by DocMD)
-GUIDE.md            Full implementation specification
 ```
 
 ## Development
 
 ```bash
 cd Build
-npm install
-npm test          # 309 tests across 10 suites
-npm run build     # ESM + CJS + TypeScript declarations
-npm run typecheck # Type checking only
 ```
 
-Zero runtime dependencies. Pure TypeScript. Builds with Vite.
+### Install dependencies
+```bash
+npm install
+```
+
+### Run tests
+```bash
+npm test
+```
+
+### Build
+```bash
+npm run build
+```
+
+### Type checking
+
+```bash
+npm run typecheck
+```
 
 ## Documentation
 
-| Document | What it covers |
-|---|---|
+| Document | Summary |
+| --- | --- |
 | [Language Reference](https://nisoku.github.io/Sazami/language-reference/) | Full Sakko syntax guide |
 | [Primitives](https://nisoku.github.io/Sazami/primitives/) | Every component with examples |
 | [Config & Theming](https://nisoku.github.io/Sazami/config-theming/) | Token system and custom themes |
 | [Curvomorphism](https://nisoku.github.io/Sazami/curvomorphism/) | How directional rounding works |
 | [API Reference](https://nisoku.github.io/Sazami/api-reference/) | Public API surface |
 
-To run docs locally:
+### Run locally
 
 ```bash
-cd Docs && npm install && npm run dev
+cd Docs
+```
+
+### Install dependencies
+```bash
+npm install
+```
+
+### Build
+```bash
+npm run build
+```
+
+### Run dev server
+```bash
+npm run dev
 ```
 
 ## License
 
-Apache License v2.0
+[Apache License v2.0](LICENSE)
