@@ -16,11 +16,11 @@ import { compileSakko, injectThemeCSS } from "@nisoku/sazami";
 injectThemeCSS();
 
 compileSakko(`
-  card {
+  <card {
     heading: "Hello, world"
     text: "Built with Sazami"
     button(accent): "Get Started"
-  }
+  }>
 `, document.getElementById("app"));
 ```
 

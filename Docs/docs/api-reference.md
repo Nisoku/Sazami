@@ -60,7 +60,7 @@ const ast = parseSakko('<page { text: Hello }>');
 ```
 
 **Parameters:**
-- `input: string` — Sakko source code
+- `input: string` - Sakko source code
 
 **Returns:** `RootNode`
 
@@ -116,7 +116,7 @@ render(vnode, document.getElementById('app'));
 
 ### `injectThemeCSS(customTokens?)`
 
-Inject theme CSS variables into the document `<head>`. Idempotent — updates existing theme if already injected.
+Inject theme CSS variables into the document `<head>`. Idempotent, updates existing theme if already injected.
 
 ```typescript
 import { injectThemeCSS } from '@nisoku/sazami';

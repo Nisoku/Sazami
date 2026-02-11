@@ -5,20 +5,20 @@
   grid(cols 3 gap large) {
     card(curved) {
       text(dim small): "Total Users"
-      text(bold xlarge): "12,483"
-      badge(success): "+4.2%"
+      text(bold large): "12,483"
+      badge(success large): "+4.2%"
     }
 
     card(curved) {
       text(dim small): "Revenue"
-      text(bold xlarge): "$48,290"
-      badge(accent): "+12.7%"
+      text(bold large): "$48,290"
+      badge(accent large): "+12.7%"
     }
 
     card(curved) {
       text(dim small): "Active Sessions"
-      text(bold xlarge): "1,024"
-      badge(danger): "-2.1%"
+      text(bold large): "1,024"
+      badge(danger large): "-2.1%"
     }
   }
 

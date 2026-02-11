@@ -117,7 +117,7 @@ injectThemeCSS({
 });
 ```
 
-Custom tokens are merged with defaults — only specify what you want to change.
+Custom tokens are merged with defaults; only specify what you want to change.
 
 ---
 

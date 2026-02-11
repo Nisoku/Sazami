@@ -9,7 +9,7 @@
     details {
       text(bold large): "Midnight City"
       text(dim small): "M83"
-      badge(accent): "Synthwave"
+      badge(accent large): "Synthwave"
     }
     
     // Playback controls

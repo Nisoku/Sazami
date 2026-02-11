@@ -28,7 +28,7 @@ Every `.sako` file has one root block wrapped in angle brackets:
 }>
 ```
 
-> **Note:** The `compileSakko()` function auto-wraps source that is missing `<>` brackets, so both `<card { ... }>` and `card { ... }` work when using the API.
+> **Note:** The `compileSakko()` function auto-wraps source that is missing `<>` brackets, so both `<card { ... }>` and `card { ... }` work when using the API. However, always have the habit to add `<>` brackets.
 
 **Example:**
 
@@ -52,16 +52,16 @@ element {
 **Example:**
 
 ```sako
-card {
+<card {
   text(bold): "Title"
   text(dim): "Subtitle"
   button: "Click"
-}
+}>
 ```
 
 ### Inline Elements
 
-Inline elements have no children — just a name, optional modifiers, and a value:
+Inline elements have no children: just a name, optional modifiers, and a value:
 
 ```sako
 name: value
@@ -81,8 +81,8 @@ icon: play
 Elements that need no value or children can stand alone:
 
 ```sako
-divider
-spacer(large)
+divider;
+spacer(large);
 ```
 
 These are parsed as inline elements with an empty value. Useful for separators, spacers, and structural markers.
@@ -138,21 +138,21 @@ The parser recognizes these keys as pairs: `cols`, `gap`, `radius`, `size`, `var
 
 ## Lists
 
-Lists group multiple sibling elements using square brackets, with items separated by commas:
+Lists group multiple sibling elements, with items separated by commas:
 
 ```sako
-grid(cols 3): [
+<grid(cols 3) {
   card { text: One },
   card { text: Two },
   card { text: Three }
-]
+}>
 ```
 
 Lists can appear after a colon or directly:
 
 ```sako
-row: [button: A, button: B]
-row [button: A, button: B]
+row: {button: A, button: B}
+row {button: A, button: B}
 ```
 
 ---
@@ -162,9 +162,9 @@ row [button: A, button: B]
 Use semicolons to place multiple inline elements on one line:
 
 ```sako
-controls {
+<controls {
   button: play; button: pause; badge(accent): LIVE
-}
+}>
 ```
 
 Semicolons work at any nesting level, including root:
@@ -190,10 +190,10 @@ Single-line comments start with `//`:
 
 ```sako
 // This is a comment
-card {
+<card {
   // Comments work anywhere
   text: Content // Inline comments too
-}
+}>
 ```
 
 ---

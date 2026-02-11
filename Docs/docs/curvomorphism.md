@@ -12,7 +12,7 @@ Curvomorphism is a directional corner-rounding system that makes corners round t
 
 ## The Concept
 
-**Traditional UI** gives all corners the same radius — every card looks identical regardless of position.
+**Traditional UI** gives all corners the same radius: every card looks identical regardless of position.
 
 **Curvomorphism** makes corners directional:
 
@@ -24,24 +24,24 @@ This creates an organic visual flow that guides the user's eye toward the conten
 ```
 Layout with center point (C):
 
-┌─────────┐          ╭─────────╮         ┌─────────┐
-│ TL      │          │    T     │         │      TR │
-│         │          │          │         │         │
-└─────────╯         ╰─────────╯         └─────────┘
+┌─────────┐          ┌─────────┐         ┌─────────┐
+│ TL      │          │    T    │         │      TR │
+│         │          │         │         │         │
+└─────────╯         ╰────────╯        ╰─────────┘
  Bottom-right        Bottom L+R          Bottom-left
    rounded            rounded              rounded
 
-╭─────────╮            (C)             ╭─────────╮
-│ L        │       ←─────────────→       │       R │
+┌─────────╮                             ╭─────────┐
+│ L        │       ←──── (C) ────→       │       R │
 │          │                             │         │
-╰─────────╯                            ╰─────────╯
+└─────────╯                             ╰─────────┘
   Right-side                            Left-side
    rounded                              rounded
 
-┌─────────╮         ╭─────────╮         ╌─────────┐
-│ BL      │          │    B     │         │      BR │
-│         │          │          │         │         │
-╰─────────┘         ╰─────────┘         ╰─────────╯
+┌─────────╮         ╭─────────╮       ╭─────────┐
+│ BL      │          │    B    │         │      BR │
+│         │          │         │         │         │
+└─────────┘          └─────────┘         └─────────┘
  Top-right            Top L+R            Top-left
    rounded            rounded             rounded
 ```
@@ -87,9 +87,9 @@ function applyCornerRounding(element, centerX, centerY, radiusValue) {
 ### Basic
 
 ```sako
-card(curved) {
+<card(curved) {
   text: "Auto-curvomorphic card"
-}
+}>
 ```
 
 ### With Radius Control
@@ -103,9 +103,9 @@ card(curved strong)  // 12px radius
 ### Explicitly Flat
 
 ```sako
-card(flat) {
+<card(flat) {
   text: "No curvomorphism"
-}
+}>
 ```
 
 ---

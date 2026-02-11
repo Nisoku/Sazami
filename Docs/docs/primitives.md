@@ -52,15 +52,15 @@ CSS grid container with responsive column support.
 |-----------|--------|---------|-------------|
 | `cols` | Any number | `1` | Number of columns |
 | `gap` | `small`, `medium`, `large`, `xlarge` | `medium` | Gap between cells |
-| `md:cols` | Any number | — | Columns at ≥768px |
-| `lg:cols` | Any number | — | Columns at ≥1024px |
+| `md:cols` | Any number | - | Columns at ≥768px |
+| `lg:cols` | Any number | - | Columns at ≥1024px |
 
 ```sako
-grid(cols 3 gap large): [
+<grid(cols 3 gap large) {
   card { text: "1" },
   card { text: "2" },
   card { text: "3" }
-]
+}>
 ```
 
 ### `stack`
@@ -72,10 +72,10 @@ Overlapping layers using CSS grid stacking (all children occupy the same grid ce
 | `align` | `center`, etc. | `center` | Content alignment |
 
 ```sako
-stack {
+<stack {
   image: "background.jpg"
   text(bold): "Overlay Text"
-}
+}>
 ```
 
 ---
@@ -91,16 +91,16 @@ Panel/container with background, border, and shadow.
 | `variant` | `default`, `accent`, `primary`, `secondary`, `dim` | `default` | Color variant |
 | `layout` | `row`, `column` | `column` | Flex direction |
 | `gap` | `small`, `medium`, `large` | `small` | Child spacing |
-| `align` | `center`, etc. | — | Cross axis alignment |
-| `justify` | `space-between`, etc. | — | Main axis alignment |
-| `curved` | (boolean) | — | Enable curvomorphism |
+| `align` | `center`, etc. | - | Cross axis alignment |
+| `justify` | `space-between`, etc. | - | Main axis alignment |
+| `curved` | (boolean) | - | Enable curvomorphism |
 | `radius` | `soft`, `medium`, `strong` | `medium` | Curvomorphism radius |
 
 ```sako
-card(row center curved) {
+<card(row center curved) {
   text(bold): "Title"
   button(accent): "Action"
-}
+}>
 ```
 
 ### `text`
@@ -120,7 +120,7 @@ text(dim small): "Caption"
 
 ### `heading`
 
-Heading text — bold and larger by default.
+Heading text - bold and larger by default.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
@@ -134,7 +134,7 @@ heading(xlarge): "Big Title"
 
 ### `label`
 
-Form label — small, medium-weight, uppercase, dimmed.
+Form label - small, medium-weight, uppercase, dimmed.
 
 ```sako
 label: "Email Address"
@@ -152,7 +152,7 @@ Clickable button with variant styling and hover/active states.
 |-----------|--------|---------|-------------|
 | `variant` | `primary`, `accent`, `secondary`, `danger`, `dim` | `primary` | Color variant |
 | `size` | `small`, `medium`, `large` | `medium` | Padding and font size |
-| `disabled` | (boolean) | — | Disable interaction |
+| `disabled` | (boolean) | - | Disable interaction |
 
 ```sako
 button(accent large): "Save"
@@ -166,10 +166,10 @@ Icon-only button with built-in SVG icons.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `icon` | `play`, `pause`, `stop`, `previous`, `next`, `skip`, `close`, `menu`, `search` | — | Icon name |
+| `icon` | `play`, `pause`, `stop`, `previous`, `next`, `skip`, `close`, `menu`, `search` | - | Icon name |
 | `variant` | `primary`, `accent`, `secondary`, `dim` | `secondary` | Color variant |
 | `size` | `small`, `medium`, `large` | `medium` | Icon and padding size |
-| `disabled` | (boolean) | — | Disable interaction |
+| `disabled` | (boolean) | - | Disable interaction |
 
 ```sako
 icon-btn: play
@@ -183,9 +183,9 @@ Text input field with focus states.
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
 | `size` | `small`, `medium`, `large` | `medium` | Input size |
-| `placeholder` | any string | — | Placeholder text |
+| `placeholder` | any string | - | Placeholder text |
 | `type` | `text`, `password`, `email`, etc. | `text` | Input type |
-| `disabled` | (boolean) | — | Disable input |
+| `disabled` | (boolean) | - | Disable input |
 
 ```sako
 label: "Email"
@@ -201,8 +201,8 @@ Checkbox with label support.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `checked` | (boolean) | — | Checked state |
-| `disabled` | (boolean) | — | Disable interaction |
+| `checked` | (boolean) | - | Checked state |
+| `disabled` | (boolean) | - | Disable interaction |
 
 ```sako
 row(space-between) {
@@ -221,8 +221,8 @@ Toggle switch with animated thumb.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `checked` | (boolean) | — | On/off state |
-| `disabled` | (boolean) | — | Disable interaction |
+| `checked` | (boolean) | - | On/off state |
+| `disabled` | (boolean) | - | Disable interaction |
 
 ```sako
 row(space-between) {
@@ -245,8 +245,8 @@ Image display with shape variants.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `src` | URL string | — | Image source |
-| `alt` | string | — | Alt text |
+| `src` | URL string | - | Image source |
+| `alt` | string | - | Alt text |
 | `shape` | `default`, `round`, `square` | `default` | Border radius |
 
 ### `coverart`
@@ -255,7 +255,7 @@ Specialized image for album/media artwork. Fixed aspect ratio, square by default
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `src` | URL string | — | Image source |
+| `src` | URL string | - | Image source |
 | `shape` | `square`, `round` | `square` | Border shape |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Dimensions (48–160px) |
 
@@ -269,7 +269,7 @@ SVG icon display with built-in icon set.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `icon` | `play`, `pause`, `stop`, `previous`, `next` | — | Icon name |
+| `icon` | `play`, `pause`, `stop`, `previous`, `next` | - | Icon name |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Icon size |
 | `color` | `current`, or token name | `current` | Icon color |
 
@@ -324,7 +324,7 @@ A layout section that can define a curvomorphism center point.
 
 | Attribute | Values | Default | Description |
 |-----------|--------|---------|-------------|
-| `center-point` | `x,y` coordinates | — | Set curvomorphism center |
+| `center-point` | `x,y` coordinates | - | Set curvomorphism center |
 | `gap` | `small`, `medium`, `large` | `medium` | Child spacing |
 | `variant` | `default`, `accent`, `primary` | `default` | Background variant |
 
@@ -339,11 +339,11 @@ section(center-point "400,300") {
 Generic grouping container for descriptive content (track info, metadata, etc.).
 
 ```sako
-details {
+<details {
   text(bold large): "Midnight City"
   text(dim): "M83"
   badge(accent): "Synthwave"
-}
+}>
 ```
 
 ### `controls`
@@ -351,11 +351,11 @@ details {
 Generic grouping container for interactive control elements.
 
 ```sako
-controls {
+<controls {
   icon-btn: previous;
   icon-btn(accent large): play;
   icon-btn: next
-}
+}>
 ```
 
 ---
