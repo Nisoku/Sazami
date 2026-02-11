@@ -216,7 +216,7 @@
 <p>Curvomorphism is a directional corner-rounding system that makes corners round toward a center point and sharp toward edges, creating a visual “pull” toward the content center.</p>
 <hr>
 <h2 id="the-concept">The Concept</h2>
-<p><strong>Traditional UI</strong> gives all corners the same radius — every card looks identical regardless of position.</p>
+<p><strong>Traditional UI</strong> gives all corners the same radius: every card looks identical regardless of position.</p>
 <p><strong>Curvomorphism</strong> makes corners directional:</p>
 <ul>
 <li>Corners facing the <strong>center</strong> of the layout → <strong>rounded</strong></li>
@@ -225,24 +225,24 @@
 <p>This creates an organic visual flow that guides the user’s eye toward the content center.</p>
 <pre class="hljs"><code>Layout with center point (C):
 
-┌─────────┐          ╭─────────╮         ┌─────────┐
-│ TL      │          │    T     │         │      TR │
-│         │          │          │         │         │
-└─────────╯         ╰─────────╯         └─────────┘
+┌─────────┐          ┌─────────┐         ┌─────────┐
+│ TL      │          │    T    │         │      TR │
+│         │          │         │         │         │
+└─────────╯         ╰────────╯        ╰─────────┘
  Bottom-right        Bottom L+R          Bottom-left
    rounded            rounded              rounded
 
-╭─────────╮            (C)             ╭─────────╮
-│ L        │       ←─────────────→       │       R │
+┌─────────╮                             ╭─────────┐
+│ L        │       ←──── (C) ────→       │       R │
 │          │                             │         │
-╰─────────╯                            ╰─────────╯
+└─────────╯                             ╰─────────┘
   Right-side                            Left-side
    rounded                              rounded
 
-┌─────────╮         ╭─────────╮         ╌─────────┐
-│ BL      │          │    B     │         │      BR │
-│         │          │          │         │         │
-╰─────────┘         ╰─────────┘         ╰─────────╯
+┌─────────╮         ╭─────────╮       ╭─────────┐
+│ BL      │          │    B    │         │      BR │
+│         │          │         │         │         │
+└─────────┘          └─────────┘         └─────────┘
  Top-right            Top L+R            Top-left
    rounded            rounded             rounded
 </code></pre>
@@ -278,9 +278,9 @@
 <hr>
 <h2 id="usage-in-sakko">Usage in Sakko</h2>
 <h3 id="basic">Basic</h3>
-<pre class="hljs"><code>card(curved) {
+<pre class="hljs"><code>&lt;card(curved) {
   text: &quot;Auto-curvomorphic card&quot;
-}
+}&gt;
 </code></pre>
 <h3 id="with-radius-control">With Radius Control</h3>
 <pre class="hljs"><code>card(curved soft)    // 4px radius
@@ -288,9 +288,9 @@ card(curved medium)  // 8px radius (default)
 card(curved strong)  // 12px radius
 </code></pre>
 <h3 id="explicitly-flat">Explicitly Flat</h3>
-<pre class="hljs"><code>card(flat) {
+<pre class="hljs"><code>&lt;card(flat) {
   text: &quot;No curvomorphism&quot;
-}
+}&gt;
 </code></pre>
 <hr>
 <h2 id="api">API</h2>

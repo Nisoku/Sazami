@@ -319,22 +319,22 @@ row(space-between gap medium) { text: Left; text: Right }
 <tr>
 <td><code>md:cols</code></td>
 <td>Any number</td>
-<td>—</td>
+<td>-</td>
 <td>Columns at ≥768px</td>
 </tr>
 <tr>
 <td><code>lg:cols</code></td>
 <td>Any number</td>
-<td>—</td>
+<td>-</td>
 <td>Columns at ≥1024px</td>
 </tr>
 </tbody>
 </table>
-</div><pre class="hljs"><code>grid(cols 3 gap large): [
+</div><pre class="hljs"><code>&lt;grid(cols 3 gap large) {
   card { text: &quot;1&quot; },
   card { text: &quot;2&quot; },
   card { text: &quot;3&quot; }
-]
+}&gt;
 </code></pre>
 <h3 id="stack"><code>stack</code></h3>
 <p>Overlapping layers using CSS grid stacking (all children occupy the same grid cell).</p>
@@ -356,10 +356,10 @@ row(space-between gap medium) { text: Left; text: Right }
 </tr>
 </tbody>
 </table>
-</div><pre class="hljs"><code>stack {
+</div><pre class="hljs"><code>&lt;stack {
   image: &quot;background.jpg&quot;
   text(bold): &quot;Overlay Text&quot;
-}
+}&gt;
 </code></pre>
 <hr>
 <h2 id="content-primitives">Content Primitives</h2>
@@ -396,19 +396,19 @@ row(space-between gap medium) { text: Left; text: Right }
 <tr>
 <td><code>align</code></td>
 <td><code>center</code>, etc.</td>
-<td>—</td>
+<td>-</td>
 <td>Cross axis alignment</td>
 </tr>
 <tr>
 <td><code>justify</code></td>
 <td><code>space-between</code>, etc.</td>
-<td>—</td>
+<td>-</td>
 <td>Main axis alignment</td>
 </tr>
 <tr>
 <td><code>curved</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Enable curvomorphism</td>
 </tr>
 <tr>
@@ -419,10 +419,10 @@ row(space-between gap medium) { text: Left; text: Right }
 </tr>
 </tbody>
 </table>
-</div><pre class="hljs"><code>card(row center curved) {
+</div><pre class="hljs"><code>&lt;card(row center curved) {
   text(bold): &quot;Title&quot;
   button(accent): &quot;Action&quot;
-}
+}&gt;
 </code></pre>
 <h3 id="text"><code>text</code></h3>
 <p>Text display with size, weight, and tone control.</p>
@@ -460,7 +460,7 @@ row(space-between gap medium) { text: Left; text: Right }
 text(dim small): &quot;Caption&quot;
 </code></pre>
 <h3 id="heading"><code>heading</code></h3>
-<p>Heading text — bold and larger by default.</p>
+<p>Heading text - bold and larger by default.</p>
 <div class="table-wrapper"><table>
 <thead>
 <tr>
@@ -489,7 +489,7 @@ text(dim small): &quot;Caption&quot;
 heading(xlarge): &quot;Big Title&quot;
 </code></pre>
 <h3 id="label"><code>label</code></h3>
-<p>Form label — small, medium-weight, uppercase, dimmed.</p>
+<p>Form label - small, medium-weight, uppercase, dimmed.</p>
 <pre class="hljs"><code>label: &quot;Email Address&quot;
 </code></pre>
 <hr>
@@ -521,7 +521,7 @@ heading(xlarge): &quot;Big Title&quot;
 <tr>
 <td><code>disabled</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Disable interaction</td>
 </tr>
 </tbody>
@@ -545,7 +545,7 @@ button(danger disabled): &quot;Delete&quot;
 <tr>
 <td><code>icon</code></td>
 <td><code>play</code>, <code>pause</code>, <code>stop</code>, <code>previous</code>, <code>next</code>, <code>skip</code>, <code>close</code>, <code>menu</code>, <code>search</code></td>
-<td>—</td>
+<td>-</td>
 <td>Icon name</td>
 </tr>
 <tr>
@@ -563,7 +563,7 @@ button(danger disabled): &quot;Delete&quot;
 <tr>
 <td><code>disabled</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Disable interaction</td>
 </tr>
 </tbody>
@@ -592,7 +592,7 @@ icon-btn(accent large): play
 <tr>
 <td><code>placeholder</code></td>
 <td>any string</td>
-<td>—</td>
+<td>-</td>
 <td>Placeholder text</td>
 </tr>
 <tr>
@@ -604,7 +604,7 @@ icon-btn(accent large): play
 <tr>
 <td><code>disabled</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Disable input</td>
 </tr>
 </tbody>
@@ -630,13 +630,13 @@ input(type password placeholder &quot;Enter password&quot;): &quot;&quot;
 <tr>
 <td><code>checked</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Checked state</td>
 </tr>
 <tr>
 <td><code>disabled</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Disable interaction</td>
 </tr>
 </tbody>
@@ -665,13 +665,13 @@ row(space-between) {
 <tr>
 <td><code>checked</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>On/off state</td>
 </tr>
 <tr>
 <td><code>disabled</code></td>
 <td>(boolean)</td>
-<td>—</td>
+<td>-</td>
 <td>Disable interaction</td>
 </tr>
 </tbody>
@@ -702,13 +702,13 @@ row(space-between) {
 <tr>
 <td><code>src</code></td>
 <td>URL string</td>
-<td>—</td>
+<td>-</td>
 <td>Image source</td>
 </tr>
 <tr>
 <td><code>alt</code></td>
 <td>string</td>
-<td>—</td>
+<td>-</td>
 <td>Alt text</td>
 </tr>
 <tr>
@@ -734,7 +734,7 @@ row(space-between) {
 <tr>
 <td><code>src</code></td>
 <td>URL string</td>
-<td>—</td>
+<td>-</td>
 <td>Image source</td>
 </tr>
 <tr>
@@ -768,7 +768,7 @@ row(space-between) {
 <tr>
 <td><code>icon</code></td>
 <td><code>play</code>, <code>pause</code>, <code>stop</code>, <code>previous</code>, <code>next</code></td>
-<td>—</td>
+<td>-</td>
 <td>Icon name</td>
 </tr>
 <tr>
@@ -887,7 +887,7 @@ badge(success): &quot;Active&quot;
 <tr>
 <td><code>center-point</code></td>
 <td><code>x,y</code> coordinates</td>
-<td>—</td>
+<td>-</td>
 <td>Set curvomorphism center</td>
 </tr>
 <tr>
@@ -910,19 +910,19 @@ badge(success): &quot;Active&quot;
 </code></pre>
 <h3 id="details"><code>details</code></h3>
 <p>Generic grouping container for descriptive content (track info, metadata, etc.).</p>
-<pre class="hljs"><code>details {
+<pre class="hljs"><code>&lt;details {
   text(bold large): &quot;Midnight City&quot;
   text(dim): &quot;M83&quot;
   badge(accent): &quot;Synthwave&quot;
-}
+}&gt;
 </code></pre>
 <h3 id="controls"><code>controls</code></h3>
 <p>Generic grouping container for interactive control elements.</p>
-<pre class="hljs"><code>controls {
+<pre class="hljs"><code>&lt;controls {
   icon-btn: previous;
   icon-btn(accent large): play;
   icon-btn: next
-}
+}&gt;
 </code></pre>
 <hr>
 <h2 id="component-registry">Component Registry</h2>

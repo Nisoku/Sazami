@@ -226,7 +226,7 @@
 }&gt;
 </code></pre>
 <blockquote>
-<p><strong>Note:</strong> The <code>compileSakko()</code> function auto-wraps source that is missing <code>&lt;&gt;</code> brackets, so both <code>&lt;card { ... }&gt;</code> and <code>card { ... }</code> work when using the API.</p>
+<p><strong>Note:</strong> The <code>compileSakko()</code> function auto-wraps source that is missing <code>&lt;&gt;</code> brackets, so both <code>&lt;card { ... }&gt;</code> and <code>card { ... }</code> work when using the API. However, always have the habit to add <code>&lt;&gt;</code> brackets.</p>
 </blockquote>
 <p><strong>Example:</strong></p>
 <pre class="hljs"><code>&lt;page {
@@ -241,14 +241,14 @@
 }
 </code></pre>
 <p><strong>Example:</strong></p>
-<pre class="hljs"><code>card {
+<pre class="hljs"><code>&lt;card {
   text(bold): &quot;Title&quot;
   text(dim): &quot;Subtitle&quot;
   button: &quot;Click&quot;
-}
+}&gt;
 </code></pre>
 <h3 id="inline-elements">Inline Elements</h3>
-<p>Inline elements have no children — just a name, optional modifiers, and a value:</p>
+<p>Inline elements have no children: just a name, optional modifiers, and a value:</p>
 <pre class="hljs"><code>name: value
 name(modifiers): value
 </code></pre>
@@ -259,8 +259,8 @@ icon: play
 </code></pre>
 <h3 id="void-elements">Void Elements</h3>
 <p>Elements that need no value or children can stand alone:</p>
-<pre class="hljs"><code>divider
-spacer(large)
+<pre class="hljs"><code>divider;
+spacer(large);
 </code></pre>
 <p>These are parsed as inline elements with an empty value. Useful for separators, spacers, and structural markers.</p>
 <hr>
@@ -352,23 +352,23 @@ image(src &quot;photo.jpg&quot; alt &quot;A photo&quot;): &quot;&quot;
 </blockquote>
 <hr>
 <h2 id="lists">Lists</h2>
-<p>Lists group multiple sibling elements using square brackets, with items separated by commas:</p>
-<pre class="hljs"><code>grid(cols 3): [
+<p>Lists group multiple sibling elements, with items separated by commas:</p>
+<pre class="hljs"><code>&lt;grid(cols 3) {
   card { text: One },
   card { text: Two },
   card { text: Three }
-]
+}&gt;
 </code></pre>
 <p>Lists can appear after a colon or directly:</p>
-<pre class="hljs"><code>row: [button: A, button: B]
-row [button: A, button: B]
+<pre class="hljs"><code>row: {button: A, button: B}
+row {button: A, button: B}
 </code></pre>
 <hr>
 <h2 id="inline-siblings-with-semicolons">Inline Siblings with Semicolons</h2>
 <p>Use semicolons to place multiple inline elements on one line:</p>
-<pre class="hljs"><code>controls {
+<pre class="hljs"><code>&lt;controls {
   button: play; button: pause; badge(accent): LIVE
-}
+}&gt;
 </code></pre>
 <p>Semicolons work at any nesting level, including root:</p>
 <pre class="hljs"><code>&lt;page {
@@ -385,10 +385,10 @@ row [button: A, button: B]
 <h2 id="comments">Comments</h2>
 <p>Single-line comments start with <code>//</code>:</p>
 <pre class="hljs"><code>// This is a comment
-card {
+&lt;card {
   // Comments work anywhere
   text: Content // Inline comments too
-}
+}&gt;
 </code></pre>
 <hr>
 <h2 id="complete-example">Complete Example</h2>
