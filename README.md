@@ -195,12 +195,11 @@ Zero runtime dependencies. Pure TypeScript. Builds with Vite.
 
 | Document | What it covers |
 |---|---|
-| [Language Reference](Docs/docs/language-reference.md) | Full Sakko syntax guide |
-| [Primitives](Docs/docs/primitives.md) | Every component with examples |
-| [Config & Theming](Docs/docs/config-theming.md) | Token system and custom themes |
-| [Curvomorphism](Docs/docs/curvomorphism.md) | How directional rounding works |
-| [API Reference](Docs/docs/api-reference.md) | Public API surface |
-| [GUIDE.md](GUIDE.md) | Complete implementation specification |
+| [Language Reference](https://nisoku.github.io/Sazami/language-reference/) | Full Sakko syntax guide |
+| [Primitives](https://nisoku.github.io/Sazami/primitives/) | Every component with examples |
+| [Config & Theming](https://nisoku.github.io/Sazami/config-theming/) | Token system and custom themes |
+| [Curvomorphism](https://nisoku.github.io/Sazami/curvomorphism/) | How directional rounding works |
+| [API Reference](https://nisoku.github.io/Sazami/api-reference/) | Public API surface |
 
 To run docs locally:
 

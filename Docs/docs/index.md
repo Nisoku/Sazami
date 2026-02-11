@@ -41,8 +41,8 @@ That renders a styled card with a heading, paragraph, and themed button into the
 
 | Page | Description |
 | --- | --- |
-| [**Language Reference**](/language-reference/) | Full Sakko syntax: blocks, modifiers, lists, void elements |
-| [**Primitives**](/primitives/) | All 23 web components with usage examples |
-| [**Config & Theming**](/config-theming/) | Design tokens, custom themes, CSS variable generation |
-| [**Curvomorphism**](/curvomorphism/) | How directional corner rounding works |
-| [**API Reference**](/api-reference/) | Complete public API: functions, types, exports |
+| [**Language Reference**](/Sazami/language-reference/) | Full Sakko syntax: blocks, modifiers, lists, void elements |
+| [**Primitives**](/Sazami/primitives/) | All 23 web components with usage examples |
+| [**Config & Theming**](/Sazami/config-theming/) | Design tokens, custom themes, CSS variable generation |
+| [**Curvomorphism**](/Sazami/curvomorphism/) | How directional corner rounding works |
+| [**API Reference**](/Sazami/api-reference/) | Complete public API: functions, types, exports |
