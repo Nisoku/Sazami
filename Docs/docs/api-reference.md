@@ -53,7 +53,8 @@ compileSakko(source, document.getElementById('app'));
 Transform an AST node into a VNode (virtual DOM node) or array of VNodes.
 
 ```typescript
-import { parseSakko, transformAST } from '@nisoku/sazami';
+import { parseSakko } from '@nisoku/sakko';
+import { transformAST } from '@nisoku/sazami';
 
 const ast = parseSakko('<page { button(accent): Save }>');
 const vnodes = ast.children.map(transformAST).flat();

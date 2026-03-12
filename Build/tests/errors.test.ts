@@ -1,5 +1,4 @@
-import { tokenize } from '../src/parser/tokenizer';
-import { parseSakko, Parser } from '../src/parser/parser';
+import { tokenize, parseSakko } from '@nisoku/sakko';
 import { transformAST } from '../src/runtime/transformer';
 import { parseModifiers, MODIFIER_MAP } from '../src/primitives/modifier-map';
 import { generateCSSVariables, generateThemeCSS, getTokenValue } from '../src/config/generator';

@@ -1,7 +1,8 @@
 /**
  * @jest-environment jsdom
  */
-import { compileSakko, parseSakko, transformAST, injectThemeCSS } from "../src/index";
+import { compileSakko, transformAST, injectThemeCSS } from "../src/index";
+import { parseSakko } from "@nisoku/sakko";
 
 describe("Full Pipeline - Advanced", () => {
   beforeEach(() => {

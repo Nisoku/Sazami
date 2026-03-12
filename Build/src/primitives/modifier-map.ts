@@ -1,4 +1,4 @@
-import { Modifier } from "../parser/parser";
+import type { Modifier } from "@nisoku/sakko";
 
 export const MODIFIER_MAP: Record<string, Record<string, any>> = {
   accent: { variant: "accent" },

@@ -1,17 +1,5 @@
 // Sazami main entry point.
 
-export { tokenize } from "./parser/tokenizer";
-export { parseSakko, Parser } from "./parser/parser";
-export type {
-  RootNode,
-  ElementNode,
-  InlineNode,
-  ListNode,
-  ASTNode,
-  Modifier,
-} from "./parser/parser";
-export type { Token } from "./parser/tokenizer";
-
 export { defaultTokens } from "./config/tokens";
 export {
   generateCSSVariables,
@@ -31,7 +19,7 @@ export { applyCurvomorphism, enableCurvomorphism } from "./curvomorphism/index";
 
 export { ICON_SVGS } from "./icons/index";
 
-import { parseSakko } from "./parser/parser";
+import { parseSakko } from "@nisoku/sakko";
 import {
   transformAST,
   VNode,

@@ -1,4 +1,4 @@
-import { ASTNode } from "../parser/parser";
+import type { ASTNode } from "@nisoku/sakko";
 import { parseModifiers } from "../primitives/modifier-map";
 
 export type VNode = {
