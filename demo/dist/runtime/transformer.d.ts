@@ -1,4 +1,4 @@
-import { ASTNode } from '../parser/parser';
+import { ASTNode } from '@nisoku/sakko';
 export type VNode = {
     type: string;
     props: Record<string, any>;

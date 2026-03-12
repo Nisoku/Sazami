@@ -9,7 +9,7 @@
 
     <title>API Reference : Sazami</title>
     
-    <meta name="description" content="Complete public API for compileSakko, parser, transformer, config, and curvomorphism">
+    <meta name="description" content="Complete public API for compileSakko, transformer, config, and curvomorphism">
     
 
     
@@ -213,7 +213,7 @@
             <div class="content-layout">
                 <div class="main-content">
                     <h1 id="api-reference">API Reference</h1>
-<p>Complete public API for Sazami.</p>
+<p>Complete public API for Sazami. Note: The parser (<code>parseSakko</code>, <code>tokenize</code>) is now in the separate <code>@nisoku/sakko</code> package.</p>
 <hr>
 <h2 id="core">Core</h2>
 <h3 id="compilesakkosource-target"><code>compileSakko(source, target)</code></h3>
@@ -240,45 +240,17 @@
 <p><strong>Behavior:</strong></p>
 <ol><li>Registers all Sazami Web Components</li>
 <li>Injects theme CSS variables into <code>&lt;head&gt;</code></li>
-<li>Parses source → AST</li>
+<li>Parses source → AST (uses <code>@nisoku/sakko</code>)</li>
 <li>Transforms AST → VNode tree</li>
 <li>Renders VNode tree → DOM</li>
 <li>Applies curvomorphism to <code>[curved]</code> elements</li>
 </ol>
 <hr>
-<h2 id="parser">Parser</h2>
-<h3 id="parsesakkoinput"><code>parseSakko(input)</code></h3>
-<p>Parse a Sakko source string into an AST.</p>
-<pre class="hljs"><code><span class="hljs-keyword">import</span> { parseSakko } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
-
-<span class="hljs-keyword">const</span> ast = <span class="hljs-title function_">parseSakko</span>(<span class="hljs-string">&#x27;&lt;page { text: Hello }&gt;&#x27;</span>);
-<span class="hljs-comment">// Returns: { type: &quot;root&quot;, name: &quot;page&quot;, children: [...] }</span>
-</code></pre>
-<p><strong>Parameters:</strong></p>
-<ul>
-<li><code>input: string</code> - Sakko source code</li>
-</ul>
-<p><strong>Returns:</strong> <code>RootNode</code></p>
-<p><strong>Throws:</strong> <code>Error</code> with descriptive message on parse failure.</p>
-<h3 id="tokenizeinput"><code>tokenize(input)</code></h3>
-<p>Tokenize a Sakko source string into a token array.</p>
-<pre class="hljs"><code><span class="hljs-keyword">import</span> { tokenize } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
-
-<span class="hljs-keyword">const</span> tokens = <span class="hljs-title function_">tokenize</span>(<span class="hljs-string">&#x27;button(accent): Save&#x27;</span>);
-<span class="hljs-comment">// Returns: [</span>
-<span class="hljs-comment">//   { type: &quot;IDENT&quot;, value: &quot;button&quot; },</span>
-<span class="hljs-comment">//   { type: &quot;LPAREN&quot;, value: &quot;(&quot; },</span>
-<span class="hljs-comment">//   { type: &quot;IDENT&quot;, value: &quot;accent&quot; },</span>
-<span class="hljs-comment">//   { type: &quot;RPAREN&quot;, value: &quot;)&quot; },</span>
-<span class="hljs-comment">//   { type: &quot;COLON&quot;, value: &quot;:&quot; },</span>
-<span class="hljs-comment">//   { type: &quot;IDENT&quot;, value: &quot;Save&quot; }</span>
-<span class="hljs-comment">// ]</span>
-</code></pre>
-<hr>
 <h2 id="transformer">Transformer</h2>
 <h3 id="transformastnode"><code>transformAST(node)</code></h3>
 <p>Transform an AST node into a VNode (virtual DOM node) or array of VNodes.</p>
-<pre class="hljs"><code><span class="hljs-keyword">import</span> { parseSakko, transformAST } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
+<pre class="hljs"><code><span class="hljs-keyword">import</span> { parseSakko } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sakko&#x27;</span>;
+<span class="hljs-keyword">import</span> { transformAST } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 
 <span class="hljs-keyword">const</span> ast = <span class="hljs-title function_">parseSakko</span>(<span class="hljs-string">&#x27;&lt;page { button(accent): Save }&gt;&#x27;</span>);
 <span class="hljs-keyword">const</span> vnodes = ast.<span class="hljs-property">children</span>.<span class="hljs-title function_">map</span>(transformAST).<span class="hljs-title function_">flat</span>();
@@ -389,18 +361,12 @@
 <h2 id="types">Types</h2>
 <p>All TypeScript types are exported:</p>
 <pre class="hljs"><code><span class="hljs-keyword">import</span> <span class="hljs-keyword">type</span> {
-  <span class="hljs-title class_">Token</span>,
-  <span class="hljs-title class_">Modifier</span>,
-  <span class="hljs-title class_">ASTNode</span>,
-  <span class="hljs-title class_">RootNode</span>,
-  <span class="hljs-title class_">ElementNode</span>,
-  <span class="hljs-title class_">InlineNode</span>,
-  <span class="hljs-title class_">ListNode</span>,
   <span class="hljs-title class_">VNode</span>,
   <span class="hljs-title class_">ComponentDefinition</span>,
   <span class="hljs-title class_">CurvomorphismOptions</span>,
 } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 </code></pre>
+<p>Note: AST types (<code>Token</code>, <code>Modifier</code>, <code>ASTNode</code>, <code>RootNode</code>, <code>ElementNode</code>, <code>InlineNode</code>, <code>ListNode</code>) are exported from <code>@nisoku/sakko</code>.</p>
 
 
                     
@@ -436,18 +402,6 @@
       
         <li class="toc-item toc-level-3">
           <a href="#compilesakkosource-target" class="toc-link">compileSakko(source, target)</a>
-        </li>
-      
-        <li class="toc-item toc-level-2">
-          <a href="#parser" class="toc-link">Parser</a>
-        </li>
-      
-        <li class="toc-item toc-level-3">
-          <a href="#parsesakkoinput" class="toc-link">parseSakko(input)</a>
-        </li>
-      
-        <li class="toc-item toc-level-3">
-          <a href="#tokenizeinput" class="toc-link">tokenize(input)</a>
         </li>
       
         <li class="toc-item toc-level-2">

@@ -1,284 +1,3 @@
-function tokenize(input) {
-  const tokens = [];
-  let i = 0;
-  let line = 1;
-  let col = 1;
-  while (i < input.length) {
-    const ch = input[i];
-    if (ch === "\n") {
-      i++;
-      line++;
-      col = 1;
-      continue;
-    }
-    if (ch === "\r") {
-      i++;
-      if (input[i] === "\n") i++;
-      line++;
-      col = 1;
-      continue;
-    }
-    if (ch === " " || ch === "	") {
-      i++;
-      col++;
-      continue;
-    }
-    if (ch === "/" && i + 1 < input.length && input[i + 1] === "/") {
-      while (i < input.length && input[i] !== "\n" && input[i] !== "\r") {
-        i++;
-      }
-      continue;
-    }
-    const SYMBOLS = {
-      "<": "LT",
-      ">": "GT",
-      "{": "LBRACE",
-      "}": "RBRACE",
-      "(": "LPAREN",
-      ")": "RPAREN",
-      "[": "LBRACKET",
-      "]": "RBRACKET",
-      ":": "COLON",
-      ";": "SEMI",
-      ",": "COMMA"
-    };
-    if (SYMBOLS[ch]) {
-      tokens.push({ type: SYMBOLS[ch], value: ch, line, col });
-      i++;
-      col++;
-      continue;
-    }
-    if (ch === '"') {
-      const startCol = col;
-      i++;
-      col++;
-      let str = "";
-      while (i < input.length && input[i] !== '"') {
-        if (input[i] === "\n") {
-          line++;
-          col = 1;
-        } else {
-          col++;
-        }
-        str += input[i];
-        i++;
-      }
-      if (i >= input.length) {
-        throw new Error(`Unterminated string at line ${line}, col ${startCol}`);
-      }
-      i++;
-      col++;
-      tokens.push({ type: "STRING", value: str, line, col: startCol });
-      continue;
-    }
-    if (/[a-zA-Z0-9_\-]/.test(ch)) {
-      const startCol = col;
-      let ident = "";
-      while (i < input.length && /[a-zA-Z0-9_\-]/.test(input[i])) {
-        ident += input[i];
-        i++;
-        col++;
-      }
-      tokens.push({ type: "IDENT", value: ident, line, col: startCol });
-      continue;
-    }
-    throw new Error(`Unexpected character: ${ch} at line ${line}, col ${col}`);
-  }
-  return tokens;
-}
-const KNOWN_KEYS = /* @__PURE__ */ new Set([
-  "cols",
-  "gap",
-  "radius",
-  "md:cols",
-  "lg:cols",
-  "placeholder",
-  "type",
-  "size",
-  "variant",
-  "layout",
-  "src",
-  "alt",
-  "icon",
-  "label",
-  "value",
-  "center-point"
-]);
-class Parser {
-  constructor(tokens, source) {
-    this.tokens = tokens;
-    this.position = 0;
-    this.source = source || "";
-  }
-  errorAt(msg, token) {
-    if (!token || !this.source) return new Error(msg);
-    const lines = this.source.split("\n");
-    const lineText = lines[token.line - 1] || "";
-    const pointer = " ".repeat(Math.max(0, token.col - 1)) + "^";
-    return new Error(
-      `${msg} at line ${token.line}, col ${token.col}
-  ${lineText}
-  ${pointer}`
-    );
-  }
-  peek() {
-    return this.tokens[this.position];
-  }
-  consume() {
-    const token = this.tokens[this.position];
-    if (!token) {
-      const last = this.tokens[this.tokens.length - 1];
-      throw this.errorAt("Unexpected end of input", last);
-    }
-    this.position++;
-    return token;
-  }
-  check(type) {
-    return this.peek()?.type === type;
-  }
-  expect(type, errorMsg) {
-    const token = this.peek();
-    if (!token || token.type !== type) {
-      const msg = errorMsg || `Expected ${type} but got ${token?.type || "end of input"}`;
-      throw this.errorAt(msg, token);
-    }
-    return this.consume();
-  }
-  parseRoot() {
-    this.expect("LT", "Expected '<'");
-    const nameToken = this.peek();
-    if (!nameToken || nameToken.type !== "IDENT") {
-      throw this.errorAt("Expected identifier after '<'", nameToken);
-    }
-    const name = this.consume().value;
-    const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
-    this.expect("LBRACE", "Expected '{'");
-    const children = [];
-    while (!this.check("RBRACE")) {
-      if (!this.peek()) {
-        throw this.errorAt(
-          "Unexpected end of input, expected '}'",
-          this.tokens[this.tokens.length - 1]
-        );
-      }
-      children.push(this.parseNode());
-      if (this.check("SEMI")) this.consume();
-      if (this.check("COMMA")) this.consume();
-    }
-    this.expect("RBRACE", "Expected '}'");
-    this.expect("GT", "Expected '>'");
-    return { type: "root", name, modifiers, children };
-  }
-  parseNode() {
-    const token = this.peek();
-    if (!token || token.type !== "IDENT") {
-      throw this.errorAt(
-        `Expected identifier but got ${token?.type || "end of input"}`,
-        token
-      );
-    }
-    const name = this.consume().value;
-    const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
-    if (this.check("COLON")) {
-      this.consume();
-      if (this.check("LBRACKET")) {
-        const list = this.parseList();
-        return { type: "element", name, modifiers, children: [list] };
-      }
-      const valToken = this.peek();
-      if (!valToken || valToken.type !== "IDENT" && valToken.type !== "STRING") {
-        throw this.errorAt(
-          `Expected value after ':' but got ${valToken?.type || "end of input"}`,
-          valToken
-        );
-      }
-      const value = this.consume().value;
-      return { type: "inline", name, modifiers, value };
-    }
-    if (this.check("LBRACKET")) {
-      const list = this.parseList();
-      return { type: "element", name, modifiers, children: [list] };
-    }
-    if (this.check("LBRACE")) {
-      this.consume();
-      const children = [];
-      while (!this.check("RBRACE")) {
-        if (!this.peek()) {
-          throw this.errorAt(
-            "Unexpected end of input, expected '}'",
-            this.tokens[this.tokens.length - 1]
-          );
-        }
-        children.push(this.parseNode());
-        if (this.check("SEMI")) this.consume();
-        if (this.check("COMMA")) this.consume();
-      }
-      this.consume();
-      return { type: "element", name, modifiers, children };
-    }
-    return { type: "inline", name, modifiers, value: "" };
-  }
-  parseModifiers() {
-    this.consume();
-    const modifiers = [];
-    while (!this.check("RPAREN")) {
-      if (!this.peek()) {
-        throw this.errorAt(
-          "Unexpected end of input, expected ')'",
-          this.tokens[this.tokens.length - 1]
-        );
-      }
-      const token = this.peek();
-      if (!token || token.type !== "IDENT") {
-        throw this.errorAt(
-          `Expected identifier in modifiers but got ${token?.type || "end of input"}`,
-          token
-        );
-      }
-      this.consume();
-      const next = this.peek();
-      if (KNOWN_KEYS.has(token.value) && next && (next.type === "IDENT" || next.type === "STRING") && !this.check("RPAREN")) {
-        modifiers.push({
-          type: "pair",
-          key: token.value,
-          value: this.consume().value
-        });
-      } else {
-        modifiers.push({ type: "flag", value: token.value });
-      }
-    }
-    this.consume();
-    return modifiers;
-  }
-  parseList() {
-    this.consume();
-    const items = [];
-    while (!this.check("RBRACKET")) {
-      if (!this.peek()) {
-        throw this.errorAt(
-          "Unexpected end of input, expected ']'",
-          this.tokens[this.tokens.length - 1]
-        );
-      }
-      items.push(this.parseNode());
-      if (this.check("COMMA")) {
-        this.consume();
-      } else if (!this.check("RBRACKET")) {
-        throw this.errorAt('Expected "," or "]"', this.peek());
-      }
-    }
-    this.consume();
-    return { type: "list", items };
-  }
-}
-function parseSakko(input) {
-  const tokens = tokenize(input);
-  if (tokens.length === 0) {
-    throw new Error("Empty input");
-  }
-  const parser = new Parser(tokens, input);
-  return parser.parseRoot();
-}
 const defaultTokens = {
   "color.background": "#ffffff",
   "color.surface": "#f8f9fa",
@@ -1462,6 +1181,287 @@ function enableCurvomorphism(element, options = {}) {
     }
   };
 }
+function tokenize(input) {
+  const tokens = [];
+  let i = 0;
+  let line = 1;
+  let col = 1;
+  while (i < input.length) {
+    const ch = input[i];
+    if (ch === "\n") {
+      i++;
+      line++;
+      col = 1;
+      continue;
+    }
+    if (ch === "\r") {
+      i++;
+      if (input[i] === "\n") i++;
+      line++;
+      col = 1;
+      continue;
+    }
+    if (ch === " " || ch === "	") {
+      i++;
+      col++;
+      continue;
+    }
+    if (ch === "/" && i + 1 < input.length && input[i + 1] === "/") {
+      while (i < input.length && input[i] !== "\n" && input[i] !== "\r") {
+        i++;
+      }
+      continue;
+    }
+    const SYMBOLS = {
+      "<": "LT",
+      ">": "GT",
+      "{": "LBRACE",
+      "}": "RBRACE",
+      "(": "LPAREN",
+      ")": "RPAREN",
+      "[": "LBRACKET",
+      "]": "RBRACKET",
+      ":": "COLON",
+      ";": "SEMI",
+      ",": "COMMA"
+    };
+    if (SYMBOLS[ch]) {
+      tokens.push({ type: SYMBOLS[ch], value: ch, line, col });
+      i++;
+      col++;
+      continue;
+    }
+    if (ch === '"') {
+      const startCol = col;
+      i++;
+      col++;
+      let str = "";
+      while (i < input.length && input[i] !== '"') {
+        if (input[i] === "\n") {
+          line++;
+          col = 1;
+        } else {
+          col++;
+        }
+        str += input[i];
+        i++;
+      }
+      if (i >= input.length) {
+        throw new Error(`Unterminated string at line ${line}, col ${startCol}`);
+      }
+      i++;
+      col++;
+      tokens.push({ type: "STRING", value: str, line, col: startCol });
+      continue;
+    }
+    if (/[a-zA-Z0-9_\-]/.test(ch)) {
+      const startCol = col;
+      let ident = "";
+      while (i < input.length && /[a-zA-Z0-9_\-]/.test(input[i])) {
+        ident += input[i];
+        i++;
+        col++;
+      }
+      tokens.push({ type: "IDENT", value: ident, line, col: startCol });
+      continue;
+    }
+    throw new Error(`Unexpected character: ${ch} at line ${line}, col ${col}`);
+  }
+  return tokens;
+}
+const KNOWN_KEYS = /* @__PURE__ */ new Set([
+  "cols",
+  "gap",
+  "radius",
+  "md:cols",
+  "lg:cols",
+  "placeholder",
+  "type",
+  "size",
+  "variant",
+  "layout",
+  "src",
+  "alt",
+  "icon",
+  "label",
+  "value",
+  "center-point"
+]);
+class Parser {
+  constructor(tokens, source) {
+    this.tokens = tokens;
+    this.position = 0;
+    this.source = source || "";
+  }
+  errorAt(msg, token) {
+    if (!token || !this.source) return new Error(msg);
+    const lines = this.source.split("\n");
+    const lineText = lines[token.line - 1] || "";
+    const pointer = " ".repeat(Math.max(0, token.col - 1)) + "^";
+    return new Error(
+      `${msg} at line ${token.line}, col ${token.col}
+  ${lineText}
+  ${pointer}`
+    );
+  }
+  peek() {
+    return this.tokens[this.position];
+  }
+  consume() {
+    const token = this.tokens[this.position];
+    if (!token) {
+      const last = this.tokens[this.tokens.length - 1];
+      throw this.errorAt("Unexpected end of input", last);
+    }
+    this.position++;
+    return token;
+  }
+  check(type) {
+    return this.peek()?.type === type;
+  }
+  expect(type, errorMsg) {
+    const token = this.peek();
+    if (!token || token.type !== type) {
+      const msg = errorMsg || `Expected ${type} but got ${token?.type || "end of input"}`;
+      throw this.errorAt(msg, token);
+    }
+    return this.consume();
+  }
+  parseRoot() {
+    this.expect("LT", "Expected '<'");
+    const nameToken = this.peek();
+    if (!nameToken || nameToken.type !== "IDENT") {
+      throw this.errorAt("Expected identifier after '<'", nameToken);
+    }
+    const name = this.consume().value;
+    const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
+    this.expect("LBRACE", "Expected '{'");
+    const children = [];
+    while (!this.check("RBRACE")) {
+      if (!this.peek()) {
+        throw this.errorAt(
+          "Unexpected end of input, expected '}'",
+          this.tokens[this.tokens.length - 1]
+        );
+      }
+      children.push(this.parseNode());
+      if (this.check("SEMI")) this.consume();
+      if (this.check("COMMA")) this.consume();
+    }
+    this.expect("RBRACE", "Expected '}'");
+    this.expect("GT", "Expected '>'");
+    return { type: "root", name, modifiers, children };
+  }
+  parseNode() {
+    const token = this.peek();
+    if (!token || token.type !== "IDENT") {
+      throw this.errorAt(
+        `Expected identifier but got ${token?.type || "end of input"}`,
+        token
+      );
+    }
+    const name = this.consume().value;
+    const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
+    if (this.check("COLON")) {
+      this.consume();
+      if (this.check("LBRACKET")) {
+        const list = this.parseList();
+        return { type: "element", name, modifiers, children: [list] };
+      }
+      const valToken = this.peek();
+      if (!valToken || valToken.type !== "IDENT" && valToken.type !== "STRING") {
+        throw this.errorAt(
+          `Expected value after ':' but got ${valToken?.type || "end of input"}`,
+          valToken
+        );
+      }
+      const value = this.consume().value;
+      return { type: "inline", name, modifiers, value };
+    }
+    if (this.check("LBRACKET")) {
+      const list = this.parseList();
+      return { type: "element", name, modifiers, children: [list] };
+    }
+    if (this.check("LBRACE")) {
+      this.consume();
+      const children = [];
+      while (!this.check("RBRACE")) {
+        if (!this.peek()) {
+          throw this.errorAt(
+            "Unexpected end of input, expected '}'",
+            this.tokens[this.tokens.length - 1]
+          );
+        }
+        children.push(this.parseNode());
+        if (this.check("SEMI")) this.consume();
+        if (this.check("COMMA")) this.consume();
+      }
+      this.consume();
+      return { type: "element", name, modifiers, children };
+    }
+    return { type: "inline", name, modifiers, value: "" };
+  }
+  parseModifiers() {
+    this.consume();
+    const modifiers = [];
+    while (!this.check("RPAREN")) {
+      if (!this.peek()) {
+        throw this.errorAt(
+          "Unexpected end of input, expected ')'",
+          this.tokens[this.tokens.length - 1]
+        );
+      }
+      const token = this.peek();
+      if (!token || token.type !== "IDENT") {
+        throw this.errorAt(
+          `Expected identifier in modifiers but got ${token?.type || "end of input"}`,
+          token
+        );
+      }
+      this.consume();
+      const next = this.peek();
+      if (KNOWN_KEYS.has(token.value) && next && (next.type === "IDENT" || next.type === "STRING") && !this.check("RPAREN")) {
+        modifiers.push({
+          type: "pair",
+          key: token.value,
+          value: this.consume().value
+        });
+      } else {
+        modifiers.push({ type: "flag", value: token.value });
+      }
+    }
+    this.consume();
+    return modifiers;
+  }
+  parseList() {
+    this.consume();
+    const items = [];
+    while (!this.check("RBRACKET")) {
+      if (!this.peek()) {
+        throw this.errorAt(
+          "Unexpected end of input, expected ']'",
+          this.tokens[this.tokens.length - 1]
+        );
+      }
+      items.push(this.parseNode());
+      if (this.check("COMMA")) {
+        this.consume();
+      } else if (!this.check("RBRACKET")) {
+        throw this.errorAt('Expected "," or "]"', this.peek());
+      }
+    }
+    this.consume();
+    return { type: "list", items };
+  }
+}
+function parseSakko(input) {
+  const tokens = tokenize(input);
+  if (tokens.length === 0) {
+    throw new Error("Empty input");
+  }
+  const parser = new Parser(tokens, input);
+  return parser.parseRoot();
+}
 let themeInjected = false;
 function injectThemeCSS(customTokens) {
   if (typeof document === "undefined") return;
@@ -1517,7 +1517,6 @@ export {
   COMPONENT_REGISTRY,
   ICON_SVGS,
   MODIFIER_MAP,
-  Parser,
   applyCurvomorphism,
   compileSakko,
   defaultTokens,
@@ -1527,10 +1526,8 @@ export {
   getTokenValue,
   injectThemeCSS,
   parseModifiers,
-  parseSakko,
   registerComponents,
   render,
-  tokenize,
   transformAST
 };
 //# sourceMappingURL=index.mjs.map
