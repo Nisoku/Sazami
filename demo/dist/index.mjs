@@ -76,6 +76,7 @@ const MODIFIER_MAP = {
   small: { size: "small" },
   medium: { size: "medium" },
   large: { size: "large" },
+  xlarge: { size: "xlarge" },
   bold: { weight: "bold" },
   normal: { weight: "normal" },
   light: { weight: "light" },
@@ -494,8 +495,6 @@ class SazamiIconButton extends HTMLElement {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--saz-icon-size-medium, 20px);
-  height: var(--saz-icon-size-medium, 20px);
   padding: var(--saz-space-small, 8px);
   border: none;
   border-radius: var(--saz-radius-round, 9999px);
@@ -507,16 +506,8 @@ class SazamiIconButton extends HTMLElement {
 }
 :host(:hover) { background: var(--saz-color-border, #e0e0e0); }
 :host(:active) { transform: scale(0.9); }
-:host([size="small"]) {
-  width: var(--saz-icon-size-small, 16px);
-  height: var(--saz-icon-size-small, 16px);
-  padding: var(--saz-space-tiny, 4px);
-}
-:host([size="large"]) {
-  width: var(--saz-icon-size-large, 24px);
-  height: var(--saz-icon-size-large, 24px);
-  padding: var(--saz-space-medium, 12px);
-}
+:host([size="small"]) { padding: var(--saz-space-tiny, 4px); }
+:host([size="large"]) { padding: var(--saz-space-medium, 12px); }
 :host([variant="accent"]) { color: var(--saz-color-accent, #ff4d8a); }
 :host([variant="primary"]) { color: var(--saz-color-primary, #2563eb); }
 :host([variant="dim"]) { color: var(--saz-color-text-dim, #6b7280); }
@@ -525,9 +516,27 @@ class SazamiIconButton extends HTMLElement {
   outline: 2px solid var(--saz-color-primary, #2563eb);
   outline-offset: 2px;
 }
-svg { width: 100%; height: 100%; pointer-events: none; }
-.glyph { pointer-events: none; }
-`) + (svg || `<span class="glyph">${icon}</span>`);
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--saz-icon-size-medium, 20px);
+  height: var(--saz-icon-size-medium, 20px);
+}
+:host([size="small"]) .icon {
+  width: var(--saz-icon-size-small, 16px);
+  height: var(--saz-icon-size-small, 16px);
+}
+:host([size="large"]) .icon {
+  width: var(--saz-icon-size-large, 24px);
+  height: var(--saz-icon-size-large, 24px);
+}
+:host([size="xlarge"]) .icon {
+  width: var(--saz-icon-size-xlarge, 32px);
+  height: var(--saz-icon-size-xlarge, 32px);
+}
+.icon svg { width: 100%; height: 100%; pointer-events: none; }
+`) + `<div class="icon">${svg || `<span class="glyph">${icon}</span>`}</div>`;
     this.addEventListener("keydown", (e) => {
       const ke = e;
       if (ke.key === "Enter" || ke.key === " ") {
