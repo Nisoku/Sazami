@@ -1,12 +1,12 @@
 ---
 title: "API Reference"
-description: "Complete public API for compileSakko, parser, transformer, config, and curvomorphism"
+description: "Complete public API for compileSakko, transformer, config, and curvomorphism"
 order: 5
 ---
 
 # API Reference
 
-Complete public API for Sazami.
+Complete public API for Sazami. Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
 
 ---
 
@@ -39,50 +39,10 @@ compileSakko(source, document.getElementById('app'));
 **Behavior:**
 1. Registers all Sazami Web Components
 2. Injects theme CSS variables into `<head>`
-3. Parses source → AST
+3. Parses source → AST (uses `@nisoku/sakko`)
 4. Transforms AST → VNode tree
 5. Renders VNode tree → DOM
 6. Applies curvomorphism to `[curved]` elements
-
----
-
-## Parser
-
-### `parseSakko(input)`
-
-Parse a Sakko source string into an AST.
-
-```typescript
-import { parseSakko } from '@nisoku/sazami';
-
-const ast = parseSakko('<page { text: Hello }>');
-// Returns: { type: "root", name: "page", children: [...] }
-```
-
-**Parameters:**
-- `input: string` - Sakko source code
-
-**Returns:** `RootNode`
-
-**Throws:** `Error` with descriptive message on parse failure.
-
-### `tokenize(input)`
-
-Tokenize a Sakko source string into a token array.
-
-```typescript
-import { tokenize } from '@nisoku/sazami';
-
-const tokens = tokenize('button(accent): Save');
-// Returns: [
-//   { type: "IDENT", value: "button" },
-//   { type: "LPAREN", value: "(" },
-//   { type: "IDENT", value: "accent" },
-//   { type: "RPAREN", value: ")" },
-//   { type: "COLON", value: ":" },
-//   { type: "IDENT", value: "Save" }
-// ]
-```
 
 ---
 
@@ -267,15 +227,10 @@ All TypeScript types are exported:
 
 ```typescript
 import type {
-  Token,
-  Modifier,
-  ASTNode,
-  RootNode,
-  ElementNode,
-  InlineNode,
-  ListNode,
   VNode,
   ComponentDefinition,
   CurvomorphismOptions,
 } from '@nisoku/sazami';
 ```
+
+Note: AST types (`Token`, `Modifier`, `ASTNode`, `RootNode`, `ElementNode`, `InlineNode`, `ListNode`) are exported from `@nisoku/sakko`.

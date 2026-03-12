@@ -84,9 +84,9 @@ Tokens cover colors, spacing, typography, radii, shadows, and icon sizes. See th
 
 ## How it works
 
-Sakko is a three-layer system:
+Sazami is a two-layer system built on top of Sakko:
 
-1. **Sakko**: a bracket-based DSL you write in `.sako` files (or inline)
+1. **Sakko**: a bracket-based DSL you write in `.sako` files (installed separately via `@nisoku/sakko`)
 2. **Sazami Primitives**: semantic web components (`saz-card`, `saz-button`, etc.)
 3. **Sazami Config**: a CSS-variable theme engine driven by design tokens
 
@@ -179,7 +179,6 @@ Type your Sakko code on the left; see the rendered output on the right. Includes
 ```text
 Build/              Library source code
   src/
-    parser/         Tokenizer, parser, AST types
     primitives/     Primitives (Web Components)
     config/         Design tokens and CSS variable generation
     runtime/        AST-to-VNode transformer and DOM renderer
