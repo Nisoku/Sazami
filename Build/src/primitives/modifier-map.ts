@@ -11,6 +11,7 @@ export const MODIFIER_MAP: Record<string, Record<string, any>> = {
   small: { size: "small" },
   medium: { size: "medium" },
   large: { size: "large" },
+  xlarge: { size: "xlarge" },
 
   bold: { weight: "bold" },
   normal: { weight: "normal" },
