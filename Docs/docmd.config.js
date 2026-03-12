@@ -20,7 +20,6 @@ module.exports = {
       icon: 'book',
       collapsible: true,
       children: [
-        { title: 'Language Reference', path: '/language-reference/' },
         { title: 'Primitives', path: '/primitives/' },
         { title: 'Config & Theming', path: '/config-theming/' },
         { title: 'Curvomorphism', path: '/curvomorphism/' },

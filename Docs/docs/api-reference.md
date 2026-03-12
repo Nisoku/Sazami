@@ -6,7 +6,9 @@ order: 5
 
 # API Reference
 
-Complete public API for Sazami. Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
+Complete public API for Sazami. 
+
+> Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
 
 ---
 
