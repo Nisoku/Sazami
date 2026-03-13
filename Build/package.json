@@ -33,7 +33,7 @@
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"
   },
   "dependencies": {
-    "@nisoku/sakko": "^0.1.3"
+    "@nisoku/sakko": "^0.1.4"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
