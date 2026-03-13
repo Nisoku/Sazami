@@ -2474,10 +2474,16 @@ function tokenize(input) {
       continue;
     }
     if (ch === "/" && i + 1 < input.length && input[i + 1] === "/") {
-      while (i < input.length && input[i] !== "\n" && input[i] !== "\r") {
-        i++;
+      const commentContent = input.slice(i + 2);
+      const nextNewline = commentContent.indexOf("\n");
+      const nextLT = commentContent.indexOf("<");
+      const hasNewlineBeforeLT = nextNewline !== -1 && (nextLT === -1 || nextNewline < nextLT);
+      if (hasNewlineBeforeLT || nextLT === -1) {
+        while (i < input.length && input[i] !== "\n" && input[i] !== "\r") {
+          i++;
+        }
+        continue;
       }
-      continue;
     }
     const SYMBOLS = {
       "<": "LT",
@@ -2552,7 +2558,17 @@ const KNOWN_KEYS = /* @__PURE__ */ new Set([
   "icon",
   "label",
   "value",
-  "center-point"
+  "center-point",
+  "min",
+  "max",
+  "step",
+  "name",
+  "heading",
+  "slot",
+  "active",
+  "open",
+  "message",
+  "title"
 ]);
 class Parser {
   constructor(tokens, source) {
