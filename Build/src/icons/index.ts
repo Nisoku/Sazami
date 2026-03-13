@@ -1,5 +1,9 @@
 // @ts-expect-error
-const iconModules = import.meta.glob("./*.svg", { query: "?raw", import: "default", eager: true });
+const iconModules = import.meta.glob("./*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 export const ICON_SVGS: Record<string, string> = {};
 

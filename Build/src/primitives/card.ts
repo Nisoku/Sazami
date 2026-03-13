@@ -32,6 +32,7 @@ ${GAP_RULES}
 :host([size="small"])  { padding: var(--saz-space-small, 8px); }
 :host([size="medium"]) { padding: var(--saz-space-medium, 12px); }
 :host([size="large"])  { padding: var(--saz-space-large, 16px); }
+:host([size="xlarge"]) { padding: var(--saz-space-xlarge, 24px); }
 ${VARIANT_BG_RULES}
 `) + "<slot></slot>";
   }

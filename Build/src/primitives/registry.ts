@@ -20,6 +20,17 @@ import { SazamiDivider } from "./divider";
 import { SazamiSpacer } from "./spacer";
 import { SazamiSection } from "./section";
 import { createGenericClass } from "./generic";
+import { SazamiModal } from "./modal";
+import { SazamiSelect } from "./select";
+import { SazamiTabs } from "./tabs";
+import { SazamiSlider } from "./slider";
+import { SazamiRadio } from "./radio";
+import { SazamiSwitch } from "./switch";
+import { SazamiToast } from "./toast";
+import { SazamiAvatar } from "./avatar";
+import { SazamiChip } from "./chip";
+import { SazamiSpinner, SazamiProgress } from "./spinner";
+import { SazamiAccordion } from "./accordion";
 
 export const COMPONENT_REGISTRY: Record<string, typeof HTMLElement> = {
   "saz-row": SazamiRow,
@@ -45,6 +56,18 @@ export const COMPONENT_REGISTRY: Record<string, typeof HTMLElement> = {
   "saz-section": SazamiSection,
   "saz-details": createGenericClass(),
   "saz-controls": createGenericClass(),
+  "saz-modal": SazamiModal,
+  "saz-select": SazamiSelect,
+  "saz-tabs": SazamiTabs,
+  "saz-slider": SazamiSlider,
+  "saz-radio": SazamiRadio,
+  "saz-switch": SazamiSwitch,
+  "saz-toast": SazamiToast,
+  "saz-avatar": SazamiAvatar,
+  "saz-chip": SazamiChip,
+  "saz-spinner": SazamiSpinner,
+  "saz-progress": SazamiProgress,
+  "saz-accordion": SazamiAccordion,
 };
 
 export function registerComponents(): void {

@@ -31,6 +31,23 @@ const SAZAMI_REGISTRY: Record<string, { tag: string }> = {
   details: { tag: "saz-details" },
   controls: { tag: "saz-controls" },
   section: { tag: "saz-section" },
+  div: { tag: "div" },
+  span: { tag: "span" },
+  option: { tag: "option" },
+  tab: { tag: "tab" },
+  panel: { tag: "panel" },
+  modal: { tag: "saz-modal" },
+  select: { tag: "saz-select" },
+  tabs: { tag: "saz-tabs" },
+  slider: { tag: "saz-slider" },
+  radio: { tag: "saz-radio" },
+  switch: { tag: "saz-switch" },
+  toast: { tag: "saz-toast" },
+  avatar: { tag: "saz-avatar" },
+  chip: { tag: "saz-chip" },
+  spinner: { tag: "saz-spinner" },
+  progress: { tag: "saz-progress" },
+  accordion: { tag: "saz-accordion" },
 };
 
 export function getTag(name: string): string {

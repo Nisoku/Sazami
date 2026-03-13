@@ -40,6 +40,10 @@ input::placeholder { color: var(--saz-color-text-dimmer, #9ca3af); }
   padding: var(--saz-space-medium, 12px) var(--saz-space-large, 16px);
   font-size: var(--saz-text-size-large, 16px);
 }
+:host([size="xlarge"]) input {
+  padding: var(--saz-space-large, 16px) var(--saz-space-xlarge, 24px);
+  font-size: var(--saz-text-size-xlarge, 20px);
+}
 :host([disabled]) input {
   opacity: 0.5;
   cursor: not-allowed;

@@ -24,6 +24,7 @@ export class SazamiDivider extends HTMLElement {
 }
 :host([size="small"]) { margin: var(--saz-space-small, 8px) 0; }
 :host([size="large"]) { margin: var(--saz-space-large, 16px) 0; }
+:host([size="xlarge"]) { margin: var(--saz-space-xlarge, 24px) 0; }
 :host([variant="dim"]) { background: var(--saz-color-surface, #f8f9fa); }
 `) + "";
   }

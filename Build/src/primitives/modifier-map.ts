@@ -12,6 +12,7 @@ export const MODIFIER_MAP: Record<string, Record<string, any>> = {
   medium: { size: "medium" },
   large: { size: "large" },
   xlarge: { size: "xlarge" },
+  tiny: { size: "tiny" },
 
   bold: { weight: "bold" },
   normal: { weight: "normal" },
@@ -33,10 +34,17 @@ export const MODIFIER_MAP: Record<string, Record<string, any>> = {
   active: { active: true },
   loading: { loading: true },
   checked: { checked: true },
+  selected: { selected: true },
+  removable: { removable: true },
 
   "center-point": { "center-point": true },
   vertical: { vertical: true },
   wrap: { wrap: true },
+
+  indeterminate: { indeterminate: true },
+
+  heading: { heading: true },
+  open: { open: true },
 };
 
 export function parseModifiers(modifiers: Modifier[]): Record<string, any> {

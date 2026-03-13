@@ -45,6 +45,10 @@ export class SazamiButton extends HTMLElement {
   padding: var(--saz-space-medium, 12px) var(--saz-space-xlarge, 24px);
   font-size: var(--saz-text-size-large, 16px);
 }
+:host([size="xlarge"]) {
+  padding: var(--saz-space-large, 16px) var(--saz-space-xxlarge, 32px);
+  font-size: var(--saz-text-size-xlarge, 20px);
+}
 :host([variant="accent"]) {
   background: var(--saz-color-accent, #ff4d8a);
   color: var(--saz-color-on-accent, #ffffff);

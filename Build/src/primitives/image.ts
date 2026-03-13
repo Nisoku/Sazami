@@ -29,6 +29,7 @@ img {
 :host([size="small"])  { max-width: 120px; }
 :host([size="medium"]) { max-width: 240px; }
 :host([size="large"])  { max-width: 480px; }
+:host([size="xlarge"]) { max-width: 640px; }
 `) + `<img src="${src}" alt="${alt}" />`;
   }
 }

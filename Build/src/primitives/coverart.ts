@@ -31,6 +31,7 @@ img {
 :host([size="small"])  { width: 40px; height: 40px; }
 :host([size="medium"]) { width: 64px; height: 64px; }
 :host([size="large"])  { width: 96px; height: 96px; }
+:host([size="xlarge"]) { width: 128px; height: 128px; }
 `) + (src ? `<img src="${src}" alt="${alt}" />` : "");
   }
 }

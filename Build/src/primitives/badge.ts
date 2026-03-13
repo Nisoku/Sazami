@@ -30,6 +30,7 @@ export class SazamiBadge extends HTMLElement {
 :host([variant="dim"])       { background: transparent; color: var(--saz-color-text-dim, #6b7280); }
 :host([size="small"]) { font-size: 10px; padding: 2px var(--saz-space-tiny, 4px); }
 :host([size="large"]) { font-size: var(--saz-text-size-medium, 14px); padding: var(--saz-space-small, 8px) var(--saz-space-medium, 12px); }
+:host([size="xlarge"]) { font-size: var(--saz-text-size-large, 16px); padding: var(--saz-space-medium, 12px) var(--saz-space-large, 16px); }
 `) + "<slot></slot>";
   }
 }

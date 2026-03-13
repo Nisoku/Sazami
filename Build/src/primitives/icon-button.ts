@@ -38,6 +38,7 @@ export class SazamiIconButton extends HTMLElement {
 :host(:active) { transform: scale(0.9); }
 :host([size="small"]) { padding: var(--saz-space-tiny, 4px); }
 :host([size="large"]) { padding: var(--saz-space-medium, 12px); }
+:host([size="xlarge"]) { padding: var(--saz-space-large, 16px); }
 :host([variant="accent"]) { color: var(--saz-color-accent, #ff4d8a); }
 :host([variant="primary"]) { color: var(--saz-color-primary, #2563eb); }
 :host([variant="dim"]) { color: var(--saz-color-text-dim, #6b7280); }
