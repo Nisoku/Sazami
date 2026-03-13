@@ -118,6 +118,7 @@
         --demo-card-bg: #1e293b;
         --saz-color-surface: #1e293b;
         --saz-color-bg: #0f172a;
+        --saz-color-background: #1e293b;
         --saz-color-text: #f1f5f9;
         --saz-color-text-dim: #94a3b8;
         --saz-color-border: #334155;
@@ -189,6 +190,72 @@
         <h2>Media Player</h2>
         <p class="desc">A media player card with icon buttons.</p>
         <div class="demo-output" id="demo-player"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Chips & Badges</h2>
+        <p class="desc">Chips for tags, selections, and removable items.</p>
+        <div class="demo-output" id="demo-chips"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Loading</h2>
+        <p class="desc">Spinners and progress bars.</p>
+        <div class="demo-output" id="demo-loading"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Slider</h2>
+        <p class="desc">Range slider input.</p>
+        <div class="demo-output" id="demo-slider"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Form Elements</h2>
+        <p class="desc">Radio buttons, switches, and toggles.</p>
+        <div class="demo-output" id="demo-forms2"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Accordion</h2>
+        <p class="desc">Collapsible sections.</p>
+        <div class="demo-output" id="demo-accordion"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Modal</h2>
+        <p class="desc">Dialog with overlay.</p>
+        <div class="demo-output" id="demo-modal"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Select</h2>
+        <p class="desc">Dropdown select.</p>
+        <div class="demo-output" id="demo-select"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Tabs</h2>
+        <p class="desc">Tabbed interface.</p>
+        <div class="demo-output" id="demo-tabs"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Toast</h2>
+        <p class="desc">Toast notifications.</p>
+        <div class="demo-output" id="demo-toast"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Labels & Badges</h2>
+        <p class="desc">Labels, badges, and tags.</p>
+        <div class="demo-output" id="demo-labels"></div>
+      </section>
+
+      <section class="demo-section">
+        <h2>Layout</h2>
+        <p class="desc">Spacers, dividers, and sections.</p>
+        <div class="demo-output" id="demo-layout"></div>
       </section>
     </main>
 
@@ -283,22 +350,54 @@
             icon: "stop",
             icon: "previous",
             icon: "next",
+            icon: "back",
+            icon: "forward",
+            icon: "skip"
+          ];
+          row(gap medium center): [
             icon: "close",
             icon: "menu",
             icon: "search",
-            icon: "settings"
-          ];
-          row(gap medium center): [
+            icon: "settings",
             icon: "heart",
             icon: "star",
             icon: "check",
-            icon: "plus",
+            icon: "plus"
+          ];
+          row(gap medium center): [
             icon: "minus",
             icon: "edit",
             icon: "share",
             icon: "download",
             icon: "upload",
-            icon: "refresh"
+            icon: "refresh",
+            icon: "home",
+            icon: "up",
+            icon: "down"
+          ];
+          row(gap medium center): [
+            icon: "mail",
+            icon: "phone",
+            icon: "calendar",
+            icon: "clock",
+            icon: "user",
+            icon: "users",
+            icon: "folder",
+            icon: "file"
+          ];
+          row(gap medium center): [
+            icon: "image",
+            icon: "camera",
+            icon: "bell",
+            icon: "lock",
+            icon: "link",
+            icon: "trash",
+            icon: "copy",
+            icon: "bookmark"
+          ];
+          row(gap medium center): [
+            icon: "pin",
+            icon: "globe"
           ];
           row(gap small center): [
             icon(small): "home",
@@ -345,6 +444,172 @@
             icon-btn: "next"
           ];
           divider
+        }>
+      `
+      );
+
+      render(
+        "demo-chips",
+        `
+        <stack(gap large) {
+          row(gap medium center): [
+            avatar(src "https://i.pravatar.cc/100?img=1"): "",
+            avatar(src "https://i.pravatar.cc/100?img=2" large): "",
+            avatar(src "https://i.pravatar.cc/100?img=3" xlarge): "",
+            avatar(alt "John Doe" small): "",
+            avatar(large): "JD"
+          ];
+          row(gap small center): [
+            chip: "Basic",
+            chip(selected): "Selected",
+            chip(accent): "Accent",
+            chip(danger): "Danger",
+            chip(removable): "Removable"
+          ]
+        }>
+      `
+      );
+
+      render(
+        "demo-loading",
+        `
+        <stack(gap large) {
+          row(gap medium center): [
+            spinner: "",
+            spinner(large): "",
+            spinner(xlarge): ""
+          ];
+          row(gap medium): [
+            progress(value 25 max 100): "",
+            progress(value 50 max 100 large): "",
+            progress(value 75 max 100 accent): "",
+            progress(indeterminate): ""
+          ]
+        }>
+      `
+      );
+
+      render(
+        "demo-slider",
+        `
+        <stack(gap medium) {
+          slider(value 50 min 0 max 100 step 1): "";
+          slider(value 25 min 0 max 100 small): "";
+          slider(value 75 min 0 max 100 xlarge): ""
+        }>
+      `
+      );
+
+      render(
+        "demo-forms2",
+        `
+        <stack(gap large) {
+          row(gap medium center): [
+            stack(gap small): [
+              radio(name "r1" value "a"): "Option A",
+              radio(name "r1" value "b"): "Option B",
+              radio(name "r1" value "c" checked): "Option C (checked)"
+            ],
+            stack(gap small): [
+              switch: "WiFi",
+              switch(checked): "Bluetooth",
+              switch(checked variant "accent"): "Notifications",
+              switch(variant "success"): "Dark Mode"
+            ]
+          ]
+        }>
+      `
+      );
+
+      render(
+        "demo-accordion",
+        `
+        <accordion {
+          div(heading "Section 1"): "This is the first section content.",
+          div(heading "Section 2" open): "This section is open by default.",
+          div(heading "Section 3"): "And another section here."
+        }>
+      `
+      );
+
+      render(
+        "demo-modal",
+        `
+        <modal(title "Hello") {
+          text: "This is the modal content"
+        }>
+      `
+      );
+
+      render(
+        "demo-select",
+        `
+        <stack(gap medium) {
+          select(placeholder "Choose..."): [
+            option(value ""): "Choose...",
+            option(value "a"): "Option A",
+            option(value "b"): "Option B",
+            option(value "c"): "Option C"
+          ]
+        }>
+      `
+      );
+
+      render(
+        "demo-tabs",
+        `
+        <tabs(active 0) {
+          tab(slot "tab" label "One"): "",
+          tab(slot "tab" label "Two"): "",
+          tab(slot "tab" label "Three"): "",
+          div(slot "panel"): "Content 1",
+          div(slot "panel"): "Content 2",
+          div(slot "panel"): "Content 3"
+        }>
+      `
+      );
+
+      render(
+        "demo-toast",
+        `
+        <toast(message "Hello!" variant "success") {}>
+      `
+      );
+
+      render(
+        "demo-labels",
+        `
+        <stack(gap large) {
+          row(gap medium center): [
+            label: "This is a label",
+            badge: "New",
+            badge(variant "accent"): "Featured",
+            badge(variant "success"): "Done",
+            badge(variant "danger"): "Error"
+          ];
+          row(gap small center): [
+            tag: "Tag",
+            tag(variant "primary"): "Primary",
+            tag(variant "accent"): "Accent",
+            tag(variant "success"): "Success"
+          ]
+        }>
+      `
+      );
+
+      render(
+        "demo-layout",
+        `
+        <stack(gap medium) {
+          section { heading: "Section 1"; text: "Content here." };
+          divider;
+          section { heading: "Section 2"; text: "More content." };
+          row(gap medium center): [
+            spacer: "",
+            text: "Before spacer",
+            spacer(size large): "",
+            text: "After spacer"
+          ]
         }>
       `
       );

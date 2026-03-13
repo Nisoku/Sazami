@@ -165,6 +165,7 @@
           <option value="player">Media Player</option>
           <option value="dashboard">Dashboard</option>
           <option value="icons">Icon Gallery</option>
+          <option value="allnew">All New Components</option>
         </select>
         <button id="btn-clear">Clear</button>
         <button id="btn-format">Format</button>
@@ -221,6 +222,73 @@
         dashboard: `<stack(gap large) {\n  heading: "Dashboard"\n  grid(cols 3 gap medium) {\n    card(primary) {\n      text: "Users";\n      heading: "12,847"\n    },\n    card(success) {\n      text: "Revenue";\n      heading: "$48,290"\n    },\n    card(accent) {\n      text: "Growth";\n      heading: "+24.5%"\n    }\n  };\n  card {\n    heading: "Quick Actions"\n    row(gap small): [\n      button(primary): "New Report",\n      button: "Export Data",\n      button(dim): "Settings"\n    ]\n  }\n}>`,
 
         icons: `<stack(gap medium) {\n  text(bold): "Media Controls"\n  row(gap medium center): [\n    icon: "previous",\n    icon: "play",\n    icon: "pause",\n    icon: "stop",\n    icon: "next"\n  ];\n  text(bold): "Actions"\n  row(gap medium center): [\n    icon: "search",\n    icon: "edit",\n    icon: "share",\n    icon: "download",\n    icon: "upload",\n    icon: "refresh"\n  ];\n  text(bold): "Navigation"\n  row(gap medium center): [\n    icon: "home",\n    icon: "back",\n    icon: "forward",\n    icon: "up",\n    icon: "down",\n    icon: "menu",\n    icon: "close"\n  ];\n  text(bold): "Sizes"\n  row(gap medium center): [\n    icon(small): "star",\n    icon: "star",\n    icon(large): "star"\n  ]\n}>`,
+
+        allnew: `stack(gap large) {
+  heading: "All New Components"
+
+  text(bold): "Chips"
+  row(gap small center): [
+    chip: "Basic",
+    chip(selected): "Selected",
+    chip(accent): "Accent",
+    chip(danger): "Danger",
+    chip(removable): "Removable"
+  ]
+
+  text(bold): "Badges"
+  row(gap small center): [
+    badge: "New",
+    badge(accent): "Featured",
+    badge(success): "Done",
+    badge(danger): "Error"
+  ]
+
+  text(bold): "Tags"
+  row(gap small center): [
+    tag: "Tag",
+    tag(primary): "Primary",
+    tag(accent): "Accent"
+  ]
+
+  text(bold): "Avatar"
+  row(gap medium center): [
+    avatar: "JD",
+    avatar(small): "AB",
+    avatar(large): "XD"
+  ]
+
+  text(bold): "Spinner"
+  row(gap medium center): [
+    spinner: "",
+    spinner(large): "",
+    spinner(xlarge accent): ""
+  ]
+
+  text(bold): "Progress"
+  row(gap medium): [
+    progress(value 30 max 100): "",
+    progress(value 60 max 100 large): "",
+    progress(value 45 max 100 accent): ""
+  ]
+
+  text(bold): "Slider"
+  slider(value 50 min 0 max 100 step 1): ""
+
+  text(bold): "Radio"
+  stack(gap small): [
+    radio(name "r1" value "a"): "Option A",
+    radio(name "r1" value "b" checked): "Option B"
+  ]
+
+  text(bold): "Switch"
+  row(gap small center): [
+    switch: "WiFi",
+    switch(checked): "Bluetooth"
+  ]
+
+  text(bold): "Input"
+  input(placeholder "Enter text..."): ""
+}`,
       };
 
       let debounceTimer = null;
