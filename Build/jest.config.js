@@ -16,4 +16,7 @@ module.exports = {
       },
     }],
   },
+  moduleNameMapper: {
+    "^.*icons/index.*$": "<rootDir>/tests/__mocks__/icons.js",
+  },
 };
