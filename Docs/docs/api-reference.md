@@ -211,14 +211,16 @@ MODIFIER_MAP['bold'];    // { weight: 'bold' }
 
 ### `ICON_SVGS`
 
-A record mapping icon names to SVG markup strings. All 25 built-in icons use `currentColor` and scale to their container.
+A record mapping icon names to SVG markup strings. All 41 built-in icons use `currentColor` and scale to their container.
 
 ```typescript
 import { ICON_SVGS } from '@nisoku/sazami';
 
 // Available: play, pause, stop, previous, next, skip, close, menu,
 // search, settings, heart, star, check, plus, minus, edit, share,
-// download, upload, refresh, home, back, forward, up, down
+// download, upload, refresh, home, back, forward, up, down,
+// mail, phone, calendar, clock, user, users, folder, file, image,
+// camera, bell, lock, link, trash, copy, bookmark, pin, globe
 ICON_SVGS['play'];  // '<svg ...>...</svg>'
 ```
 

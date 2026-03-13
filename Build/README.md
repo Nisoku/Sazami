@@ -100,13 +100,17 @@ Everything is compiled at runtime in the browser. No build step required. Additi
 
 ## Primitives
 
-23 web components, grouped by purpose:
+48 web components, grouped by purpose:
 
 | Category | Components |
 |---|---|
 | Layout | `row`, `column`, `grid`, `stack`, `section` |
 | Content | `card`, `text`, `heading`, `label` |
-| Interactive | `button`, `icon-btn`, `input`, `checkbox`, `toggle` |
+| Interactive | `button`, `icon-btn`, `input`, `checkbox`, `toggle`, `radio`, `switch`, `slider`, `select` |
+| Navigation | `tabs`, `accordion` |
+| Feedback | `spinner`, `progress`, `toast` |
+| Overlay | `modal` |
+| Display | `avatar`, `chip` |
 | Media | `image`, `coverart`, `icon` |
 | Indicators | `badge`, `tag`, `divider`, `spacer` |
 | Grouping | `details`, `controls` |
@@ -119,7 +123,7 @@ Every interactive primitive has:
 
 ## Icons
 
-Sazami ships with 37 SVG icons. Icons inherit the current text color and scale with the `size` modifier:
+Sazami ships with 41 SVG icons. Icons inherit the current text color and scale with the `size` modifier:
 
 ```sako
 <row(gap medium) {
@@ -129,7 +133,7 @@ Sazami ships with 37 SVG icons. Icons inherit the current text color and scale w
 }>
 ```
 
-Available: play, pause, stop, previous, next, skip, close, menu, search, settings, heart, star, check, plus, minus, edit, share, download, upload, refresh, home, back, forward, up, down.
+Available: play, pause, stop, previous, next, skip, close, menu, search, settings, heart, star, check, plus, minus, edit, share, download, upload, refresh, home, back, forward, up, down, mail, phone, calendar, clock, user, users, folder, file, image, camera, bell, lock, link, trash, copy, bookmark, pin, globe.
 
 ## Modifiers
 

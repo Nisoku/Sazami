@@ -30,8 +30,8 @@ That renders a styled card with a heading, paragraph, and themed button into the
 
 | Feature | Details |
 | --- | --- |
-| **Components** | 23 semantic web components with Shadow DOM, ARIA roles, keyboard navigation |
-| **Icons** | 37 SVG icons built in, no external dependencies |
+| **Components** | 48 semantic web components with Shadow DOM, ARIA roles, keyboard navigation |
+| **Icons** | 41 SVG icons built in, no external dependencies |
 | **Tokens** | Design token system: colors, spacing, typography, radii, shadows |
 | **Curvomorphism** | Directional corner rounding based on element position |
 | **Output** | ESM + CJS builds with full TypeScript declarations |
@@ -42,7 +42,7 @@ That renders a styled card with a heading, paragraph, and themed button into the
 | Page | Description |
 | --- | --- |
 | [**Language Reference**](/Sazami/language-reference/) | Full Sakko syntax: blocks, modifiers, lists, void elements |
-| [**Primitives**](/Sazami/primitives/) | All 23 web components with usage examples |
+| [**Primitives**](/Sazami/primitives/) | All 48 web components with usage examples |
 | [**Config & Theming**](/Sazami/config-theming/) | Design tokens, custom themes, CSS variable generation |
 | [**Curvomorphism**](/Sazami/curvomorphism/) | How directional corner rounding works |
 | [**API Reference**](/Sazami/api-reference/) | Complete public API: functions, types, exports |
