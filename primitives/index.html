@@ -9,7 +9,7 @@
 
     <title>Sazami Primitives : Sazami</title>
     
-    <meta name="description" content="All 21 semantic Web Components with attributes, modifiers, and examples">
+    <meta name="description" content="All 48 semantic Web Components with attributes, modifiers, and examples">
     
 
     
@@ -675,6 +675,483 @@ row(space-between) {
   toggle(checked): &quot;&quot;
 }
 </code></pre>
+<h3 id="radio"><code>radio</code></h3>
+<p>Radio button with group support.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>-</td>
+<td>Group name</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>string</td>
+<td>-</td>
+<td>Radio value</td>
+</tr>
+<tr>
+<td><code>checked</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Checked state</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Disable interaction</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>radio(name &quot;color&quot; value &quot;red&quot;): &quot;Red&quot;
+radio(name &quot;color&quot; value &quot;blue&quot; checked): &quot;Blue&quot;
+</code></pre>
+<h3 id="switch"><code>switch</code></h3>
+<p>Toggle switch with variant support.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>checked</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>On/off state</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td><code>default</code>, <code>accent</code>, <code>success</code></td>
+<td><code>default</code></td>
+<td>Color variant</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Disable interaction</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>switch: &quot;WiFi&quot;
+switch(checked): &quot;Bluetooth&quot;
+switch(checked variant &quot;accent&quot;): &quot;Notifications&quot;
+</code></pre>
+<h3 id="slider"><code>slider</code></h3>
+<p>Range slider with value display.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td>number</td>
+<td><code>50</code></td>
+<td>Current value</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td>number</td>
+<td><code>0</code></td>
+<td>Minimum value</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>number</td>
+<td><code>100</code></td>
+<td>Maximum value</td>
+</tr>
+<tr>
+<td><code>step</code></td>
+<td>number</td>
+<td><code>1</code></td>
+<td>Step increment</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>medium</code></td>
+<td>Track height</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Disable interaction</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>slider(value 50 min 0 max 100 step 1): &quot;&quot;
+</code></pre>
+<h3 id="select"><code>select</code></h3>
+<p>Dropdown select with options.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td>string</td>
+<td>-</td>
+<td>Selected value</td>
+</tr>
+<tr>
+<td><code>placeholder</code></td>
+<td>string</td>
+<td>“Select…”</td>
+<td>Placeholder text</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Disable interaction</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>select(placeholder &quot;Choose...&quot;): [
+  option(value &quot;a&quot;): &quot;Option A&quot;,
+  option(value &quot;b&quot;): &quot;Option B&quot;
+]
+</code></pre>
+<hr>
+<h2 id="navigation-primitives">Navigation Primitives</h2>
+<h3 id="tabs"><code>tabs</code></h3>
+<p>Tabbed interface with animated transitions.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>active</code></td>
+<td>number</td>
+<td><code>0</code></td>
+<td>Active tab index</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>tabs(active 0): [
+  tab(slot &quot;tab&quot; label &quot;Tab 1&quot;): &quot;&quot;,
+  tab(slot &quot;tab&quot; label &quot;Tab 2&quot;): &quot;&quot;,
+  div(slot &quot;panel&quot;): &quot;Content 1&quot;,
+  div(slot &quot;panel&quot;): &quot;Content 2&quot;
+]
+</code></pre>
+<h3 id="accordion"><code>accordion</code></h3>
+<p>Collapsible sections.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>single-open</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Only one section open at a time</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>accordion: [
+  div(heading &quot;Section 1&quot; slot &quot;panel&quot;): &quot;Content 1&quot;,
+  div(heading &quot;Section 2&quot; open slot &quot;panel&quot;): &quot;Content 2&quot;
+]
+</code></pre>
+<hr>
+<h2 id="feedback-primitives">Feedback Primitives</h2>
+<h3 id="spinner"><code>spinner</code></h3>
+<p>Loading spinner with size variants.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>size</code></td>
+<td><code>tiny</code>, <code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>medium</code></td>
+<td>Spinner size</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td><code>default</code>, <code>accent</code>, <code>light</code></td>
+<td><code>default</code></td>
+<td>Color variant</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>-</td>
+<td>Accessible label</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>spinner: &quot;&quot;
+spinner(large): &quot;&quot;
+spinner(xlarge accent): &quot;&quot;
+</code></pre>
+<h3 id="progress"><code>progress</code></h3>
+<p>Progress bar with customizable fill.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td>number</td>
+<td><code>50</code></td>
+<td>Current value</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td>number</td>
+<td><code>0</code></td>
+<td>Minimum value</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>number</td>
+<td><code>100</code></td>
+<td>Maximum value</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>tiny</code>, <code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>medium</code></td>
+<td>Bar height</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td><code>default</code>, <code>accent</code>, <code>success</code>, <code>danger</code></td>
+<td><code>default</code></td>
+<td>Color variant</td>
+</tr>
+<tr>
+<td><code>indeterminate</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Animated loading state</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>progress(value 30 max 100): &quot;&quot;
+progress(value 75 max 100 variant &quot;success&quot;): &quot;&quot;
+progress(indeterminate): &quot;&quot;
+</code></pre>
+<h3 id="toast"><code>toast</code></h3>
+<p>Toast notification with auto-dismiss.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>message</code></td>
+<td>string</td>
+<td>-</td>
+<td>Toast message</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td><code>default</code>, <code>success</code>, <code>error</code>, <code>warning</code>, <code>info</code></td>
+<td><code>default</code></td>
+<td>Color variant</td>
+</tr>
+<tr>
+<td><code>duration</code></td>
+<td>number</td>
+<td><code>3000</code></td>
+<td>Auto-dismiss delay (ms)</td>
+</tr>
+<tr>
+<td><code>no-close</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Hide close button</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>toast(message &quot;Saved!&quot; variant &quot;success&quot;): &quot;&quot;
+</code></pre>
+<hr>
+<h2 id="overlay-primitives">Overlay Primitives</h2>
+<h3 id="modal"><code>modal</code></h3>
+<p>Dialog with overlay and animations.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>-</td>
+<td>Modal title</td>
+</tr>
+<tr>
+<td><code>open</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Open state</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>modal(title &quot;Confirm&quot;): [
+  text: &quot;Are you sure?&quot;
+]
+</code></pre>
+<hr>
+<h2 id="display-primitives">Display Primitives</h2>
+<h3 id="avatar"><code>avatar</code></h3>
+<p>User avatar with image or initials.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src</code></td>
+<td>URL string</td>
+<td>-</td>
+<td>Image source</td>
+</tr>
+<tr>
+<td><code>alt</code></td>
+<td>string</td>
+<td>-</td>
+<td>Alt text for image</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>tiny</code>, <code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>medium</code></td>
+<td>Avatar size</td>
+</tr>
+<tr>
+<td><code>shape</code></td>
+<td><code>circle</code>, <code>square</code>, <code>rounded</code></td>
+<td><code>circle</code></td>
+<td>Border shape</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>avatar: &quot;JD&quot;
+avatar(src &quot;https://example.com/img.jpg&quot;): &quot;&quot;
+avatar(alt &quot;John Doe&quot; large): &quot;&quot;
+</code></pre>
+<h3 id="chip"><code>chip</code></h3>
+<p>Selectable/removable tag.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>label</code></td>
+<td>string</td>
+<td>-</td>
+<td>Chip text</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td><code>default</code>, <code>primary</code>, <code>accent</code>, <code>success</code>, <code>danger</code>, <code>warning</code></td>
+<td><code>default</code></td>
+<td>Color variant</td>
+</tr>
+<tr>
+<td><code>selected</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Selected state</td>
+</tr>
+<tr>
+<td><code>removable</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Show remove button</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>medium</code></td>
+<td>Chip size</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code>chip: &quot;Basic&quot;
+chip(selected): &quot;Selected&quot;
+chip(accent): &quot;Accent&quot;
+chip(removable): &quot;Removable&quot;
+</code></pre>
 <hr>
 <h2 id="media-primitives">Media Primitives</h2>
 <h3 id="image"><code>image</code></h3>
@@ -757,7 +1234,7 @@ row(space-between) {
 <tbody>
 <tr>
 <td><code>icon</code></td>
-<td><code>play</code>, <code>pause</code>, <code>stop</code>, <code>previous</code>, <code>next</code></td>
+<td>play, pause, stop, previous, next, skip, back, forward, close, menu, search, settings, heart, star, check, plus, minus, edit, share, download, upload, refresh, home, up, down, mail, phone, calendar, clock, user, users, folder, file, image, camera, bell, lock, link, trash, copy, bookmark, pin, globe</td>
 <td>-</td>
 <td>Icon name</td>
 </tr>
@@ -775,7 +1252,10 @@ row(space-between) {
 </tr>
 </tbody>
 </table>
-</div><hr>
+</div><pre class="hljs"><code>icon: &quot;play&quot;
+icon(accent large): &quot;heart&quot;
+</code></pre>
+<hr>
 <h2 id="indicator-primitives">Indicator Primitives</h2>
 <h3 id="badge"><code>badge</code></h3>
 <p>Small pill-shaped label.</p>
@@ -962,6 +1442,54 @@ badge(success): &quot;Active&quot;
 <td><code>saz-toggle</code></td>
 </tr>
 <tr>
+<td><code>radio</code></td>
+<td><code>saz-radio</code></td>
+</tr>
+<tr>
+<td><code>switch</code></td>
+<td><code>saz-switch</code></td>
+</tr>
+<tr>
+<td><code>slider</code></td>
+<td><code>saz-slider</code></td>
+</tr>
+<tr>
+<td><code>select</code></td>
+<td><code>saz-select</code></td>
+</tr>
+<tr>
+<td><code>tabs</code></td>
+<td><code>saz-tabs</code></td>
+</tr>
+<tr>
+<td><code>accordion</code></td>
+<td><code>saz-accordion</code></td>
+</tr>
+<tr>
+<td><code>spinner</code></td>
+<td><code>saz-spinner</code></td>
+</tr>
+<tr>
+<td><code>progress</code></td>
+<td><code>saz-progress</code></td>
+</tr>
+<tr>
+<td><code>toast</code></td>
+<td><code>saz-toast</code></td>
+</tr>
+<tr>
+<td><code>modal</code></td>
+<td><code>saz-modal</code></td>
+</tr>
+<tr>
+<td><code>avatar</code></td>
+<td><code>saz-avatar</code></td>
+</tr>
+<tr>
+<td><code>chip</code></td>
+<td><code>saz-chip</code></td>
+</tr>
+<tr>
 <td><code>row</code></td>
 <td><code>saz-row</code></td>
 </tr>
@@ -1119,6 +1647,70 @@ badge(success): &quot;Active&quot;
       
         <li class="toc-item toc-level-3">
           <a href="#toggle" class="toc-link">toggle</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#radio" class="toc-link">radio</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#switch" class="toc-link">switch</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#slider" class="toc-link">slider</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#select" class="toc-link">select</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#navigation-primitives" class="toc-link">Navigation Primitives</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#tabs" class="toc-link">tabs</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#accordion" class="toc-link">accordion</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#feedback-primitives" class="toc-link">Feedback Primitives</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#spinner" class="toc-link">spinner</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#progress" class="toc-link">progress</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#toast" class="toc-link">toast</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#overlay-primitives" class="toc-link">Overlay Primitives</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#modal" class="toc-link">modal</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#display-primitives" class="toc-link">Display Primitives</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#avatar" class="toc-link">avatar</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#chip" class="toc-link">chip</a>
         </li>
       
         <li class="toc-item toc-level-2">
