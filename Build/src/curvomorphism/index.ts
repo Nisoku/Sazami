@@ -17,8 +17,8 @@ export function applyCurvomorphism(
   const s = "0px";
 
   // 2% of the group's half-span so it scales with layout density
-  const tx = Math.max(1, ((groupRight - groupLeft) / 2) * 0.02);
-  const ty = Math.max(1, ((groupBottom - groupTop) / 2) * 0.02);
+  const tx = Math.max(1, (Math.abs(groupRight - groupLeft) / 2) * 0.02);
+  const ty = Math.max(1, (Math.abs(groupBottom - groupTop) / 2) * 0.02);
 
   const leftIn = elCenterX > centerX + tx;
   const rightIn = elCenterX < centerX - tx;
@@ -96,7 +96,7 @@ export function enableCurvomorphism(
   }
 
   const apply = () => {
-    const cachedCenter = options.centerX === undefined && options.centerY === undefined
+    const cachedCenter = options.centerX === undefined || options.centerY === undefined
       ? findCenter(element)
       : { x: 0, y: 0 };
     const cx = options.centerX ?? cachedCenter.x;

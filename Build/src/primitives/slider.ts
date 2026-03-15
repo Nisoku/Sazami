@@ -188,7 +188,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     ) {
       let parsed = newVal !== null ? parseFloat(newVal) : null;
       if (parsed === null || Number.isNaN(parsed)) {
-        parsed = name === "value" ? 50 : name === "step" ? 1 : 0;
+        parsed = name === "value" ? 50 : name === "step" ? 1 : name === "max" ? 100 : 0;
       }
       if (name === "step" && parsed <= 0) {
         parsed = 1;

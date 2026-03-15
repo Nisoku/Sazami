@@ -80,6 +80,7 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
   declare visible: boolean;
 
   private _hideTimeout?: ReturnType<typeof setTimeout>;
+  private _removeTimeout?: ReturnType<typeof setTimeout>;
   private _closeHandler = () => this.hide();
   private _handleKeydown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -91,6 +92,9 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
   disconnectedCallback() {
     if (this._hideTimeout) {
       clearTimeout(this._hideTimeout);
+    }
+    if (this._removeTimeout) {
+      clearTimeout(this._removeTimeout);
     }
     super.disconnectedCallback();
   }
@@ -119,12 +123,8 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
             : "ℹ";
 
     const urgent = variant === "error" || variant === "danger";
-    if (!this.hasAttribute("role")) {
-      this.setAttribute("role", urgent ? "alert" : "status");
-    }
-    if (!this.hasAttribute("aria-live")) {
-      this.setAttribute("aria-live", urgent ? "assertive" : "polite");
-    }
+    this.setAttribute("role", urgent ? "alert" : "status");
+    this.setAttribute("aria-live", urgent ? "assertive" : "polite");
     this.setAttribute("aria-atomic", "true");
 
     const messageEl = `<span class="message"></span>`;
@@ -147,12 +147,14 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
     }
 
     if (showClose) {
-      const closeBtn = this.$(".close-btn");
+      const closeBtn = this.$(".close-btn") as HTMLElement | null;
       this.removeHandler("click", this._closeHandler);
-      this.addHandler("click", this._closeHandler, {
-        internal: true,
-        element: closeBtn as HTMLElement,
-      });
+      if (closeBtn) {
+        this.addHandler("click", this._closeHandler, {
+          internal: true,
+          element: closeBtn,
+        });
+      }
     }
 
     // Keyboard support: Escape to dismiss
@@ -174,8 +176,12 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
       clearTimeout(this._hideTimeout);
       this._hideTimeout = undefined;
     }
-    this.removeAttribute("visible");
-    setTimeout(() => {
+    if (this._removeTimeout) {
+      clearTimeout(this._removeTimeout);
+    }
+    this.visible = false;
+    this._removeTimeout = setTimeout(() => {
+      this._removeTimeout = undefined;
       this.dispatchEventTyped("close", {});
       this.remove();
     }, 300);
