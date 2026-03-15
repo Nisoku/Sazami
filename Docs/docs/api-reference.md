@@ -213,7 +213,7 @@ MODIFIER_MAP['bold'];    // { weight: 'bold' }
 
 ### `ICON_SVGS`
 
-A record mapping icon names to SVG markup strings. All 41 built-in icons use `currentColor` and scale to their container.
+A record mapping icon names to SVG markup strings. All 43 built-in icons use `currentColor` and scale to their container.
 
 ```typescript
 import { ICON_SVGS } from '@nisoku/sazami';
@@ -230,139 +230,12 @@ ICON_SVGS['play'];  // '<svg ...>...</svg>'
 
 ## Base Component System
 
-### `@component(config)`
+Sazami provides a declarative component system with typed properties, events, and handler management. See [Component Base](/docs/component-base.md) for full documentation.
 
-Decorator that registers component metadata (properties, events, bindings) for the base class.
-
-```typescript
-import { component, SazamiComponent } from '@nisoku/sazami';
-
-@component({
-  properties: {
-    variant: { type: 'string', reflect: true, default: 'default' },
-    disabled: { type: 'boolean', reflect: true },
-  },
-  events: {
-    change: { name: 'variant-change', detail: { variant: 'variant' } },
-  },
-  binds: {
-    variant: 'attribute',
-  },
-})
-export class MyComponent extends SazamiComponent {
-  // ...
-}
-```
-
-### `SazamiComponent`
-
-Base class for all Sazami web components. Extends `HTMLElement`.
-
-```typescript
-import { SazamiComponent } from '@nisoku/sazami';
-
-class MyComponent extends SazamiComponent {
-  render() {
-    this.mount(styles, template);
-  }
-}
-```
-
----
-
-### Handler Management
-
-All components have built-in handler tracking for proper cleanup:
-
-#### `addHandler(type, handler, options?)`
-
-Add an event handler with automatic tracking. Returns an ID for later removal.
-
-```typescript
-// Basic usage
-const handlerId = this.addHandler('click', this.handleClick);
-
-// Track internal handlers (auto-removed on disconnect)
-this.addHandler('keydown', this.handleKeydown, { internal: true });
-
-// Track handlers on child elements
-this.addHandler('change', this.handleChange, { element: this.$('input') });
-```
-
-**Parameters:**
-
-- `type: string` - Event type (e.g., 'click', 'keydown')
-- `handler: Function` - Event handler function
-- `options.internal?: boolean` - Mark as internal handler
-- `options.element?: EventTarget` - Target element (defaults to component)
-
-#### `removeHandler(typeOrId, idOrFn?)`
-
-Remove handlers by ID, function reference, or type.
-
-```typescript
-// Remove by ID
-this.removeHandler(handlerId);
-
-// Remove by type and ID
-this.removeHandler('click', handlerId);
-
-// Remove by function reference
-this.removeHandler('click', this.handleClick);
-
-// Remove all handlers with a specific ID across all types
-this.removeHandler(handlerId);
-```
-
-#### `removeAllHandlers(options?)`
-
-Remove all handlers, optionally filtered.
-
-```typescript
-// Remove all handlers
-this.removeAllHandlers();
-
-// Remove all click handlers
-this.removeAllHandlers({ type: 'click' });
-
-// Remove only internal handlers
-this.removeAllHandlers({ source: 'internal' });
-
-// Remove user handlers for a specific type
-this.removeAllHandlers({ type: 'change', source: 'user' });
-```
-
----
-
-### Event Dispatch
-
-#### `dispatch(name, detail, options)`
-
-Dispatch a custom event.
-
-```typescript
-this.dispatch('my-event', { data: 123 });
-this.dispatch('my-event', { data: 123 }, { bubbles: false, composed: false });
-```
-
-#### `dispatchEventTyped(event, detail)`
-
-Dispatch a typed event based on component metadata.
-
-```typescript
-// With config: events: { change: { name: 'variant-change', detail: { variant: 'variant' } } }
-this.dispatchEventTyped('change', { variant: 'primary' });
-```
-
-#### `onCleanup(fn)`
-
-Register cleanup functions for Sairin bindings. Called on disconnect.
-
-```typescript
-this.onCleanup(() => {
-  // Cleanup logic
-});
-```
+- `@component(config)` - Decorator for component metadata
+- `SazamiComponent` - Base class for all components
+- `addHandler()` / `removeHandler()` / `removeAllHandlers()` - Handler tracking
+- `dispatch()` / `dispatchEventTyped()` / `onCleanup()` - Event utilities
 
 ---
 
