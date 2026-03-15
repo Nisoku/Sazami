@@ -163,7 +163,7 @@ enableCurvomorphism(element);
 
 ---
 
-## Primitives
+## Primitives API
 
 ### `registerComponents()`
 
@@ -228,6 +228,236 @@ ICON_SVGS['play'];  // '<svg ...>...</svg>'
 
 ---
 
+## Base Component System
+
+### `@component(config)`
+
+Decorator that registers component metadata (properties, events, bindings) for the base class.
+
+```typescript
+import { component, SazamiComponent } from '@nisoku/sazami';
+
+@component({
+  properties: {
+    variant: { type: 'string', reflect: true, default: 'default' },
+    disabled: { type: 'boolean', reflect: true },
+  },
+  events: {
+    change: { name: 'variant-change', detail: { variant: 'variant' } },
+  },
+  binds: {
+    variant: 'attribute',
+  },
+})
+export class MyComponent extends SazamiComponent {
+  // ...
+}
+```
+
+### `SazamiComponent`
+
+Base class for all Sazami web components. Extends `HTMLElement`.
+
+```typescript
+import { SazamiComponent } from '@nisoku/sazami';
+
+class MyComponent extends SazamiComponent {
+  render() {
+    this.mount(styles, template);
+  }
+}
+```
+
+---
+
+### Handler Management
+
+All components have built-in handler tracking for proper cleanup:
+
+#### `addHandler(type, handler, options?)`
+
+Add an event handler with automatic tracking. Returns an ID for later removal.
+
+```typescript
+// Basic usage
+const handlerId = this.addHandler('click', this.handleClick);
+
+// Track internal handlers (auto-removed on disconnect)
+this.addHandler('keydown', this.handleKeydown, { internal: true });
+
+// Track handlers on child elements
+this.addHandler('change', this.handleChange, { element: this.$('input') });
+```
+
+**Parameters:**
+
+- `type: string` - Event type (e.g., 'click', 'keydown')
+- `handler: Function` - Event handler function
+- `options.internal?: boolean` - Mark as internal handler
+- `options.element?: EventTarget` - Target element (defaults to component)
+
+#### `removeHandler(typeOrId, idOrFn?)`
+
+Remove handlers by ID, function reference, or type.
+
+```typescript
+// Remove by ID
+this.removeHandler(handlerId);
+
+// Remove by type and ID
+this.removeHandler('click', handlerId);
+
+// Remove by function reference
+this.removeHandler('click', this.handleClick);
+
+// Remove all handlers with a specific ID across all types
+this.removeHandler(handlerId);
+```
+
+#### `removeAllHandlers(options?)`
+
+Remove all handlers, optionally filtered.
+
+```typescript
+// Remove all handlers
+this.removeAllHandlers();
+
+// Remove all click handlers
+this.removeAllHandlers({ type: 'click' });
+
+// Remove only internal handlers
+this.removeAllHandlers({ source: 'internal' });
+
+// Remove user handlers for a specific type
+this.removeAllHandlers({ type: 'change', source: 'user' });
+```
+
+---
+
+### Event Dispatch
+
+#### `dispatch(name, detail, options)`
+
+Dispatch a custom event.
+
+```typescript
+this.dispatch('my-event', { data: 123 });
+this.dispatch('my-event', { data: 123 }, { bubbles: false, composed: false });
+```
+
+#### `dispatchEventTyped(event, detail)`
+
+Dispatch a typed event based on component metadata.
+
+```typescript
+// With config: events: { change: { name: 'variant-change', detail: { variant: 'variant' } } }
+this.dispatchEventTyped('change', { variant: 'primary' });
+```
+
+#### `onCleanup(fn)`
+
+Register cleanup functions for Sairin bindings. Called on disconnect.
+
+```typescript
+this.onCleanup(() => {
+  // Cleanup logic
+});
+```
+
+---
+
+## Error Handling
+
+Sazami uses [Satori](https://github.com/nisoku/satori) for structured logging. Errors are logged with context and suggestions.
+
+### Error Functions
+
+```typescript
+import {
+  propertyError,
+  eventError,
+  renderError,
+  bindingError,
+  unknownComponentError,
+} from '@nisoku/sazami';
+
+// Property configuration errors
+propertyError('Invalid property value', {
+  tag: 'saz-button',
+  suggestion: 'Use a valid variant: default, accent, or ghost',
+});
+
+// Event dispatch errors
+eventError('Event not defined in metadata', {
+  tag: 'saz-input',
+  suggestion: 'Add the event to your @component config',
+});
+
+// Render errors
+renderError('Failed to render component', {
+  suggestion: 'Check template syntax and styles',
+});
+
+// Binding errors
+bindingError('Invalid binding', {
+  property: 'value',
+  suggestion: 'Use bind:value for two-way binding',
+});
+
+// Unknown component warning
+unknownComponentError('my-component', 'Use saz- prefix');
+```
+
+### Integration with Sakko
+
+Sakko (parser) also uses Satori for structured errors:
+
+```typescript
+import {
+  tokenizerError,
+  parserError,
+} from '@nisoku/sakko';
+
+tokenizerError('Invalid syntax', {
+  suggestion: 'Check for missing quotes',
+});
+
+parserError('Unexpected token', {
+  cause: 'missing closing tag',
+});
+```
+
+---
+
+## Accessibility
+
+All interactive primitives include full keyboard support following WAI-ARIA patterns.
+
+### Keyboard Navigation
+
+| Component | Keys | Behavior |
+| ----------- | ------ | ---------- |
+| Select | Enter/Space | Open/close dropdown |
+| Select | Escape | Close dropdown |
+| Select | Arrow Up/Down | Navigate options |
+| Select | Home/End | First/last option |
+| Tabs | Arrow Left/Right | Switch tabs |
+| Tabs | Enter/Space | Activate focused tab |
+| Modal | Escape | Close modal |
+| Toast | Escape | Dismiss toast |
+| Button | Enter/Space | Activate (native) |
+| Checkbox | Enter/Space | Toggle (native) |
+| Toggle | Enter/Space | Toggle (native) |
+| Slider | Arrow Left/Right | Adjust value |
+
+### Focus Management
+
+- Focus is properly managed when opening/closing modals and selects
+- Tab order follows visual layout
+- Focus indicators are visible
+
+---
+
 ## Types
 
 All TypeScript types are exported:
@@ -237,7 +467,8 @@ import type {
   VNode,
   ComponentDefinition,
   CurvomorphismOptions,
+  SazamiComponentConfig,
+  PropertyConfig,
+  EventConfig,
 } from '@nisoku/sazami';
 ```
-
-Note: AST types (`Token`, `Modifier`, `ASTNode`, `RootNode`, `ElementNode`, `InlineNode`, `ListNode`) are exported from `@nisoku/sakko`.
