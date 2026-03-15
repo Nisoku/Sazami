@@ -93,7 +93,7 @@ ${INTERACTIVE_FOCUS}
 
 const selectConfig = {
   properties: {
-    placeholder: { type: "string" as const, reflect: false },
+    placeholder: { type: "string" as const, reflect: true },
     value: { type: "string" as const, reflect: true },
     disabled: { type: "boolean" as const, reflect: true },
     open: { type: "boolean" as const, reflect: true },

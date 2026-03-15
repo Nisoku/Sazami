@@ -83,12 +83,12 @@ ${STATE_DISABLED}
 
 const sliderConfig = {
   properties: {
-    value: { type: "number" as const, reflect: false },
-    min: { type: "number" as const, reflect: false },
-    max: { type: "number" as const, reflect: false },
-    step: { type: "number" as const, reflect: false },
+    value: { type: "number" as const, reflect: false, default: 50 },
+    min: { type: "number" as const, reflect: false, default: 0 },
+    max: { type: "number" as const, reflect: false, default: 100 },
+    step: { type: "number" as const, reflect: false, default: 1 },
     disabled: { type: "boolean" as const, reflect: true },
-    size: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: false, default: "medium" },
   },
   events: {
     input: { name: "saz-input", detail: { value: "value" } },
@@ -105,23 +105,23 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   declare size: string;
 
   render() {
-    let min = parseFloat(this.getAttribute("min") || "0");
-    let max = parseFloat(this.getAttribute("max") || "100");
-    let value = parseFloat(this.getAttribute("value") || "50");
-    let step = parseFloat(this.getAttribute("step") || "1");
-    
+    let min = this.min;
+    let max = this.max;
+    let value = this.value;
+    let step = this.step;
+
     if (!Number.isFinite(min)) min = 0;
     if (!Number.isFinite(max)) max = 100;
     if (!Number.isFinite(value)) value = 50;
     if (!Number.isFinite(step)) step = 1;
     if (step <= 0) step = 1;
-    
+
     if (min > max) [min, max] = [max, min];
     if (value < min) value = min;
     if (value > max) value = max;
-    
-    const disabled = this.hasAttribute("disabled");
-    const size = this.getAttribute("size") || "medium";
+
+    const disabled = this.disabled;
+    const size = this.size || "medium";
 
     const sizes: Record<string, { track: string; thumb: string }> = {
       tiny: { track: "4px", thumb: "16px" },
@@ -172,7 +172,10 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   static get observedAttributes() {
-    return super.observedAttributes;
+    return [
+      ...super.observedAttributes,
+      "value", "min", "max", "step", "size",
+    ];
   }
 
   attributeChangedCallback(
@@ -180,6 +183,13 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
+    // Sync non-reflected attributes into their properties so that render()
+    // reads the up-to-date value from this.* rather than getAttribute().
+    if (name === "value" || name === "min" || name === "max" || name === "step") {
+      (this as any)[name] = newVal !== null ? parseFloat(newVal) : 0;
+    } else if (name === "size") {
+      (this as any)[name] = newVal ?? "";
+    }
     super.attributeChangedCallback(name, oldVal, newVal);
   }
 }

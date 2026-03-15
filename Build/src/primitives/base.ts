@@ -354,6 +354,9 @@ export class SazamiComponent<
         if (type === "boolean") {
           return this.hasAttribute(attr);
         }
+        if (this._propStorage.has(attr)) {
+          return this._propStorage.get(attr);
+        }
         const raw = this.getAttribute(attr);
         if (raw !== null) {
           if (type === "number") {
@@ -361,9 +364,6 @@ export class SazamiComponent<
             return !isNaN(val) ? val : (defaultValue ?? 0);
           }
           return raw;
-        }
-        if (this._propStorage.has(attr)) {
-          return this._propStorage.get(attr);
         }
         return defaultValue ?? (type === "number" ? 0 : "");
       },

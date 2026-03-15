@@ -24,8 +24,8 @@ ${SHAPE_RULES}
 
 const imageConfig = {
   properties: {
-    src: { type: "string" as const, reflect: false },
-    alt: { type: "string" as const, reflect: false },
+    src: { type: "string" as const, reflect: true },
+    alt: { type: "string" as const, reflect: true },
     size: { type: "string" as const, reflect: true },
     shape: { type: "string" as const, reflect: true },
   },
@@ -39,12 +39,12 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   declare shape: string;
 
   render() {
-    const src = this.getAttribute("src") || this.textContent?.trim() || "";
+    const src = this.src || this.textContent?.trim() || "";
     if (!src) {
       this.mount(STYLES, "");
       return;
     }
-    const alt = this.getAttribute("alt") || "";
+    const alt = this.alt || "";
 
     this.mount(
       STYLES,
