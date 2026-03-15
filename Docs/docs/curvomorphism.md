@@ -16,29 +16,29 @@ Curvomorphism is a directional corner-rounding system that makes corners round t
 
 **Curvomorphism** makes corners directional:
 
-- Corners facing the **center** of the layout → **rounded**
-- Corners facing the **edges** of the viewport → **sharp**
+- Corners facing the **center** of the layout -> **rounded**
+- Corners facing the **edges** of the viewport -> **sharp**
 
 This creates an organic visual flow that guides the user's eye toward the content center.
 
-```
+```txt
 Layout with center point (C):
 
 ┌─────────┐          ┌─────────┐         ┌─────────┐
 │ TL      │          │    T    │         │      TR │
 │         │          │         │         │         │
-└─────────╯         ╰────────╯        ╰─────────┘
+└─────────╯          ╰─────────╯         ╰─────────┘
  Bottom-right        Bottom L+R          Bottom-left
    rounded            rounded              rounded
 
-┌─────────╮                             ╭─────────┐
-│ L        │       ←──── (C) ────→       │       R │
-│          │                             │         │
-└─────────╯                             ╰─────────┘
-  Right-side                            Left-side
-   rounded                              rounded
+┌─────────╮                              ╭─────────┐
+│ L       │       <-──── (C) ────->      │       R │
+│         │                              │         │
+└─────────╯                              ╰─────────┘
+  Right-side                             Left-side
+   rounded                               rounded
 
-┌─────────╮         ╭─────────╮       ╭─────────┐
+┌─────────╮          ╭─────────╮         ╭─────────┐
 │ BL      │          │    B    │         │      BR │
 │         │          │         │         │         │
 └─────────┘          └─────────┘         └─────────┘
@@ -129,7 +129,7 @@ applyCurvomorphism(myElement, {
 Options:
 
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| -------- | ------ | --------- | ------------- |
 | `radius` | `string` | `"medium"` | Radius token name |
 | `centerX` | `number` | viewport center | Layout center X coordinate |
 | `centerY` | `number` | viewport center | Layout center Y coordinate |
@@ -162,6 +162,7 @@ connectedCallback() {
 ## When to Use
 
 **Good for:**
+
 - Cards in grids
 - Sidebars and drawers
 - Modal dialogs
@@ -170,6 +171,7 @@ connectedCallback() {
 - Media players
 
 **Skip for:**
+
 - Tiny buttons (too small to notice)
 - Dense control panels (looks noisy)
 - Full-bleed backgrounds

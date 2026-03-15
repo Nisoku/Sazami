@@ -29,7 +29,8 @@ import { SazamiSwitch } from "./switch";
 import { SazamiToast } from "./toast";
 import { SazamiAvatar } from "./avatar";
 import { SazamiChip } from "./chip";
-import { SazamiSpinner, SazamiProgress } from "./spinner";
+import { SazamiSpinner } from "./spinner";
+import { SazamiProgress } from "./progress";
 import { SazamiAccordion } from "./accordion";
 
 export const COMPONENT_REGISTRY: Record<string, typeof HTMLElement> = {

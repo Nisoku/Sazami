@@ -1,17 +1,8 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { INTERACTIVE_HOVER } from "./shared";
+import { ICON_SVGS } from "../icons/index";
 
-export class SazamiModal extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const title = this.getAttribute("title") || "";
-    const open = this.hasAttribute("open");
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   position: fixed;
   inset: 0;
@@ -35,8 +26,8 @@ export class SazamiModal extends HTMLElement {
 }
 .dialog {
   position: relative;
-  background: var(--saz-color-background, #fff);
-  border-radius: var(--saz-radius-medium, 12px);
+  background: var(--saz-color-background);
+  border-radius: var(--saz-radius-medium);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   max-width: 90vw;
   max-height: 90vh;
@@ -51,13 +42,13 @@ export class SazamiModal extends HTMLElement {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--saz-space-large, 16px);
-  border-bottom: 1px solid var(--saz-color-border, #e0e0e0);
+  padding: var(--saz-space-large);
+  border-bottom: 1px solid var(--saz-color-border);
 }
 .title {
-  font-size: var(--saz-text-size-large, 18px);
+  font-size: var(--saz-text-size-large);
   font-weight: 600;
-  color: var(--saz-color-text, #1f2937);
+  color: var(--saz-color-text);
   margin: 0;
 }
 .close-btn {
@@ -68,61 +59,90 @@ export class SazamiModal extends HTMLElement {
   height: 32px;
   border: none;
   background: transparent;
-  border-radius: var(--saz-radius-soft, 4px);
+  border-radius: var(--saz-radius-soft);
   cursor: pointer;
-  color: var(--saz-color-text-dim, #6b7280);
+  color: var(--saz-color-text-dim);
   transition: background 0.15s ease, color 0.15s ease;
 }
-.close-btn:hover {
-  background: var(--saz-color-surface, #f3f4f6);
-  color: var(--saz-color-text, #1f2937);
-}
+${INTERACTIVE_HOVER}
 .close-btn svg {
   width: 20px;
   height: 20px;
 }
 .content {
-  padding: var(--saz-space-large, 16px);
+  padding: var(--saz-space-large);
 }
-`) +
-      `<div class="overlay"></div>
-       <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-         <div class="header">
-           <h2 class="title" id="modal-title">${title}</h2>
-           <button class="close-btn" aria-label="Close">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-           </button>
-         </div>
-         <div class="content"><slot></slot></div>
-       </div>`;
+`;
 
-    const closeBtn = this.shadowRoot!.querySelector(".close-btn");
-    closeBtn?.addEventListener("click", () => this.close());
+const modalConfig = {
+  properties: {
+    title: { type: "string" as const, reflect: false },
+    open: { type: "boolean" as const, reflect: true },
+  },
+  events: {
+    open: { name: "saz-open", detail: {} },
+    close: { name: "saz-close", detail: {} },
+  },
+} as const;
 
-    const overlay = this.shadowRoot!.querySelector(".overlay");
-    overlay?.addEventListener("click", () => this.close());
+@component(modalConfig)
+export class SazamiModal extends SazamiComponent<typeof modalConfig> {
+  declare title: string;
+  declare open: boolean;
 
-    this.addEventListener("keydown", (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "Escape" && this.hasAttribute("open")) {
-        this.close();
+  render() {
+    const title = this.getAttribute("title") || "";
+
+    this.mount(
+      STYLES,
+      `
+      <div class="overlay"></div>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="header">
+          <h2 class="title" id="modal-title">${title}</h2>
+          <button class="close-btn" aria-label="Close">
+            ${ICON_SVGS.close || "×"}
+          </button>
+        </div>
+        <div class="content"><slot></slot></div>
+      </div>
+    `,
+    );
+
+    const closeBtn = this.$(".close-btn");
+    this.addHandler("click", () => this._close(), { internal: true, element: closeBtn as HTMLElement });
+
+    const overlay = this.$(".overlay");
+    this.addHandler("click", () => this._close(), { internal: true, element: overlay as HTMLElement });
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && this.hasAttribute("open")) {
+        this._close();
       }
-    });
+    };
+    this.addHandler("keydown", handleKeydown, { internal: true });
 
-    if (open) this.open();
+    if (this.hasAttribute("open")) this._open();
   }
 
-  open() {
+  private _open() {
     this.setAttribute("open", "");
-    this.dispatchEvent(
-      new CustomEvent("saz-open", { bubbles: true, composed: true }),
-    );
+    this.dispatchEventTyped("open", {});
   }
 
-  close() {
+  private _close() {
     this.removeAttribute("open");
-    this.dispatchEvent(
-      new CustomEvent("saz-close", { bubbles: true, composed: true }),
-    );
+    this.dispatchEventTyped("close", {});
+  }
+
+  attributeChangedCallback(name: string, oldVal: string, newVal: string) {
+    if (oldVal === newVal) return;
+    if (name === "open") {
+      if (newVal !== null) {
+        this.dispatchEventTyped("open", {});
+      } else {
+        this.dispatchEventTyped("close", {});
+      }
+    }
   }
 }

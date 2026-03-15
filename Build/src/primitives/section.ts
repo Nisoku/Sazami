@@ -1,14 +1,7 @@
-import { baseStyles, GAP_RULES } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { GAP_RULES } from "./shared";
 
-export class SazamiSection extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: flex;
   flex-direction: column;
@@ -16,7 +9,26 @@ export class SazamiSection extends HTMLElement {
 :host([layout="row"]) { flex-direction: row; }
 ${GAP_RULES}
 :host([align="center"]) { align-items: center; }
-`) + "<slot></slot>";
+`;
+
+const sectionConfig = {
+  properties: {
+    layout: { type: "string" as const, reflect: false },
+    align: { type: "string" as const, reflect: false },
+    gap: { type: "string" as const, reflect: false },
+    "center-point": { type: "boolean" as const, reflect: false },
+  },
+} as const;
+
+@component(sectionConfig)
+export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
+  declare layout: string;
+  declare align: string;
+  declare gap: string;
+  declare "center-point": boolean;
+
+  render() {
+    this.mount(STYLES, `<slot></slot>`);
 
     if (this.hasAttribute("center-point")) {
       requestAnimationFrame(() => {

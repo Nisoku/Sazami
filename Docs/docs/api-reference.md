@@ -6,7 +6,7 @@ order: 5
 
 # API Reference
 
-Complete public API for Sazami. 
+Complete public API for Sazami.
 
 > Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
 
@@ -34,16 +34,18 @@ compileSakko(source, document.getElementById('app'));
 ```
 
 **Parameters:**
+
 - `source: string` - Sakko DSL source code (angle brackets are auto-added if missing)
 - `target: HTMLElement` - DOM element to render into
 - `options?: { tokens?: Record<string, string> }` - Optional custom token overrides
 
 **Behavior:**
+
 1. Registers all Sazami Web Components
 2. Injects theme CSS variables into `<head>`
-3. Parses source → AST (uses `@nisoku/sakko`)
-4. Transforms AST → VNode tree
-5. Renders VNode tree → DOM
+3. Parses source -> AST (uses `@nisoku/sakko`)
+4. Transforms AST -> VNode tree
+5. Renders VNode tree -> DOM
 6. Applies curvomorphism to `[curved]` elements
 
 ---

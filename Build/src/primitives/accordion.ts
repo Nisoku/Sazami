@@ -1,34 +1,17 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
 import { ICON_SVGS } from "../icons/index";
 
-export class SazamiAccordion extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const items = Array.from(this.querySelectorAll(":scope > *")).map(
-      (el, i) => ({
-        title:
-          (el as HTMLElement).getAttribute("heading") || `Section ${i + 1}`,
-        content: el.innerHTML,
-        open: el.hasAttribute("open"),
-      }),
-    );
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host { display: block; }
 .item {
-  border-bottom: 1px solid var(--saz-color-border, #e0e0e0);
+  border-bottom: 1px solid var(--saz-color-border);
 }
-.item:first-child { border-top: 1px solid var(--saz-color-border, #e0e0e0); }
+.item:first-child { border-top: 1px solid var(--saz-color-border); }
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--saz-space-medium, 12px) var(--saz-space-small, 8px);
+  padding: var(--saz-space-medium) var(--saz-space-small);
   cursor: pointer;
   background: transparent;
   border: none;
@@ -36,24 +19,24 @@ export class SazamiAccordion extends HTMLElement {
   text-align: left;
   font-size: inherit;
   font-family: inherit;
-  color: var(--saz-color-text, #1f2937);
+  color: var(--saz-color-text);
   transition: background 0.15s ease;
 }
 .header:hover {
-  background: var(--saz-color-surface, #f8f9fa);
+  background: var(--saz-color-surface);
 }
 .header:focus-visible {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
+  outline: 2px solid var(--saz-color-primary);
   outline-offset: -2px;
 }
 .title {
   font-weight: 500;
-  font-size: var(--saz-text-size-medium, 14px);
+  font-size: var(--saz-text-size-medium);
 }
 .chevron {
   width: 20px;
   height: 20px;
-  color: var(--saz-color-text-dim, #6b7280);
+  color: var(--saz-color-text-dim);
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }
@@ -64,18 +47,48 @@ export class SazamiAccordion extends HTMLElement {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease, padding 0.3s ease;
-  padding: 0 var(--saz-space-small, 8px);
+  padding: 0 var(--saz-space-small);
 }
 .item[open] .content {
   max-height: 500px;
-  padding-bottom: var(--saz-space-medium, 12px);
+  padding-bottom: var(--saz-space-medium);
 }
 .inner-content {
-  font-size: var(--saz-text-size-medium, 14px);
-  color: var(--saz-color-text-dim, #6b7280);
+  font-size: var(--saz-text-size-medium);
+  color: var(--saz-color-text-dim);
   line-height: 1.5;
 }
-`) +
+`;
+
+const accordionConfig = {
+  properties: {
+    "single-open": { type: "boolean" as const, reflect: false },
+    index: { type: "string" as const, reflect: false },
+    open: { type: "boolean" as const, reflect: false },
+  },
+  events: {
+    change: { name: "saz-change", detail: { index: "index", open: "open" } },
+  },
+} as const;
+
+@component(accordionConfig)
+export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
+  declare "single-open": boolean;
+  declare index: string;
+  declare open: boolean;
+
+  render() {
+    const items = Array.from(this.querySelectorAll(":scope > *")).map(
+      (el, i) => ({
+        title:
+          (el as HTMLElement).getAttribute("heading") || `Section ${i + 1}`,
+        content: el.innerHTML,
+        open: el.hasAttribute("open"),
+      }),
+    );
+
+    this.mount(
+      STYLES,
       items
         .map(
           (item, i) => `
@@ -90,37 +103,38 @@ export class SazamiAccordion extends HTMLElement {
         </div>
       `,
         )
-        .join("");
+        .join(""),
+    );
 
-    const headers = this.shadowRoot!.querySelectorAll(".header");
+    const headers = this.shadow.querySelectorAll(".header");
     headers.forEach((header, i) => {
-      header.addEventListener("click", () => {
+      const handleClick = () => {
         const item = header.parentElement;
         const isOpen = item?.hasAttribute("open");
 
         if (this.hasAttribute("single-open")) {
-          this.shadowRoot!.querySelectorAll(".item").forEach((el) =>
-            el.removeAttribute("open"),
+          this.shadow
+            .querySelectorAll(".item")
+            .forEach((el) => el.removeAttribute("open"));
+          headers.forEach((h) =>
+            (h as HTMLElement).setAttribute("aria-expanded", "false"),
           );
-          headers.forEach((h) => h.setAttribute("aria-expanded", "false"));
         }
 
         if (isOpen) {
           item?.removeAttribute("open");
-          header.setAttribute("aria-expanded", "false");
+          (header as HTMLElement).setAttribute("aria-expanded", "false");
         } else {
           item?.setAttribute("open", "");
-          header.setAttribute("aria-expanded", "true");
+          (header as HTMLElement).setAttribute("aria-expanded", "true");
         }
 
-        this.dispatchEvent(
-          new CustomEvent("saz-change", {
-            detail: { index: i, open: !isOpen },
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      });
+        this.dispatchEventTyped("change", {
+          index: i.toString(),
+          open: !isOpen,
+        });
+      };
+      this.addHandler("click", handleClick, { internal: true, element: header });
     });
   }
 }

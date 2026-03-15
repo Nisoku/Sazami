@@ -1,62 +1,46 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { STATE_DISABLED, INTERACTIVE_HOVER, VARIANT_BG_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 
-export class SazamiChip extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const label = this.getAttribute("label") || this.textContent?.trim() || "";
-    const variant = this.getAttribute("variant") || "default";
-    const removable = this.hasAttribute("removable");
-    const selected = this.hasAttribute("selected");
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
-  gap: var(--saz-space-tiny, 4px);
-  padding: var(--saz-space-tiny, 4px) var(--saz-space-small, 8px);
-  border-radius: var(--saz-radius-round, 9999px);
-  font-size: var(--saz-text-size-small, 12px);
+  gap: var(--saz-space-tiny);
+  padding: var(--saz-space-tiny) var(--saz-space-small);
+  border-radius: var(--saz-radius-round);
+  font-size: var(--saz-text-size-small);
   font-weight: 500;
   cursor: pointer;
   user-select: none;
   transition: background 0.15s ease, color 0.15s ease;
 }
-:host(:not([size])) {
-  padding: var(--saz-space-tiny, 4px) var(--saz-space-small, 8px);
-  font-size: var(--saz-text-size-small, 12px);
-}
 :host([size="small"]) {
-  padding: 2px var(--saz-space-tiny, 4px);
+  padding: 2px var(--saz-space-tiny);
   font-size: 10px;
 }
 :host([size="large"]) {
-  padding: var(--saz-space-small, 8px) var(--saz-space-medium, 12px);
-  font-size: var(--saz-text-size-medium, 14px);
+  padding: var(--saz-space-small) var(--saz-space-medium);
+  font-size: var(--saz-text-size-medium);
 }
 :host([size="xlarge"]) {
-  padding: var(--saz-space-medium, 12px) var(--saz-space-large, 16px);
-  font-size: var(--saz-text-size-large, 16px);
+  padding: var(--saz-space-medium) var(--saz-space-large);
+  font-size: var(--saz-text-size-large);
 }
 :host([variant="default"]) {
-  background: var(--saz-color-surface, #f3f4f6);
-  color: var(--saz-color-text, #1f2937);
+  background: var(--saz-color-surface);
+  color: var(--saz-color-text);
 }
 :host([variant="primary"]) {
-  background: var(--saz-color-primary, #2563eb);
-  color: var(--saz-color-on-primary, #fff);
+  background: var(--saz-color-primary);
+  color: var(--saz-color-on-primary);
 }
 :host([variant="accent"]) {
-  background: var(--saz-color-accent, #ff4d8a);
-  color: var(--saz-color-on-accent, #fff);
+  background: var(--saz-color-accent);
+  color: var(--saz-color-on-accent);
 }
 :host([variant="success"]) {
-  background: var(--saz-color-success, #10b981);
+  background: var(--saz-color-success);
   color: #fff;
 }
 :host([variant="warning"]) {
@@ -64,20 +48,15 @@ export class SazamiChip extends HTMLElement {
   color: #92400e;
 }
 :host([variant="danger"]) {
-  background: var(--saz-color-danger, #ef4444);
+  background: var(--saz-color-danger);
   color: #fff;
 }
 :host([selected]) {
-  background: var(--saz-color-primary, #2563eb);
-  color: var(--saz-color-on-primary, #fff);
+  background: var(--saz-color-primary);
+  color: var(--saz-color-on-primary);
 }
-:host(:hover) {
-  filter: brightness(0.95);
-}
-:host([disabled]) {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+${INTERACTIVE_HOVER}
+${STATE_DISABLED}
 .remove-btn {
   display: flex;
   align-items: center;
@@ -100,30 +79,58 @@ export class SazamiChip extends HTMLElement {
   width: 16px;
   height: 16px;
 }
-`) +
-      `${label}${removable ? `<button class="remove-btn" aria-label="Remove">${ICON_SVGS.close}</button>` : ""}`;
+`;
+
+const chipConfig = {
+  properties: {
+    label: { type: "string" as const, reflect: false },
+    variant: { type: "string" as const, reflect: false },
+    removable: { type: "boolean" as const, reflect: false },
+    selected: { type: "boolean" as const, reflect: true },
+    disabled: { type: "boolean" as const, reflect: true },
+    size: { type: "string" as const, reflect: false },
+  },
+  events: {
+    change: { name: "saz-change", detail: { selected: "selected" } },
+    remove: { name: "saz-remove", detail: {} },
+  },
+} as const;
+
+@component(chipConfig)
+export class SazamiChip extends SazamiComponent<typeof chipConfig> {
+  declare label: string;
+  declare variant: string;
+  declare removable: boolean;
+  declare selected: boolean;
+  declare disabled: boolean;
+  declare size: string;
+
+  render() {
+    const label = this.getAttribute("label") || this.textContent?.trim() || "";
+    const removable = this.hasAttribute("removable");
+
+    this.mount(
+      STYLES,
+      `
+      ${label}${removable ? `<button class="remove-btn" aria-label="Remove">${ICON_SVGS.close}</button>` : ""}
+    `,
+    );
 
     if (removable) {
-      const btn = this.shadowRoot!.querySelector(".remove-btn");
+      const btn = this.$(".remove-btn") as HTMLButtonElement;
       btn?.addEventListener("click", (e) => {
         e.stopPropagation();
-        this.dispatchEvent(
-          new CustomEvent("saz-remove", { bubbles: true, composed: true }),
-        );
+        this.dispatchEventTyped("remove", {});
         this.remove();
       });
     }
 
-    this.addEventListener("click", () => {
-      if (this.hasAttribute("disabled")) return;
-      this.toggleAttribute("selected");
-      this.dispatchEvent(
-        new CustomEvent("saz-change", {
-          detail: { selected: this.hasAttribute("selected") },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    });
+    this.addEventListener("click", this._handleClick);
   }
+
+  private _handleClick = () => {
+    if (this.disabled) return;
+    this.selected = !this.selected;
+    this.dispatchEventTyped("change", { selected: this.selected });
+  };
 }

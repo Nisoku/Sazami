@@ -1,34 +1,39 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { SIZE_RULES, TYPO_WEIGHT, TYPO_TONE } from "./shared";
 
-export class SazamiText extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: block;
-  font-size: var(--saz-text-size-medium, 14px);
-  font-weight: var(--saz-text-weight-normal, 400);
-  line-height: var(--saz-text-leading-normal, 1.5);
+  font-size: var(--saz-text-size-medium);
+  font-weight: var(--saz-text-weight-normal);
+  line-height: var(--saz-text-leading-normal);
   color: inherit;
 }
-:host([size="small"])  { font-size: var(--saz-text-size-small, 12px); }
-:host([size="medium"]) { font-size: var(--saz-text-size-medium, 14px); }
-:host([size="large"])  { font-size: var(--saz-text-size-large, 16px); }
-:host([size="xlarge"]) { font-size: var(--saz-text-size-xlarge, 20px); }
-:host([weight="light"])  { font-weight: 300; }
-:host([weight="normal"]) { font-weight: var(--saz-text-weight-normal, 400); }
-:host([weight="medium"]) { font-weight: var(--saz-text-weight-medium, 500); }
-:host([weight="bold"])   { font-weight: var(--saz-text-weight-bold, 700); }
-:host([tone="dim"])    { color: var(--saz-color-text-dim, #6b7280); }
-:host([tone="dimmer"]) { color: var(--saz-color-text-dimmer, #9ca3af); }
-:host([leading="tight"])  { line-height: var(--saz-text-leading-tight, 1.25); }
-:host([leading="normal"]) { line-height: var(--saz-text-leading-normal, 1.5); }
-:host([leading="loose"])  { line-height: var(--saz-text-leading-loose, 1.75); }
-`) + "<slot></slot>";
+${SIZE_RULES}
+${TYPO_WEIGHT}
+${TYPO_TONE}
+:host([leading="tight"])  { line-height: var(--saz-text-leading-tight); }
+:host([leading="normal"]) { line-height: var(--saz-text-leading-normal); }
+:host([leading="loose"])  { line-height: var(--saz-text-leading-loose); }
+`;
+
+const textConfig = {
+  properties: {
+    size: { type: "string" as const, reflect: false },
+    weight: { type: "string" as const, reflect: false },
+    tone: { type: "string" as const, reflect: false },
+    leading: { type: "string" as const, reflect: false },
+  },
+} as const;
+
+@component(textConfig)
+export class SazamiText extends SazamiComponent<typeof textConfig> {
+  declare size: string;
+  declare weight: string;
+  declare tone: string;
+  declare leading: string;
+
+  render() {
+    this.mount(STYLES, `<slot></slot>`);
   }
 }

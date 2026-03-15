@@ -1,41 +1,19 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 
-export class SazamiToast extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const variant = this.getAttribute("variant") || "default";
-    const message =
-      this.getAttribute("message") || this.textContent?.trim() || "";
-    const duration = parseInt(this.getAttribute("duration") || "3000");
-    const showClose = !this.hasAttribute("no-close");
-
-    const icon =
-      variant === "success"
-        ? ICON_SVGS.check
-        : variant === "error" || variant === "danger"
-          ? ICON_SVGS.close
-          : variant === "warning"
-            ? "⚠"
-            : "ℹ";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   position: fixed;
-  bottom: var(--saz-space-large, 16px);
-  right: var(--saz-space-large, 16px);
+  bottom: var(--saz-space-large);
+  right: var(--saz-space-large);
   z-index: 9998;
   display: flex;
   align-items: center;
-  gap: var(--saz-space-small, 8px);
-  padding: var(--saz-space-small, 8px) var(--saz-space-large, 16px);
-  background: var(--saz-color-background, #fff);
-  border-radius: var(--saz-radius-medium, 8px);
+  gap: var(--saz-space-small);
+  padding: var(--saz-space-small) var(--saz-space-large);
+  background: var(--saz-color-background);
+  border-radius: var(--saz-radius-medium);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(100px);
   opacity: 0;
@@ -51,15 +29,15 @@ export class SazamiToast extends HTMLElement {
   height: 20px;
   flex-shrink: 0;
 }
-:host([variant="success"]) .icon { color: var(--saz-color-success, #10b981); }
-:host([variant="error"]) .icon { color: var(--saz-color-danger, #ef4444); }
+:host([variant="success"]) .icon { color: var(--saz-color-success); }
+:host([variant="error"]) .icon { color: var(--saz-color-danger); }
 :host([variant="warning"]) .icon { color: #f59e0b; }
-:host([variant="info"]) .icon { color: var(--saz-color-primary, #2563eb); }
+:host([variant="info"]) .icon { color: var(--saz-color-primary); }
 
 .message {
   flex: 1;
-  font-size: var(--saz-text-size-medium, 14px);
-  color: var(--saz-color-text, #1f2937);
+  font-size: var(--saz-text-size-medium);
+  color: var(--saz-color-text);
 }
 .close-btn {
   display: flex;
@@ -70,30 +48,76 @@ export class SazamiToast extends HTMLElement {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--saz-color-text-dim, #6b7280);
-  border-radius: var(--saz-radius-soft, 4px);
+  color: var(--saz-color-text-dim);
+  border-radius: var(--saz-radius-soft);
   transition: background 0.15s ease;
 }
-.close-btn:hover {
-  background: var(--saz-color-surface, #f3f4f6);
-}
+${INTERACTIVE_HOVER}
 .close-btn svg {
   width: 18px;
   height: 18px;
 }
-`) +
-      `<span class="icon">${icon}</span>
-       <span class="message">${message}</span>
-       ${showClose ? `<button class="close-btn" aria-label="Close">${ICON_SVGS.close}</button>` : ""}`;
+`;
+
+const toastConfig = {
+  properties: {
+    message: { type: "string" as const, reflect: false },
+    variant: { type: "string" as const, reflect: false },
+    duration: { type: "number" as const, reflect: false },
+    visible: { type: "boolean" as const, reflect: true },
+  },
+  events: {
+    close: { name: "saz-close", detail: {} },
+  },
+} as const;
+
+@component(toastConfig)
+export class SazamiToast extends SazamiComponent<typeof toastConfig> {
+  declare message: string;
+  declare variant: string;
+  declare duration: number;
+  declare visible: boolean;
+
+  render() {
+    const variant = this.getAttribute("variant") || "default";
+    const message =
+      this.getAttribute("message") || this.textContent?.trim() || "";
+    const duration = parseInt(this.getAttribute("duration") || "3000");
+    const showClose = !this.hasAttribute("no-close");
+
+    const icon =
+      variant === "success"
+        ? ICON_SVGS.check
+        : variant === "error" || variant === "danger"
+          ? ICON_SVGS.close
+          : variant === "warning"
+            ? "⚠"
+            : "ℹ";
+
+    this.mount(
+      STYLES,
+      `
+      <span class="icon">${icon}</span>
+      <span class="message">${message}</span>
+      ${showClose ? `<button class="close-btn" aria-label="Close">${ICON_SVGS.close}</button>` : ""}
+    `,
+    );
 
     if (showClose) {
-      const closeBtn = this.shadowRoot!.querySelector(".close-btn");
-      closeBtn?.addEventListener("click", () => this.hide());
+      const closeBtn = this.$(".close-btn");
+      this.addHandler("click", () => this.hide(), { internal: true, element: closeBtn as HTMLElement });
     }
 
-    requestAnimationFrame(() => {
-      this.setAttribute("visible", "");
-    });
+    // Keyboard support: Escape to dismiss
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        this.hide();
+      }
+    };
+    this.addHandler("keydown", handleKeydown, { internal: true });
+
+    this.setAttribute("visible", "");
 
     if (duration > 0) {
       setTimeout(() => this.hide(), duration);
@@ -103,9 +127,7 @@ export class SazamiToast extends HTMLElement {
   hide() {
     this.removeAttribute("visible");
     setTimeout(() => {
-      this.dispatchEvent(
-        new CustomEvent("saz-close", { bubbles: true, composed: true }),
-      );
+      this.dispatchEventTyped("close", {});
       this.remove();
     }, 300);
   }

@@ -1,19 +1,24 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
 
-export class SazamiSpacer extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host { display: block; flex: 1; }
-:host([size="small"])  { flex: none; width: var(--saz-space-small, 8px); height: var(--saz-space-small, 8px); }
-:host([size="medium"]) { flex: none; width: var(--saz-space-medium, 12px); height: var(--saz-space-medium, 12px); }
-:host([size="large"])  { flex: none; width: var(--saz-space-large, 16px); height: var(--saz-space-large, 16px); }
-:host([size="xlarge"]) { flex: none; width: var(--saz-space-xlarge, 24px); height: var(--saz-space-xlarge, 24px); }
-`) + "";
+:host([size="small"])  { flex: none; width: var(--saz-space-small); height: var(--saz-space-small); }
+:host([size="medium"]) { flex: none; width: var(--saz-space-medium); height: var(--saz-space-medium); }
+:host([size="large"])  { flex: none; width: var(--saz-space-large); height: var(--saz-space-large); }
+:host([size="xlarge"]) { flex: none; width: var(--saz-space-xlarge); height: var(--saz-space-xlarge); }
+`;
+
+const spacerConfig = {
+  properties: {
+    size: { type: "string" as const, reflect: false },
+  },
+} as const;
+
+@component(spacerConfig)
+export class SazamiSpacer extends SazamiComponent<typeof spacerConfig> {
+  declare size: string;
+
+  render() {
+    this.mount(STYLES, "");
   }
 }

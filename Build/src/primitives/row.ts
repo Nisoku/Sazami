@@ -1,18 +1,11 @@
-import { baseStyles, GAP_RULES } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { GAP_RULES } from "./shared";
 
-export class SazamiRow extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: flex;
   flex-direction: row;
-  gap: var(--saz-space-medium, 12px);
+  gap: var(--saz-space-medium);
   align-items: center;
 }
 ${GAP_RULES}
@@ -26,6 +19,25 @@ ${GAP_RULES}
 :host([align="stretch"])   { align-items: stretch; }
 :host([align="baseline"])  { align-items: baseline; }
 :host([wrap])              { flex-wrap: wrap; }
-`) + "<slot></slot>";
+`;
+
+const rowConfig = {
+  properties: {
+    justify: { type: "string" as const, reflect: false },
+    align: { type: "string" as const, reflect: false },
+    wrap: { type: "boolean" as const, reflect: false },
+    gap: { type: "string" as const, reflect: false },
+  },
+} as const;
+
+@component(rowConfig)
+export class SazamiRow extends SazamiComponent<typeof rowConfig> {
+  declare justify: string;
+  declare align: string;
+  declare wrap: boolean;
+  declare gap: string;
+
+  render() {
+    this.mount(STYLES, `<slot></slot>`);
   }
 }

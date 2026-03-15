@@ -1,16 +1,7 @@
-import { baseStyles, GAP_RULES } from "./shared";
+import { SazamiComponent, component, SazamiComponentConfig } from "./base";
+import { GAP_RULES } from "./shared";
 
-// Factory for generic structural containers (details, controls, etc.)
-// Each call returns a fresh class so customElements.define never collides.
-export function createGenericClass(): typeof HTMLElement {
-  return class extends HTMLElement {
-    constructor() {
-      super();
-      this.attachShadow({ mode: "open" });
-    }
-    connectedCallback() {
-      this.shadowRoot!.innerHTML =
-        baseStyles(`
+const STYLES = `
 :host {
   display: flex;
   flex-direction: column;
@@ -19,7 +10,20 @@ export function createGenericClass(): typeof HTMLElement {
 ${GAP_RULES}
 :host([align="center"]) { align-items: center; }
 :host([justify="space-between"]) { justify-content: space-between; }
-`) + "<slot></slot>";
+`;
+
+export function createGenericClass<C extends SazamiComponentConfig = any>(
+  config?: C,
+): { new (): SazamiComponent<C> } {
+  class Generic extends SazamiComponent<C> {
+    render() {
+      this.mount(STYLES, `<slot></slot>`);
     }
-  };
+  }
+
+  if (config) {
+    component(config)(Generic as any);
+  }
+
+  return Generic as { new (): SazamiComponent<C> };
 }
