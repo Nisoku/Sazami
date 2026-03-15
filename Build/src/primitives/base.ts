@@ -7,16 +7,28 @@ import {
 
 export interface SazamiComponentConfig {
   observedAttributes?: readonly string[] | string[];
-  properties?: Record<string, PropertyConfig>;
+  properties?: Record<string, AnyPropertyConfig>;
   events?: Record<string, EventConfig>;
   binds?: Record<string, BindingType>;
 }
 
 export interface PropertyConfig {
-  type: "string" | "number" | "boolean";
+  type: "string";
   reflect?: boolean;
-  default?: string | number | boolean;
+  default?: string;
 }
+export interface PropertyConfigNumber {
+  type: "number";
+  reflect?: boolean;
+  default: number;
+}
+export interface PropertyConfigBoolean {
+  type: "boolean";
+  reflect?: boolean;
+  default?: boolean;
+}
+
+export type AnyPropertyConfig = PropertyConfig | PropertyConfigNumber | PropertyConfigBoolean;
 
 export interface EventConfig {
   name: string;
@@ -27,7 +39,7 @@ export type BindingType = "attribute" | "property" | "input";
 
 // Get property config safely
 type GetPropConfig<C extends SazamiComponentConfig, P extends string> =
-  C["properties"] extends Record<string, PropertyConfig>
+  C["properties"] extends Record<string, AnyPropertyConfig>
     ? P extends keyof C["properties"]
       ? C["properties"][P]
       : never
@@ -35,7 +47,7 @@ type GetPropConfig<C extends SazamiComponentConfig, P extends string> =
 
 // Map property name -> its actual TS type
 type PropType<C extends SazamiComponentConfig, P extends string> =
-  GetPropConfig<C, P> extends PropertyConfig
+  GetPropConfig<C, P> extends AnyPropertyConfig
     ? GetPropConfig<C, P>["type"] extends "boolean"
       ? boolean
       : GetPropConfig<C, P>["type"] extends "number"
@@ -53,7 +65,7 @@ type EventDetail<
 
 // All properties with their types
 export type InferProps<C extends SazamiComponentConfig> =
-  C["properties"] extends Record<string, PropertyConfig>
+  C["properties"] extends Record<string, AnyPropertyConfig>
     ? { [P in keyof C["properties"]]: PropType<C, P & string> }
     : {};
 

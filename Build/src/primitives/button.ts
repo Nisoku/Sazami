@@ -74,16 +74,22 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
     if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
 
+    this.removeHandler("click", this._handleClick);
     this.removeHandler("keydown", this._handleKeydown);
+    this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
+
+  private _handleClick = () => {
+    if (this.disabled || this.loading) return;
+    this.dispatchEventTyped("click", {});
+  };
 
   private _handleKeydown = (e: KeyboardEvent) => {
     if (this.disabled || this.loading) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       this.click();
-      this.dispatchEventTyped("click", {});
     }
   };
 }

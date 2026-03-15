@@ -7,6 +7,11 @@
 - [x] more icons
 - [x] modifiers not applying for progress bars
 
+- [ ] Full re-render on attribute change causes focus loss and flicker
+  - render() does shadow.innerHTML = ... which destroys all internal state/focus
+  - Interactive components (input, slider, etc.) lose focus on any attribute change
+  - Accordion works around this with manual DOM reuse (_itemElements), but paths drift
+  - Needs partial updates or virtual DOM diffing to fix properly
 - [ ] Checkbox misaligned
 - [ ] Fix curvomorphism not working properly and only the bottom left corner being rounded
 - [ ] more sizes and configurability (xsmall, custom sizes, px, percent, etc)

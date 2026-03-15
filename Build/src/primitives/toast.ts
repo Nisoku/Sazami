@@ -64,7 +64,7 @@ const toastConfig = {
   properties: {
     message: { type: "string" as const, reflect: false },
     variant: { type: "string" as const, reflect: false },
-    duration: { type: "number" as const, reflect: false },
+    duration: { type: "number" as const, reflect: false, default: 3000 },
     visible: { type: "boolean" as const, reflect: true },
   },
   events: {

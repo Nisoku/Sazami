@@ -250,7 +250,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   }
 
   static get observedAttributes() {
-    return ["open", "value", "disabled"];
+    return ["open", "value", "disabled", "placeholder"];
   }
 
   attributeChangedCallback(
@@ -272,6 +272,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     if (name === "value") {
       this._updateDisplay();
       this._updateSelectedState();
+    }
+    if (name === "placeholder") {
+      this._updateDisplay();
     }
     if (name === "disabled") {
       this.removeAllHandlers({ type: "click" });

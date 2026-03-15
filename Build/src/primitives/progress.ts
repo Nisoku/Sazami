@@ -36,9 +36,9 @@ const STYLES = `
 
 const progressConfig = {
   properties: {
-    value: { type: "number" as const, reflect: true },
-    max: { type: "number" as const, reflect: true },
-    min: { type: "number" as const, reflect: true },
+    value: { type: "number" as const, reflect: true, default: 0 },
+    max: { type: "number" as const, reflect: true, default: 100 },
+    min: { type: "number" as const, reflect: true, default: 0 },
     size: { type: "string" as const, reflect: true },
     variant: { type: "string" as const, reflect: true },
     indeterminate: { type: "boolean" as const, reflect: true },
