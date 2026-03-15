@@ -8,12 +8,15 @@ const STYLES = `
   display: block;
   position: relative;
   width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 .trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  box-sizing: border-box;
   padding: var(--saz-space-small) var(--saz-space-large);
   border: 1px solid var(--saz-color-border);
   border-radius: var(--saz-radius-medium);
@@ -73,6 +76,7 @@ ${INTERACTIVE_FOCUS}
   padding: var(--saz-space-small) var(--saz-space-large);
   cursor: pointer;
   transition: background 0.1s ease;
+  box-sizing: border-box;
 }
 .option:hover:not(.selected) {
   background: var(--saz-color-surface);

@@ -105,10 +105,21 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   declare size: string;
 
   render() {
-    const min = parseFloat(this.getAttribute("min") || "0");
-    const max = parseFloat(this.getAttribute("max") || "100");
-    const value = parseFloat(this.getAttribute("value") || "50");
-    const step = parseFloat(this.getAttribute("step") || "1");
+    let min = parseFloat(this.getAttribute("min") || "0");
+    let max = parseFloat(this.getAttribute("max") || "100");
+    let value = parseFloat(this.getAttribute("value") || "50");
+    let step = parseFloat(this.getAttribute("step") || "1");
+    
+    if (!Number.isFinite(min)) min = 0;
+    if (!Number.isFinite(max)) max = 100;
+    if (!Number.isFinite(value)) value = 50;
+    if (!Number.isFinite(step)) step = 1;
+    if (step <= 0) step = 1;
+    
+    if (min > max) [min, max] = [max, min];
+    if (value < min) value = min;
+    if (value > max) value = max;
+    
     const disabled = this.hasAttribute("disabled");
     const size = this.getAttribute("size") || "medium";
 
@@ -161,15 +172,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   static get observedAttributes() {
-    return [
-      ...super.observedAttributes,
-      "value",
-      "min",
-      "max",
-      "step",
-      "disabled",
-      "size",
-    ];
+    return super.observedAttributes;
   }
 
   attributeChangedCallback(

@@ -51,4 +51,8 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
       `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`,
     );
   }
+
+  static get observedAttributes() {
+    return [...super.observedAttributes, "src", "alt"];
+  }
 }

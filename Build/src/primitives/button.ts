@@ -48,9 +48,9 @@ const buttonConfig = {
     disabled: { type: "boolean" as const, reflect: true },
     loading: { type: "boolean" as const, reflect: true },
     active: { type: "boolean" as const, reflect: true },
-    size: { type: "string" as const, reflect: false },
-    variant: { type: "string" as const, reflect: false },
-    shape: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
     tone: { type: "string" as const, reflect: false },
   },
   events: {

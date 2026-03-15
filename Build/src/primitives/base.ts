@@ -146,6 +146,7 @@ export class SazamiComponent<
       fn();
     }
     this._cleanupFns = [];
+    this._rendered = false;
   }
 
   attributeChangedCallback(

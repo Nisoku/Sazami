@@ -52,7 +52,7 @@ const spinnerConfig = {
   properties: {
     size: { type: "string" as const, reflect: true },
     variant: { type: "string" as const, reflect: true },
-    label: { type: "string" as const, reflect: false },
+    label: { type: "string" as const, reflect: true },
   },
 } as const;
 
@@ -63,8 +63,8 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   declare label: string;
 
   render() {
-    const label = this.getAttribute("label") || "Loading...";
-    const hasCustomLabel = this.hasAttribute("label");
+    const label = this.label || "Loading...";
+    const hasCustomLabel = this.label !== undefined && this.label !== null && this.label !== "";
 
     if (!hasCustomLabel) {
       this.setAttribute("role", "status");

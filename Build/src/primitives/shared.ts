@@ -42,8 +42,8 @@ export const SIZE_PADDING_RULES = `
 :host([size="tiny"])    { padding: var(--saz-space-tiny) var(--saz-space-small); }
 :host([size="small"])   { padding: var(--saz-space-tiny) var(--saz-space-small); }
 :host([size="medium"])  { padding: var(--saz-space-small) var(--saz-space-medium); }
-:host([size="large"])   { padding: var(--saz-space-medium) var(--saz-space-large); }
-:host([size="xlarge"]) { padding: var(--saz-space-large) var(--saz-space-xlarge); }
+:host([size="large"])   { padding: var(--saz-space-medium) var(--saz-space-large); min-width: 120px; width: auto; }
+:host([size="xlarge"]) { padding: var(--saz-space-large) var(--saz-space-xlarge); min-width: 160px; width: auto; }
 `;
 
 // VARIANTS
