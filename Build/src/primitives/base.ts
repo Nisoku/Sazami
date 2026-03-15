@@ -326,7 +326,12 @@ export class SazamiComponent<
         if (type === "boolean") {
           return this.hasAttribute(attr);
         }
-        return this.getAttribute(attr) ?? defaultValue ?? "";
+        const raw = this.getAttribute(attr);
+        if (type === "number") {
+          const val = raw !== null ? parseFloat(raw) : defaultValue;
+          return typeof val === "number" && !isNaN(val) ? val : 0;
+        }
+        return raw ?? defaultValue ?? "";
       },
       set(value: boolean | string | number) {
         if (type === "boolean") {

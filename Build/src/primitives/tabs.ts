@@ -122,7 +122,7 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
     });
   }
 
-  private _activateTab(index: number) {
+  private _activateTab(index: number, emit = true) {
     const tabButtons = this.shadow.querySelectorAll(".tab");
     const panelElements = this.shadow.querySelectorAll(".panel");
     tabButtons.forEach((b, j) => {
@@ -133,9 +133,24 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
       );
     });
     panelElements.forEach((p, j) => {
+      p.classList.toggle("active", j === index);
       (p as HTMLElement).style.display = j === index ? "block" : "none";
     });
-    this.active = index.toString();
-    this.dispatchEventTyped("change", { activeIndex: index.toString() });
+    if (this.active !== index.toString()) {
+      this.active = index.toString();
+    }
+    if (emit) {
+      this.dispatchEventTyped("change", { activeIndex: index.toString() });
+    }
+  }
+
+  static get observedAttributes() {
+    return ["active"];
+  }
+
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (name === "active" && oldVal !== newVal && this.shadow.childNodes.length) {
+      this._activateTab(Number(newVal ?? 0), false);
+    }
   }
 }

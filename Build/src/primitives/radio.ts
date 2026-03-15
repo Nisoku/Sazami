@@ -67,8 +67,6 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
 
   render() {
     const label = this.textContent?.trim() || "";
-    const name = this.getAttribute("name") || "";
-    const value = this.getAttribute("value") || "";
 
     this.mount(
       STYLES,
@@ -81,7 +79,7 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     if (!this.hasAttribute("role")) this.setAttribute("role", "radio");
     if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
 
-    this.addEventListener("click", this._handleClick);
+    this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
 

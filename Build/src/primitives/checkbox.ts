@@ -81,7 +81,7 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
     if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
     this._updateAria();
 
-    this.addEventListener("click", this._handleClick);
+    this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
 

@@ -23,9 +23,9 @@ ${SHAPE_RULES}
 // Config
 const badgeConfig = {
   properties: {
-    size: { type: "string" as const, reflect: false },
-    variant: { type: "string" as const, reflect: false },
-    shape: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
   },
 } as const;
 

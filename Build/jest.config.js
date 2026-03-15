@@ -1,6 +1,6 @@
 module.exports = {
   preset: "ts-jest",
-  testEnvironment: "node",
+  testEnvironment: "jest-fixed-jsdom",
   roots: ["<rootDir>/tests"],
   transform: {
     "^.+\\.tsx?$": ["ts-jest", {

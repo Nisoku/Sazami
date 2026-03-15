@@ -18,7 +18,7 @@ ${VARIANT_BG_RULES}
 
 const tagConfig = {
   properties: {
-    variant: { type: "string" as const, reflect: false },
+    variant: { type: "string" as const, reflect: true },
   },
 } as const;
 

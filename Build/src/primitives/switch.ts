@@ -89,15 +89,27 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "switch");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+    this._updateAria();
 
-    this.addEventListener("click", this._handleClick);
+    this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
+  }
+
+  private _updateAria() {
+    this.setAttribute("aria-checked", String(this.checked));
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
   }
 
   private _handleClick = () => {
     if (this.disabled) return;
     this.checked = !this.checked;
+    this._updateAria();
     this.dispatchEventTyped("change", { checked: this.checked });
   };
 

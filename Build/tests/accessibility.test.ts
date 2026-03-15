@@ -162,7 +162,7 @@ describe("Accessibility Features", () => {
       el.setAttribute("open", "");
       document.body.appendChild(el);
       
-      el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       
       expect(el.hasAttribute("open")).toBe(false);
       el.remove();

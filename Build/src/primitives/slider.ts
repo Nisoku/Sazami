@@ -143,13 +143,15 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     const slider = this.$(".slider") as HTMLInputElement;
     const filled = this.$(".filled") as HTMLElement;
 
-    slider?.addEventListener("input", () => {
-      const val = parseFloat(slider.value);
-      const pct = ((val - min) / (max - min)) * 100;
-      filled.style.width = `${pct}%`;
-      this.value = val;
-      this.dispatchEventTyped("input", { value: val });
-    });
+    if (slider) {
+      this.addHandler("input", () => {
+        const val = parseFloat(slider.value);
+        const pct = ((val - min) / (max - min)) * 100;
+        filled.style.width = `${pct}%`;
+        this.value = val;
+        this.dispatchEventTyped("input", { value: val });
+      }, { internal: true, element: slider });
+    }
   }
 
   static get observedAttributes() {

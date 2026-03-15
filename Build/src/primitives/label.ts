@@ -15,7 +15,7 @@ const STYLES = `
 
 const labelConfig = {
   properties: {
-    for: { type: "string" as const, reflect: false },
+    for: { type: "string" as const, reflect: true },
   },
 } as const;
 
@@ -24,6 +24,11 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
   declare for: string;
 
   render() {
-    this.mount(STYLES, `<slot></slot>`);
+    const forAttr = this.getAttribute("for");
+    const labelContent = forAttr
+      ? `<label for="${forAttr}"><slot></slot></label>`
+      : `<label><slot></label>`;
+
+    this.mount(STYLES, labelContent);
   }
 }

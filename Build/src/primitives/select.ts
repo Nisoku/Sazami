@@ -103,6 +103,21 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   declare open: boolean;
 
   private _options: Array<{ value: string; label: string }> = [];
+  private _handleDocumentClick = (e: Event) => {
+    if (!this.contains(e.target as Node)) {
+      this.open = false;
+    }
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener("click", this._handleDocumentClick);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("click", this._handleDocumentClick);
+    super.disconnectedCallback();
+  }
 
   render() {
     const placeholder = this.getAttribute("placeholder") || "Select...";
@@ -118,7 +133,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     this.mount(
       STYLES,
       `
-      <div class="trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+      <div class="trigger" role="combobox" tabindex="${this.disabled ? "-1" : "0"}" aria-haspopup="listbox" aria-expanded="${this.hasAttribute("open") ? "true" : "false"}">
         <span class="value">${selectedOption?.label || placeholder}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
@@ -151,7 +166,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._navigateOption(e.key === "ArrowDown" ? 1 : -1);
       }
     };
-    this.addHandler("keydown", handleKeydown, { internal: true });
+    this.addHandler("keydown", handleKeydown, { internal: true, element: trigger as HTMLElement });
 
     const handleDropdownClick = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -164,12 +179,6 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       }
     };
     this.addHandler("click", handleDropdownClick, { internal: true, element: dropdown as HTMLElement });
-
-    document.addEventListener("click", (e: Event) => {
-      if (!this.contains(e.target as Node)) {
-        this.open = false;
-      }
-    });
   }
 
   private toggleOpen() {

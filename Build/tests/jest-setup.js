@@ -1,6 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 global.importMetaGlob = function(pattern, options = {}) {
   const svgsDir = path.join(__dirname, "src", "icons", "svgs");
   const files = fs.readdirSync(svgsDir);

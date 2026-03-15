@@ -83,18 +83,34 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+    this._updateTabIndex();
     if (!this.hasAttribute("aria-label")) {
       this.setAttribute("aria-label", icon);
     }
 
+    this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
+
+  private _updateTabIndex() {
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
+  }
+
+  private _handleClick = () => {
+    if (this.disabled) return;
+    this.dispatchEventTyped("click", {});
+  };
 
   private _handleKeydown = (e: KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      this.click();
+      this._handleClick();
     }
   };
 }

@@ -53,15 +53,27 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   declare variant: string;
 
   render() {
-    const value = parseFloat(this.getAttribute("value") || "50");
-    const max = parseFloat(this.getAttribute("max") || "100");
-    const min = parseFloat(this.getAttribute("min") || "0");
+    const rawValue = Number(this.getAttribute("value") || "50");
+    const rawMax = Number(this.getAttribute("max") || "100");
+    const rawMin = Number(this.getAttribute("min") || "0");
+    const value = Number.isFinite(rawValue) ? rawValue : 50;
+    const max = Number.isFinite(rawMax) ? rawMax : 100;
+    const min = Number.isFinite(rawMin) ? rawMin : 0;
     const indeterminate = this.hasAttribute("indeterminate");
 
-    const percent = Math.min(
-      100,
-      Math.max(0, ((value - min) / (max - min)) * 100),
-    );
+    const range = max - min;
+    const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+
+    if (!this.hasAttribute("role")) {
+      this.setAttribute("role", "progressbar");
+    }
+    this.setAttribute("aria-valuemin", String(min));
+    this.setAttribute("aria-valuemax", String(max));
+    if (indeterminate) {
+      this.removeAttribute("aria-valuenow");
+    } else {
+      this.setAttribute("aria-valuenow", String(value));
+    }
 
     this.mount(
       STYLES,
@@ -74,7 +86,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   }
 
   static get observedAttributes() {
-    return ["value", "max", "min"];
+    return ["value", "max", "min", "indeterminate"];
   }
 
   attributeChangedCallback() {

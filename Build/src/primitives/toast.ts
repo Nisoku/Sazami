@@ -78,6 +78,15 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
   declare duration: number;
   declare visible: boolean;
 
+  private _hideTimeout?: ReturnType<typeof setTimeout>;
+
+  disconnectedCallback() {
+    if (this._hideTimeout) {
+      clearTimeout(this._hideTimeout);
+    }
+    super.disconnectedCallback();
+  }
+
   render() {
     const variant = this.getAttribute("variant") || "default";
     const message =
@@ -120,11 +129,15 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
     this.setAttribute("visible", "");
 
     if (duration > 0) {
-      setTimeout(() => this.hide(), duration);
+      this._hideTimeout = setTimeout(() => this.hide(), duration);
     }
   }
 
   hide() {
+    if (this._hideTimeout) {
+      clearTimeout(this._hideTimeout);
+      this._hideTimeout = undefined;
+    }
     this.removeAttribute("visible");
     setTimeout(() => {
       this.dispatchEventTyped("close", {});

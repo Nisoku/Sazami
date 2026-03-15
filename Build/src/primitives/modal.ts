@@ -2,6 +2,18 @@ import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 
+const escapeHtml = (str: string) =>
+  str.replace(/[&<>"']/g, (c) => {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return map[c] || c;
+  });
+
 const STYLES = `
 :host {
   position: fixed;
@@ -91,7 +103,7 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
   declare open: boolean;
 
   render() {
-    const title = this.getAttribute("title") || "";
+    const title = escapeHtml(this.getAttribute("title") || "");
 
     this.mount(
       STYLES,
@@ -120,19 +132,16 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
         this._close();
       }
     };
-    this.addHandler("keydown", handleKeydown, { internal: true });
-
-    if (this.hasAttribute("open")) this._open();
+    document.addEventListener("keydown", handleKeydown);
+    this.onCleanup(() => document.removeEventListener("keydown", handleKeydown));
   }
 
   private _open() {
     this.setAttribute("open", "");
-    this.dispatchEventTyped("open", {});
   }
 
   private _close() {
     this.removeAttribute("open");
-    this.dispatchEventTyped("close", {});
   }
 
   attributeChangedCallback(name: string, oldVal: string, newVal: string) {

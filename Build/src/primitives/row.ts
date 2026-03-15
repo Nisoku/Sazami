@@ -23,10 +23,10 @@ ${GAP_RULES}
 
 const rowConfig = {
   properties: {
-    justify: { type: "string" as const, reflect: false },
-    align: { type: "string" as const, reflect: false },
-    wrap: { type: "boolean" as const, reflect: false },
-    gap: { type: "string" as const, reflect: false },
+    justify: { type: "string" as const, reflect: true },
+    align: { type: "string" as const, reflect: true },
+    wrap: { type: "boolean" as const, reflect: true },
+    gap: { type: "string" as const, reflect: true },
   },
 } as const;
 

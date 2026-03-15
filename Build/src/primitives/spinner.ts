@@ -23,8 +23,18 @@ const STYLES = `
   font-size: var(--saz-text-size-small);
   color: var(--saz-color-text-dim);
 }
-:host([label=""]) .label,
-:host(:not([label])) .label { display: none; }
+:host([label=""]) .label { display: none; }
+:host(:not([label])) .label { 
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -47,6 +57,15 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
 
   render() {
     const label = this.getAttribute("label") || "Loading...";
+    const hasCustomLabel = this.hasAttribute("label");
+
+    if (!hasCustomLabel) {
+      this.setAttribute("role", "status");
+      this.setAttribute("aria-live", "polite");
+    } else {
+      this.removeAttribute("role");
+      this.removeAttribute("aria-live");
+    }
 
     this.mount(
       STYLES,
