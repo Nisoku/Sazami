@@ -1,21 +1,12 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { SHAPE_RULES, SIZE_RULES } from "./shared";
+import { escapeHtml } from "../escape";
 
-export class SazamiImage extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const src = this.getAttribute("src") || this.textContent?.trim() || "";
-    const alt = this.getAttribute("alt") || "";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: block;
   overflow: hidden;
-  border-radius: var(--saz-radius-medium, 8px);
+  border-radius: var(--saz-radius-medium);
   line-height: 0;
 }
 img {
@@ -24,12 +15,40 @@ img {
   display: block;
   object-fit: cover;
 }
-:host([shape="round"]) { border-radius: var(--saz-radius-round, 9999px); }
-:host([shape="square"]) { border-radius: var(--saz-radius-none, 0); }
+${SHAPE_RULES}
 :host([size="small"])  { max-width: 120px; }
 :host([size="medium"]) { max-width: 240px; }
 :host([size="large"])  { max-width: 480px; }
 :host([size="xlarge"]) { max-width: 640px; }
-`) + `<img src="${src}" alt="${alt}" />`;
+`;
+
+const imageConfig = {
+  properties: {
+    src: { type: "string" as const, reflect: true },
+    alt: { type: "string" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
+  },
+} as const;
+
+@component(imageConfig)
+export class SazamiImage extends SazamiComponent<typeof imageConfig> {
+  declare src: string;
+  declare alt: string;
+  declare size: string;
+  declare shape: string;
+
+  render() {
+    const src = this.src;
+    if (!src) {
+      this.mount(STYLES, "");
+      return;
+    }
+    const alt = this.alt || "";
+
+    this.mount(
+      STYLES,
+      `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`,
+    );
   }
 }

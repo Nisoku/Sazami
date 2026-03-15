@@ -19,7 +19,7 @@ All interactive primitives have ARIA roles, keyboard navigation (Enter/Space), f
 Horizontal flex container.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `gap` | `small`, `medium`, `large`, `xlarge` | `medium` | Space between children |
 | `justify` | `flex-start`, `space-between`, `space-around`, `center` | `flex-start` | Main axis alignment |
 | `align` | `flex-start`, `center`, `flex-end` | `flex-start` | Cross axis alignment |
@@ -35,7 +35,7 @@ row(space-between gap medium) { text: Left; text: Right }
 Vertical flex container.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `gap` | `small`, `medium`, `large`, `xlarge` | `medium` | Space between children |
 | `justify` | `flex-start`, `space-between`, `center` | `flex-start` | Main axis alignment |
 | `align` | `stretch`, `center`, `flex-start`, `flex-end` | `stretch` | Cross axis alignment |
@@ -49,7 +49,7 @@ column(gap small) { text: Line 1; text: Line 2 }
 CSS grid container with responsive column support.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `cols` | Any number | `1` | Number of columns |
 | `gap` | `small`, `medium`, `large`, `xlarge` | `medium` | Gap between cells |
 | `md:cols` | Any number | - | Columns at ≥768px |
@@ -68,7 +68,7 @@ CSS grid container with responsive column support.
 Overlapping layers using CSS grid stacking (all children occupy the same grid cell).
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `align` | `center`, etc. | `center` | Content alignment |
 
 ```sako
@@ -87,7 +87,7 @@ Overlapping layers using CSS grid stacking (all children occupy the same grid ce
 Panel/container with background, border, and shadow.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `variant` | `default`, `accent`, `primary`, `secondary`, `dim` | `default` | Color variant |
 | `layout` | `row`, `column` | `column` | Flex direction |
 | `gap` | `small`, `medium`, `large` | `small` | Child spacing |
@@ -108,7 +108,7 @@ Panel/container with background, border, and shadow.
 Text display with size, weight, and tone control.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Font size |
 | `weight` | `light`, `normal`, `medium`, `bold` | `normal` | Font weight |
 | `tone` | `default`, `dim`, `dimmer` | `default` | Text color |
@@ -123,7 +123,7 @@ text(dim small): "Caption"
 Heading text - bold and larger by default.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `size` | `medium`, `large`, `xlarge` | `large` | Font size |
 | `weight` | `normal`, `bold` | `bold` | Font weight |
 
@@ -149,7 +149,7 @@ label: "Email Address"
 Clickable button with variant styling and hover/active states.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `variant` | `primary`, `accent`, `secondary`, `danger`, `dim` | `primary` | Color variant |
 | `size` | `small`, `medium`, `large` | `medium` | Padding and font size |
 | `disabled` | (boolean) | - | Disable interaction |
@@ -165,7 +165,7 @@ button(danger disabled): "Delete"
 Icon-only button with built-in SVG icons.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `icon` | `play`, `pause`, `stop`, `previous`, `next`, `skip`, `close`, `menu`, `search` | - | Icon name |
 | `variant` | `primary`, `accent`, `secondary`, `dim` | `secondary` | Color variant |
 | `size` | `small`, `medium`, `large` | `medium` | Icon and padding size |
@@ -181,7 +181,7 @@ icon-btn(accent large): play
 Text input field with focus states.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `size` | `small`, `medium`, `large` | `medium` | Input size |
 | `placeholder` | any string | - | Placeholder text |
 | `type` | `text`, `password`, `email`, etc. | `text` | Input type |
@@ -200,7 +200,7 @@ input(type password placeholder "Enter password"): ""
 Checkbox with label support.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `checked` | (boolean) | - | Checked state |
 | `disabled` | (boolean) | - | Disable interaction |
 
@@ -220,7 +220,7 @@ row(space-between) {
 Toggle switch with animated thumb.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `checked` | (boolean) | - | On/off state |
 | `disabled` | (boolean) | - | Disable interaction |
 
@@ -240,7 +240,7 @@ row(space-between) {
 Radio button with group support.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `name` | string | - | Group name |
 | `value` | string | - | Radio value |
 | `checked` | (boolean) | - | Checked state |
@@ -256,7 +256,7 @@ radio(name "color" value "blue" checked): "Blue"
 Toggle switch with variant support.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `checked` | (boolean) | - | On/off state |
 | `variant` | `default`, `accent`, `success` | `default` | Color variant |
 | `disabled` | (boolean) | - | Disable interaction |
@@ -272,7 +272,7 @@ switch(checked variant "accent"): "Notifications"
 Range slider with value display.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `value` | number | `50` | Current value |
 | `min` | number | `0` | Minimum value |
 | `max` | number | `100` | Maximum value |
@@ -289,7 +289,7 @@ slider(value 50 min 0 max 100 step 1): ""
 Dropdown select with options.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `value` | string | - | Selected value |
 | `placeholder` | string | "Select..." | Placeholder text |
 | `disabled` | (boolean) | - | Disable interaction |
@@ -310,7 +310,7 @@ select(placeholder "Choose..."): [
 Tabbed interface with animated transitions.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `active` | number | `0` | Active tab index |
 
 ```sako
@@ -327,7 +327,7 @@ tabs(active 0): [
 Collapsible sections.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `single-open` | (boolean) | - | Only one section open at a time |
 
 ```sako
@@ -346,7 +346,7 @@ accordion: [
 Loading spinner with size variants.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `size` | `tiny`, `small`, `medium`, `large`, `xlarge` | `medium` | Spinner size |
 | `variant` | `default`, `accent`, `light` | `default` | Color variant |
 | `label` | string | - | Accessible label |
@@ -362,7 +362,7 @@ spinner(xlarge accent): ""
 Progress bar with customizable fill.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `value` | number | `50` | Current value |
 | `min` | number | `0` | Minimum value |
 | `max` | number | `100` | Maximum value |
@@ -381,7 +381,7 @@ progress(indeterminate): ""
 Toast notification with auto-dismiss.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `message` | string | - | Toast message |
 | `variant` | `default`, `success`, `error`, `warning`, `info` | `default` | Color variant |
 | `duration` | number | `3000` | Auto-dismiss delay (ms) |
@@ -400,7 +400,7 @@ toast(message "Saved!" variant "success"): ""
 Dialog with overlay and animations.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `title` | string | - | Modal title |
 | `open` | (boolean) | - | Open state |
 
@@ -419,7 +419,7 @@ modal(title "Confirm"): [
 User avatar with image or initials.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `src` | URL string | - | Image source |
 | `alt` | string | - | Alt text for image |
 | `size` | `tiny`, `small`, `medium`, `large`, `xlarge` | `medium` | Avatar size |
@@ -436,7 +436,7 @@ avatar(alt "John Doe" large): ""
 Selectable/removable tag.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `label` | string | - | Chip text |
 | `variant` | `default`, `primary`, `accent`, `success`, `danger`, `warning` | `default` | Color variant |
 | `selected` | (boolean) | - | Selected state |
@@ -459,7 +459,7 @@ chip(removable): "Removable"
 Image display with shape variants.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `src` | URL string | - | Image source |
 | `alt` | string | - | Alt text |
 | `shape` | `default`, `round`, `square` | `default` | Border radius |
@@ -469,7 +469,7 @@ Image display with shape variants.
 Specialized image for album/media artwork. Fixed aspect ratio, square by default.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `src` | URL string | - | Image source |
 | `shape` | `square`, `round` | `square` | Border shape |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Dimensions (48–160px) |
@@ -483,7 +483,7 @@ coverart(round): "album.jpg"
 SVG icon display with built-in icon set.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `icon` | play, pause, stop, previous, next, skip, back, forward, close, menu, search, settings, heart, star, check, plus, minus, edit, share, download, upload, refresh, home, up, down, mail, phone, calendar, clock, user, users, folder, file, image, camera, bell, lock, link, trash, copy, bookmark, pin, globe | - | Icon name |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Icon size |
 | `color` | `current`, or token name | `current` | Icon color |
@@ -502,7 +502,7 @@ icon(accent large): "heart"
 Small pill-shaped label.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `variant` | `default`, `accent`, `primary`, `success`, `danger` | `default` | Color variant |
 
 ```sako
@@ -515,7 +515,7 @@ badge(success): "Active"
 Larger label/category tag with border.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `variant` | `secondary`, `primary`, `accent`, `success`, `danger` | `secondary` | Color variant |
 
 ### `divider`
@@ -523,7 +523,7 @@ Larger label/category tag with border.
 Horizontal or vertical separator line.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `direction` | `horizontal`, `vertical` | `horizontal` | Line direction |
 
 ### `spacer`
@@ -531,7 +531,7 @@ Horizontal or vertical separator line.
 Empty space element for manual spacing.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Space size |
 
 ---
@@ -543,7 +543,7 @@ Empty space element for manual spacing.
 A layout section that can define a curvomorphism center point.
 
 | Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
+| ----------- | -------- | --------- | ------------- |
 | `center-point` | `x,y` coordinates | - | Set curvomorphism center |
 | `gap` | `small`, `medium`, `large` | `medium` | Child spacing |
 | `variant` | `default`, `accent`, `primary` | `default` | Background variant |
@@ -585,7 +585,7 @@ Generic grouping container for interactive control elements.
 All primitives are registered in a central registry that maps Sakko element names to custom element tags:
 
 | Sakko Name | Custom Element Tag |
-|------------|-------------------|
+| ------------ | ------------------- |
 | `card` | `saz-card` |
 | `text` | `saz-text` |
 | `heading` | `saz-heading` |

@@ -1,46 +1,35 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
-export class SazamiCheckbox extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    if (!this.hasAttribute("role")) this.setAttribute("role", "checkbox");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
-    this.setAttribute(
-      "aria-checked",
-      this.hasAttribute("checked") ? "true" : "false",
-    );
-
-    const label = this.textContent?.trim() || "";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
-  gap: var(--saz-space-small, 8px);
+  align-self: center;
+  vertical-align: middle;
+  height: fit-content;
+  gap: var(--saz-space-small);
   cursor: pointer;
   user-select: none;
 }
 .box {
   width: 18px;
   height: 18px;
-  border: 2px solid var(--saz-color-border, #e0e0e0);
-  border-radius: var(--saz-radius-soft, 4px);
+  border: 2px solid var(--saz-color-border);
+  border-radius: var(--saz-radius-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
-  background: var(--saz-color-background, #fff);
+  align-self: center;
+  background: var(--saz-color-background);
 }
 :host([checked]) .box {
-  background: var(--saz-color-primary, #2563eb);
-  border-color: var(--saz-color-primary, #2563eb);
+  background: var(--saz-color-primary);
+  border-color: var(--saz-color-primary);
 }
 .check {
   color: #fff;
@@ -48,47 +37,87 @@ export class SazamiCheckbox extends HTMLElement {
   height: 12px;
   opacity: 0;
   transition: opacity 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
-.check svg { width: 100%; height: 100%; }
+.check svg { width: 100%; height: 100%; display: block; }
 :host([checked]) .check { opacity: 1; }
 .label {
-  font-size: var(--saz-text-size-medium, 14px);
-  color: var(--saz-color-text, #1f2937);
+  font-size: var(--saz-text-size-medium);
+  color: var(--saz-color-text);
 }
-:host([disabled]) {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-:host(:focus-visible) .box {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
-  outline-offset: 2px;
-}
-`) +
-      `<span class="box"><span class="check">${ICON_SVGS.check}</span></span>${label ? `<span class="label">${label}</span>` : ""}`;
+${STATE_DISABLED}
+${INTERACTIVE_FOCUS}
+`;
 
-    this.addEventListener("click", () => {
-      if (this.hasAttribute("disabled")) return;
-      this.toggleAttribute("checked");
-      this.setAttribute(
-        "aria-checked",
-        this.hasAttribute("checked") ? "true" : "false",
-      );
-      this.dispatchEvent(
-        new CustomEvent("saz-change", {
-          detail: { checked: this.hasAttribute("checked") },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    });
+// Config as constant for type inference
+const checkboxConfig = {
+  // observedAttributes auto-derived from properties with reflect: true
+  properties: {
+    checked: { type: "boolean" as const, reflect: true },
+    disabled: { type: "boolean" as const, reflect: true },
+  },
+  events: {
+    change: { name: "saz-change", detail: { checked: "checked" } },
+  },
+  binds: {
+    checked: "attribute" as const,
+    disabled: "attribute" as const,
+  },
+} as const;
 
-    this.addEventListener("keydown", (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "Enter" || ke.key === " ") {
-        ke.preventDefault();
-        this.click();
-      }
-    });
+@component(checkboxConfig)
+export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
+  declare checked: boolean;
+  declare disabled: boolean;
+
+  render() {
+    const label = this.textContent?.trim() || "";
+
+    this.mount(
+      STYLES,
+      `
+      <span class="box">
+        <span class="check">${ICON_SVGS.check || ""}</span>
+      </span>
+      ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
+    `,
+    );
+
+    if (!this.hasAttribute("role")) this.setAttribute("role", "checkbox");
+    this._updateAria();
+
+    this.removeHandler("click", this._handleClick);
+    this.removeHandler("keydown", this._handleKeydown);
+    this.addHandler("click", this._handleClick, { internal: true });
+    this.addHandler("keydown", this._handleKeydown, { internal: true });
+  }
+
+  private _handleClick = () => {
+    if (this.disabled) return;
+    this.checked = !this.checked;
+    this._updateAria();
+    // TypeScript enforces: { checked: boolean }
+    this.dispatchEventTyped("change", { checked: this.checked });
+  };
+
+  private _handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      this._handleClick();
+    }
+  };
+
+  private _updateAria() {
+    this.setAttribute("aria-checked", this.checked ? "true" : "false");
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
   }
 }

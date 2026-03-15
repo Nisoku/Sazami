@@ -1,5 +1,6 @@
 import type { ASTNode } from "@nisoku/sakko";
 import { parseModifiers } from "../primitives/modifier-map";
+import { unknownComponentError } from "../errors";
 
 export type VNode = {
   type: string;
@@ -53,9 +54,7 @@ const SAZAMI_REGISTRY: Record<string, { tag: string }> = {
 export function getTag(name: string): string {
   const entry = SAZAMI_REGISTRY[name];
   if (!entry) {
-    if (typeof console !== "undefined") {
-      console.warn(`[sazami] Unknown component "${name}", using saz-${name}`);
-    }
+    unknownComponentError(name);
     return `saz-${name}`;
   }
   return entry.tag;

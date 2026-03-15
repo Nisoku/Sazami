@@ -15,9 +15,11 @@ export const defaultTokens: Record<string, string> = {
 
   "color.on-accent": "#ffffff",
   "color.on-primary": "#ffffff",
+  "color.on-secondary": "#1f2937",
   "color.on-success": "#ffffff",
   "color.on-danger": "#ffffff",
 
+  "space.xsmall": "2px",
   "space.tiny": "4px",
   "space.small": "8px",
   "space.medium": "12px",
@@ -32,6 +34,8 @@ export const defaultTokens: Record<string, string> = {
   "text.size.medium": "14px",
   "text.size.large": "16px",
   "text.size.xlarge": "20px",
+  "text.size.xsmall": "10px",
+  "text.size.tiny": "11px",
 
   "text.weight.light": "300",
   "text.weight.normal": "400",
@@ -56,4 +60,5 @@ export const defaultTokens: Record<string, string> = {
   "icon.size.medium": "20px",
   "icon.size.large": "24px",
   "icon.size.xlarge": "32px",
+  "icon.size.xsmall": "12px",
 };

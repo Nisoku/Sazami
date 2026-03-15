@@ -1,24 +1,36 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
 
-export class SazamiLabel extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: block;
-  font-size: var(--saz-text-size-small, 12px);
-  font-weight: var(--saz-text-weight-medium, 500);
-  color: var(--saz-color-text-dim, #6b7280);
-  margin-bottom: var(--saz-space-tiny, 4px);
-  line-height: var(--saz-text-leading-normal, 1.5);
+  font-size: var(--saz-text-size-small);
+  font-weight: var(--saz-text-weight-medium);
+  color: var(--saz-color-text-dim);
+  margin-bottom: var(--saz-space-tiny);
+  line-height: var(--saz-text-leading-normal);
   cursor: default;
   user-select: none;
 }
-`) + "<slot></slot>";
+`;
+
+const labelConfig = {
+  properties: {
+    for: { type: "string" as const, reflect: true },
+  },
+} as const;
+
+@component(labelConfig)
+export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
+  declare for: string;
+
+  render() {
+    this.mount(STYLES, `<label><slot></slot></label>`);
+
+    if (this.hasAttribute("for")) {
+      const label = this.shadowRoot?.querySelector("label");
+      if (label) {
+        label.setAttribute("for", this.getAttribute("for") || "");
+      }
+    }
   }
 }

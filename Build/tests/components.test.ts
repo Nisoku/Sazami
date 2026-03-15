@@ -2,9 +2,15 @@
  * @jest-environment jsdom
  */
 import { registerComponents, COMPONENT_REGISTRY } from "../src/primitives/registry";
+import { generateThemeCSS } from "../src/config/generator";
 
 describe("Primitive Components - Behavior", () => {
   beforeAll(() => {
+    // Apply CSS variables to document for tests
+    const style = document.createElement("style");
+    style.textContent = generateThemeCSS();
+    document.head.appendChild(style);
+    
     registerComponents();
   });
 
@@ -398,7 +404,7 @@ describe("Primitive Components - Behavior", () => {
       const el = document.createElement("saz-badge");
       document.body.appendChild(el);
       const style = el.shadowRoot!.querySelector("style")?.textContent || "";
-      expect(style).toContain("9999px");
+      expect(style).toContain("var(--saz-radius-round)");
       el.remove();
     });
   });
@@ -476,7 +482,7 @@ describe("Primitive Components - Behavior", () => {
       const el = document.createElement("saz-heading");
       document.body.appendChild(el);
       const style = el.shadowRoot!.querySelector("style")?.textContent || "";
-      expect(style).toContain("700");
+      expect(style).toContain("var(--saz-text-weight-bold)");
       el.remove();
     });
   });
@@ -592,6 +598,564 @@ describe("Primitive Components - Behavior", () => {
       iconBtn.remove();
       toggle.remove();
       checkbox.remove();
+    });
+  });
+
+  describe("saz-modal", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-modal");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      expect(el.shadowRoot!.querySelector(".dialog")).toBeTruthy();
+      expect(el.shadowRoot!.querySelector(".overlay")).toBeTruthy();
+      el.remove();
+    });
+
+    test("shows modal when open attribute is set", () => {
+      const el = document.createElement("saz-modal");
+      el.setAttribute("open", "");
+      document.body.appendChild(el);
+      expect(el.hasAttribute("open")).toBe(true);
+      el.remove();
+    });
+
+    test("dispatches saz-open event when opened", () => {
+      const el = document.createElement("saz-modal");
+      document.body.appendChild(el);
+      
+      let opened = false;
+      el.addEventListener("saz-open", () => { opened = true; });
+      
+      el.setAttribute("open", "");
+      expect(opened).toBe(true);
+      el.remove();
+    });
+
+    test("renders title from attribute", () => {
+      const el = document.createElement("saz-modal");
+      el.setAttribute("title", "My Modal");
+      document.body.appendChild(el);
+      const title = el.shadowRoot!.querySelector(".title");
+      expect(title?.textContent).toBe("My Modal");
+      el.remove();
+    });
+
+    test("has close button", () => {
+      const el = document.createElement("saz-modal");
+      document.body.appendChild(el);
+      const closeBtn = el.shadowRoot!.querySelector(".close-btn");
+      expect(closeBtn).toBeTruthy();
+      el.remove();
+    });
+  });
+
+  describe("saz-toast", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-toast");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("shows message from attribute", () => {
+      const el = document.createElement("saz-toast");
+      el.setAttribute("message", "Saved successfully");
+      document.body.appendChild(el);
+      const msg = el.shadowRoot!.querySelector(".message");
+      expect(msg?.textContent).toBe("Saved successfully");
+      el.remove();
+    });
+
+    test("shows different icons for variants", () => {
+      const successEl = document.createElement("saz-toast");
+      successEl.setAttribute("variant", "success");
+      document.body.appendChild(successEl);
+      expect(successEl.shadowRoot!.querySelector(".icon")).toBeTruthy();
+      successEl.remove();
+
+      const errorEl = document.createElement("saz-toast");
+      errorEl.setAttribute("variant", "error");
+      document.body.appendChild(errorEl);
+      expect(errorEl.shadowRoot!.querySelector(".icon")).toBeTruthy();
+      errorEl.remove();
+    });
+
+    test("has visible attribute after rendering", () => {
+      const el = document.createElement("saz-toast");
+      document.body.appendChild(el);
+      expect(el.hasAttribute("visible")).toBe(true);
+      el.remove();
+    });
+  });
+
+  describe("saz-tabs", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-tabs");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("renders tab buttons from slot", () => {
+      const el = document.createElement("saz-tabs");
+      const tab1 = document.createElement("div");
+      tab1.setAttribute("slot", "tab");
+      tab1.setAttribute("label", "Tab One");
+      const tab2 = document.createElement("div");
+      tab2.setAttribute("slot", "tab");
+      tab2.setAttribute("label", "Tab Two");
+      el.appendChild(tab1);
+      el.appendChild(tab2);
+      document.body.appendChild(el);
+      
+      const tabs = el.shadowRoot!.querySelectorAll(".tab");
+      expect(tabs.length).toBe(2);
+      expect(tabs[0].textContent).toBe("Tab One");
+      el.remove();
+    });
+
+    test("has active attribute for active tab", async () => {
+      const el = document.createElement("saz-tabs");
+      const tab1 = document.createElement("div");
+      tab1.setAttribute("slot", "tab");
+      const tab2 = document.createElement("div");
+      tab2.setAttribute("slot", "tab");
+      el.appendChild(tab1);
+      el.appendChild(tab2);
+      el.setAttribute("active", "1");
+      document.body.appendChild(el);
+      
+      await Promise.resolve();
+      const tabButtons = el.shadowRoot!.querySelectorAll(".tab");
+      expect(tabButtons[1].classList.contains("active")).toBe(true);
+      el.remove();
+    });
+
+    test("dispatches saz-change event when tab is clicked", () => {
+      const el = document.createElement("saz-tabs");
+      const tab1 = document.createElement("div");
+      tab1.setAttribute("slot", "tab");
+      const panel1 = document.createElement("div");
+      panel1.setAttribute("slot", "panel");
+      el.appendChild(tab1);
+      el.appendChild(panel1);
+      document.body.appendChild(el);
+      
+      let activeIndex: string | null = null;
+      el.addEventListener("saz-change", ((e: CustomEvent) => {
+        activeIndex = e.detail.activeIndex;
+      }) as EventListener);
+      
+      const tabButton = el.shadowRoot!.querySelector(".tab") as HTMLElement;
+      tabButton?.click();
+      
+      expect(activeIndex).toBe("0");
+      el.remove();
+    });
+  });
+
+  describe("saz-accordion", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-accordion");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("renders items from children with heading attribute", () => {
+      const el = document.createElement("saz-accordion");
+      const item1 = document.createElement("div");
+      item1.setAttribute("heading", "Section 1");
+      item1.textContent = "Content 1";
+      el.appendChild(item1);
+      document.body.appendChild(el);
+      
+      const headers = el.shadowRoot!.querySelectorAll(".title");
+      expect(headers.length).toBe(1);
+      expect(headers[0].textContent).toBe("Section 1");
+      el.remove();
+    });
+
+    test("supports single-open attribute", () => {
+      const el = document.createElement("saz-accordion");
+      el.setAttribute("single-open", "");
+      document.body.appendChild(el);
+      expect(el.hasAttribute("single-open")).toBe(true);
+      el.remove();
+    });
+
+    test("expands item on header click", () => {
+      const el = document.createElement("saz-accordion");
+      const item1 = document.createElement("div");
+      item1.setAttribute("heading", "Section 1");
+      el.appendChild(item1);
+      document.body.appendChild(el);
+      
+      const header = el.shadowRoot!.querySelector(".header") as HTMLElement;
+      header?.click();
+      
+      const item = el.shadowRoot!.querySelector(".item");
+      expect(item?.hasAttribute("open")).toBe(true);
+      el.remove();
+    });
+  });
+
+  describe("saz-select", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-select");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      expect(el.shadowRoot!.querySelector(".trigger")).toBeTruthy();
+      el.remove();
+    });
+
+    test("shows placeholder when no value", () => {
+      const el = document.createElement("saz-select");
+      el.setAttribute("placeholder", "Choose...");
+      document.body.appendChild(el);
+      
+      const valueEl = el.shadowRoot!.querySelector(".value");
+      expect(valueEl?.textContent).toBe("Choose...");
+      el.remove();
+    });
+
+    test("renders options from slot", () => {
+      const el = document.createElement("saz-select");
+      const opt1 = document.createElement("option");
+      opt1.setAttribute("value", "a");
+      opt1.textContent = "Option A";
+      const opt2 = document.createElement("option");
+      opt2.setAttribute("value", "b");
+      opt2.textContent = "Option B";
+      el.appendChild(opt1);
+      el.appendChild(opt2);
+      document.body.appendChild(el);
+      
+      const options = el.shadowRoot!.querySelectorAll(".option");
+      expect(options.length).toBe(2);
+      expect(options[0].textContent).toBe("Option A");
+      el.remove();
+    });
+
+    test("shows selected value", () => {
+      const el = document.createElement("saz-select");
+      el.setAttribute("value", "b");
+      const opt1 = document.createElement("option");
+      opt1.setAttribute("value", "a");
+      opt1.textContent = "Option A";
+      const opt2 = document.createElement("option");
+      opt2.setAttribute("value", "b");
+      opt2.textContent = "Option B";
+      el.appendChild(opt1);
+      el.appendChild(opt2);
+      document.body.appendChild(el);
+      
+      const valueEl = el.shadowRoot!.querySelector(".value");
+      expect(valueEl?.textContent).toBe("Option B");
+      el.remove();
+    });
+
+    test("toggles dropdown on trigger click", () => {
+      const el = document.createElement("saz-select");
+      const opt1 = document.createElement("option");
+      opt1.setAttribute("value", "a");
+      el.appendChild(opt1);
+      document.body.appendChild(el);
+      
+      const trigger = el.shadowRoot!.querySelector(".trigger") as HTMLElement;
+      trigger?.click();
+      
+      expect(el.hasAttribute("open")).toBe(true);
+      el.remove();
+    });
+
+    test("dispatches saz-change when option is selected", () => {
+      const el = document.createElement("saz-select");
+      const opt1 = document.createElement("option");
+      opt1.setAttribute("value", "a");
+      opt1.textContent = "Option A";
+      el.appendChild(opt1);
+      document.body.appendChild(el);
+      
+      let newValue: string | null = null;
+      el.addEventListener("saz-change", ((e: CustomEvent) => {
+        newValue = e.detail.value;
+      }) as EventListener);
+      
+      const trigger = el.shadowRoot!.querySelector(".trigger") as HTMLElement;
+      trigger?.click();
+      
+      const option = el.shadowRoot!.querySelector(".option") as HTMLElement;
+      option?.click();
+      
+      expect(newValue).toBe("a");
+      el.remove();
+    });
+  });
+
+  describe("saz-button variants", () => {
+    test("primary variant has correct styles", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("variant", "primary");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="primary"');
+      expect(style).toContain("saz-color-primary");
+      el.remove();
+    });
+
+    test("secondary variant has transparent background", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("variant", "secondary");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="secondary"');
+      expect(style).toContain("background: transparent");
+      el.remove();
+    });
+
+    test("accent variant has accent color", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("variant", "accent");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="accent"');
+      expect(style).toContain("saz-color-accent");
+      el.remove();
+    });
+
+    test("danger variant has danger color", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("variant", "danger");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="danger"');
+      expect(style).toContain("saz-color-danger");
+      el.remove();
+    });
+
+    test("dim variant has dim color", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("variant", "dim");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="dim"');
+      expect(style).toContain("saz-color-text-dim");
+      el.remove();
+    });
+
+    test("supports tone attribute", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("tone", "dim");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('tone="dim"');
+      el.remove();
+    });
+
+    test("supports shape pill", () => {
+      const el = document.createElement("saz-button");
+      el.setAttribute("shape", "pill");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('shape="pill"');
+      expect(style).toContain("saz-radius-round");
+      el.remove();
+    });
+  });
+
+  describe("saz-slider", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-slider");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      expect(el.shadowRoot!.querySelector(".slider")).toBeTruthy();
+      el.remove();
+    });
+
+    test("renders range input", () => {
+      const el = document.createElement("saz-slider");
+      document.body.appendChild(el);
+      const input = el.shadowRoot!.querySelector('input[type="range"]');
+      expect(input).toBeTruthy();
+      el.remove();
+    });
+
+    test("uses min/max from attributes", () => {
+      const el = document.createElement("saz-slider");
+      el.setAttribute("min", "0");
+      el.setAttribute("max", "50");
+      document.body.appendChild(el);
+      const input = el.shadowRoot!.querySelector('input[type="range"]') as HTMLInputElement;
+      expect(input?.min).toBe("0");
+      expect(input?.max).toBe("50");
+      el.remove();
+    });
+
+    test("dispatches saz-input event on change", () => {
+      const el = document.createElement("saz-slider");
+      document.body.appendChild(el);
+      
+      let value: number | null = null;
+      el.addEventListener("saz-input", ((e: CustomEvent) => {
+        value = e.detail.value;
+      }) as EventListener);
+      
+      const input = el.shadowRoot!.querySelector('input[type="range"]') as HTMLInputElement;
+      input.value = "75";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      
+      expect(value).toBe(75);
+      el.remove();
+    });
+  });
+
+  describe("saz-radio", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-radio");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("renders radio circle", () => {
+      const el = document.createElement("saz-radio");
+      document.body.appendChild(el);
+      expect(el.shadowRoot!.querySelector(".radio")).toBeTruthy();
+      el.remove();
+    });
+
+    test("toggles checked on click", () => {
+      const el = document.createElement("saz-radio");
+      document.body.appendChild(el);
+      
+      expect(el.hasAttribute("checked")).toBe(false);
+      el.click();
+      expect(el.hasAttribute("checked")).toBe(true);
+      el.remove();
+    });
+
+    test("dispatches saz-change event", () => {
+      const el = document.createElement("saz-radio");
+      document.body.appendChild(el);
+      
+      let value: string | null = null;
+      el.addEventListener("saz-change", ((e: CustomEvent) => {
+        value = e.detail.value;
+      }) as EventListener);
+      
+      el.click();
+      expect(value).toBe("");
+      el.remove();
+    });
+  });
+
+  describe("saz-switch", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-switch");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("toggles checked on click", () => {
+      const el = document.createElement("saz-switch");
+      document.body.appendChild(el);
+      
+      expect(el.hasAttribute("checked")).toBe(false);
+      el.click();
+      expect(el.hasAttribute("checked")).toBe(true);
+      el.remove();
+    });
+
+    test("dispatches saz-change event with checked value", () => {
+      const el = document.createElement("saz-switch");
+      document.body.appendChild(el);
+      
+      let detail: any = null;
+      el.addEventListener("saz-change", ((e: CustomEvent) => {
+        detail = e.detail;
+      }) as EventListener);
+      
+      el.click();
+      expect(detail).toBeTruthy();
+      expect(detail.checked).toBe(true);
+      el.remove();
+    });
+  });
+
+  describe("saz-card variants and props", () => {
+    test("supports layout=row", () => {
+      const el = document.createElement("saz-card");
+      el.setAttribute("layout", "row");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('layout="row"');
+      expect(style).toContain("flex-direction: row");
+      el.remove();
+    });
+
+    test("supports size variants", () => {
+      const small = document.createElement("saz-card");
+      small.setAttribute("size", "small");
+      document.body.appendChild(small);
+      const smallStyle = small.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(smallStyle).toContain('size="small"');
+      small.remove();
+
+      const large = document.createElement("saz-card");
+      large.setAttribute("size", "large");
+      document.body.appendChild(large);
+      const largeStyle = large.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(largeStyle).toContain('size="large"');
+      large.remove();
+    });
+
+    test("supports variant background", () => {
+      const el = document.createElement("saz-card");
+      el.setAttribute("variant", "accent");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('variant="accent"');
+      expect(style).toContain("saz-color-accent");
+      el.remove();
+    });
+  });
+
+  describe("saz-section", () => {
+    test("renders with Shadow DOM", () => {
+      const el = document.createElement("saz-section");
+      document.body.appendChild(el);
+      expect(el.shadowRoot).toBeTruthy();
+      el.remove();
+    });
+
+    test("supports layout=row", () => {
+      const el = document.createElement("saz-section");
+      el.setAttribute("layout", "row");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain('layout="row"');
+      el.remove();
+    });
+  });
+
+  describe("saz-column", () => {
+    test("renders with flex column layout", () => {
+      const el = document.createElement("saz-column");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain("flex-direction: column");
+      el.remove();
+    });
+
+    test("supports justify variants", () => {
+      const el = document.createElement("saz-column");
+      el.setAttribute("justify", "space-between");
+      document.body.appendChild(el);
+      const style = el.shadowRoot!.querySelector("style")?.textContent || "";
+      expect(style).toContain("space-between");
+      el.remove();
     });
   });
 });

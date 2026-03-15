@@ -1,0 +1,18 @@
+<curvomorphism-test {
+  heading(xlarge): "Curvomorphism Test"
+  text(dim): "All corners should curve inward toward the center of the grid."
+
+  section(center-point) {
+    grid(cols 3 gap large) {
+      card(curved): "Top Left",
+      card(curved): "Top Center",
+      card(curved): "Top Right",
+      card(curved): "Middle Left",
+      card(curved): "Middle Center",
+      card(curved): "Middle Right",
+      card(curved): "Bottom Left",
+      card(curved): "Bottom Center",
+      card(curved): "Bottom Right"
+    }
+  }
+}>

@@ -1,39 +1,55 @@
-import { baseStyles, GAP_RULES, VARIANT_BG_RULES } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { GAP_RULES, VARIANT_BG_RULES } from "./shared";
 
-export class SazamiCard extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: flex;
   flex-direction: column;
-  background: var(--saz-color-surface, #f8f9fa);
-  border: 1px solid var(--saz-color-border, #e0e0e0);
-  padding: var(--saz-space-large, 16px);
-  border-radius: var(--saz-radius-medium, 8px);
-  box-shadow: var(--saz-shadow-soft, 0 1px 3px rgba(0,0,0,0.1));
-  color: var(--saz-color-text, #1f2937);
+  background: var(--saz-color-surface);
+  border: 1px solid var(--saz-color-border);
+  padding: var(--saz-space-large);
+  border-radius: var(--saz-radius-medium);
+  box-shadow: var(--saz-shadow-soft);
+  color: var(--saz-color-text);
   transition: box-shadow 0.25s ease, transform 0.25s ease, background 0.2s ease;
-  gap: var(--saz-space-large, 16px);
+  gap: var(--saz-space-large);
 }
-:host(:hover) { box-shadow: var(--saz-shadow-medium, 0 4px 6px rgba(0,0,0,0.1)); }
+:host(:hover) { box-shadow: var(--saz-shadow-medium); }
+${GAP_RULES}
 :host([layout="row"])    { flex-direction: row; }
 :host([layout="column"]) { flex-direction: column; }
 :host([align="center"])    { align-items: center; }
 :host([align="stretch"])   { align-items: stretch; }
 :host([justify="space-between"]) { justify-content: space-between; }
 :host([justify="center"])        { justify-content: center; }
-${GAP_RULES}
-:host([size="small"])  { padding: var(--saz-space-small, 8px); }
-:host([size="medium"]) { padding: var(--saz-space-medium, 12px); }
-:host([size="large"])  { padding: var(--saz-space-large, 16px); }
-:host([size="xlarge"]) { padding: var(--saz-space-xlarge, 24px); }
+:host([size="small"])  { padding: var(--saz-space-small); }
+:host([size="medium"]) { padding: var(--saz-space-medium); }
+:host([size="large"])  { padding: var(--saz-space-large); }
+:host([size="xlarge"]) { padding: var(--saz-space-xlarge); }
 ${VARIANT_BG_RULES}
-`) + "<slot></slot>";
+`;
+
+const cardConfig = {
+  properties: {
+    layout: { type: "string" as const, reflect: false },
+    align: { type: "string" as const, reflect: false },
+    justify: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: false },
+    variant: { type: "string" as const, reflect: false },
+    gap: { type: "string" as const, reflect: false },
+  },
+} as const;
+
+@component(cardConfig)
+export class SazamiCard extends SazamiComponent<typeof cardConfig> {
+  declare layout: string;
+  declare align: string;
+  declare justify: string;
+  declare size: string;
+  declare variant: string;
+  declare gap: string;
+
+  render() {
+    this.mount(STYLES, `<slot></slot>`);
   }
 }

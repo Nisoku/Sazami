@@ -14,8 +14,8 @@ The Sazami Config system provides design tokens that drive all visual styling th
 
 Design tokens are defined in JavaScript objects, converted to CSS variables, and injected into the document. All primitives reference these variables, making the entire UI themeable by changing token values.
 
-```
-Token Definition  →  CSS Variable Generation  →  :root injection  →  Components consume
+```txt
+Token Definition  ->  CSS Variable Generation  ->  :root injection  ->  Components consume
 ```
 
 ---
@@ -25,7 +25,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Colors
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | -------------- |
 | `color.background` | `#ffffff` | `--saz-color-background` |
 | `color.surface` | `#f8f9fa` | `--saz-color-surface` |
 | `color.border` | `#e0e0e0` | `--saz-color-border` |
@@ -44,7 +44,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Spacing
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `space.tiny` | `4px` | `--saz-space-tiny` |
 | `space.small` | `8px` | `--saz-space-small` |
 | `space.medium` | `12px` | `--saz-space-medium` |
@@ -55,7 +55,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Typography
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `font.family` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` | `--saz-font-family` |
 | `text.size.small` | `12px` | `--saz-text-size-small` |
 | `text.size.medium` | `14px` | `--saz-text-size-medium` |
@@ -72,7 +72,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Radii
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `radius.none` | `0px` | `--saz-radius-none` |
 | `radius.soft` | `4px` | `--saz-radius-soft` |
 | `radius.medium` | `8px` | `--saz-radius-medium` |
@@ -82,7 +82,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Shadows
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `shadow.soft` | `0 1px 3px rgba(0,0,0,0.1)` | `--saz-shadow-soft` |
 | `shadow.medium` | `0 4px 6px rgba(0,0,0,0.1)` | `--saz-shadow-medium` |
 | `shadow.strong` | `0 10px 15px rgba(0,0,0,0.1)` | `--saz-shadow-strong` |
@@ -90,7 +90,7 @@ Token Definition  →  CSS Variable Generation  →  :root injection  →  Compo
 ### Icon Sizes
 
 | Token | Default | CSS Variable |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `icon.size.small` | `16px` | `--saz-icon-size-small` |
 | `icon.size.medium` | `20px` | `--saz-icon-size-medium` |
 | `icon.size.large` | `24px` | `--saz-icon-size-large` |

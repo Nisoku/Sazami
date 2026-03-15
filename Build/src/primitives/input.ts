@@ -1,72 +1,109 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { SIZE_PADDING_RULES, STATE_DISABLED } from "./shared";
+import { escapeHtml } from "../escape";
 
-export class SazamiInput extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const placeholder = this.getAttribute("placeholder") || "";
-    const type = this.getAttribute("type") || "text";
-    const value = this.getAttribute("value") || this.textContent?.trim() || "";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host { display: block; }
 input {
   width: 100%;
-  padding: var(--saz-space-small, 8px) var(--saz-space-large, 16px);
-  border: 1px solid var(--saz-color-border, #e0e0e0);
-  border-radius: var(--saz-radius-medium, 8px);
-  font-size: var(--saz-text-size-medium, 14px);
+  padding: var(--saz-space-small) var(--saz-space-large);
+  border: 1px solid var(--saz-color-border);
+  border-radius: var(--saz-radius-medium);
+  font-size: var(--saz-text-size-medium);
   font-family: inherit;
-  color: var(--saz-color-text, #1f2937);
-  background: var(--saz-color-background, #ffffff);
+  color: var(--saz-color-text);
+  background: var(--saz-color-background);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 input:focus {
-  border-color: var(--saz-color-primary, #2563eb);
+  border-color: var(--saz-color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
-input::placeholder { color: var(--saz-color-text-dimmer, #9ca3af); }
-:host([size="small"]) input {
-  padding: var(--saz-space-tiny, 4px) var(--saz-space-small, 8px);
-  font-size: var(--saz-text-size-small, 12px);
-}
-:host([size="large"]) input {
-  padding: var(--saz-space-medium, 12px) var(--saz-space-large, 16px);
-  font-size: var(--saz-text-size-large, 16px);
-}
-:host([size="xlarge"]) input {
-  padding: var(--saz-space-large, 16px) var(--saz-space-xlarge, 24px);
-  font-size: var(--saz-text-size-xlarge, 20px);
-}
-:host([disabled]) input {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--saz-color-surface, #f8f9fa);
-}
+input::placeholder { color: var(--saz-color-text-dimmer); }
+${SIZE_PADDING_RULES}
+${STATE_DISABLED}
 :host([variant="accent"]) input:focus {
-  border-color: var(--saz-color-accent, #ff4d8a);
+  border-color: var(--saz-color-accent);
   box-shadow: 0 0 0 3px rgba(255, 77, 138, 0.15);
 }
-`) +
-      `<input type="${type}" placeholder="${placeholder}" value="${value}" ${this.hasAttribute("disabled") ? "disabled" : ""} />`;
+`;
 
-    const input = this.shadowRoot!.querySelector("input");
+// Config
+const inputConfig = {
+  properties: {
+    value: { type: "string" as const, reflect: true },
+    placeholder: { type: "string" as const, reflect: false },
+    type: { type: "string" as const, reflect: false },
+    disabled: { type: "boolean" as const, reflect: true },
+    size: { type: "string" as const, reflect: false },
+    variant: { type: "string" as const, reflect: false },
+  },
+  events: {
+    input: { name: "saz-input", detail: { value: "value" } },
+  },
+} as const;
+
+@component(inputConfig)
+export class SazamiInput extends SazamiComponent<typeof inputConfig> {
+  declare value: string;
+  declare placeholder: string;
+  declare type: string;
+  declare disabled: boolean;
+  declare size: string;
+  declare variant: string;
+
+  render() {
+    // Read attributes directly for non-reflected properties
+    const placeholder = this.getAttribute("placeholder") || "";
+    const type = this.getAttribute("type") || "text";
+
+    this.mount(
+      STYLES,
+      `
+      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(this.value || "")}" ${this.disabled ? "disabled" : ""} />
+    `,
+    );
+
+    const input = this.$("input") as HTMLInputElement;
     if (input) {
-      input.addEventListener("input", (e) => {
-        this.dispatchEvent(
-          new CustomEvent("saz-input", {
-            detail: { value: (e.target as HTMLInputElement).value },
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      });
+      this.addHandler(
+        "input",
+        (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          this.value = target.value;
+          this.dispatchEventTyped("input", { value: target.value });
+        },
+        { internal: true, element: input },
+      );
+    }
+  }
+
+  static get observedAttributes() {
+    return ["value", "disabled", "placeholder", "type"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    const input = this.$("input") as HTMLInputElement;
+    if (!input) return;
+
+    if (name === "value") {
+      if (newVal === null) {
+        if (input.value !== "") input.value = "";
+      } else if (input.value !== newVal) {
+        input.value = newVal;
+      }
+    } else if (name === "disabled") {
+      input.disabled = newVal !== null;
+    } else if (name === "placeholder") {
+      input.placeholder = newVal ?? "";
+    } else if (name === "type") {
+      input.type = newVal ?? "text";
     }
   }
 }

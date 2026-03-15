@@ -1,46 +1,16 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { SHAPE_RULES } from "./shared";
+import { escapeHtml } from "../escape";
 
-export class SazamiAvatar extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const src = this.getAttribute("src") || "";
-    const alt = this.getAttribute("alt") || "";
-    const initialsAttr = this.getAttribute("initials") || "";
-    const size = this.getAttribute("size") || "medium";
-    const textContent = this.textContent?.trim() || "";
-    const initials = initialsAttr || this.getInitials(alt || textContent);
-
-    const sizeMap: Record<string, string> = {
-      tiny: "24px",
-      small: "32px",
-      medium: "40px",
-      large: "56px",
-      xlarge: "80px",
-    };
-
-    const fontSize =
-      {
-        tiny: "10px",
-        small: "12px",
-        medium: "14px",
-        large: "20px",
-        xlarge: "28px",
-      }[size] || "14px";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--saz-color-primary, #2563eb);
-  color: var(--saz-color-on-primary, #fff);
+  background: var(--saz-color-primary);
+  color: var(--saz-color-on-primary);
   font-weight: 600;
   flex-shrink: 0;
   width: 40px;
@@ -61,15 +31,43 @@ export class SazamiAvatar extends HTMLElement {
   text-transform: uppercase;
   user-select: none;
 }
-:host([shape="square"]) { border-radius: var(--saz-radius-medium, 8px); }
-:host([shape="rounded"]) { border-radius: var(--saz-radius-soft, 4px); }
-`) +
-      (src
-        ? `<img class="image" src="${src}" alt="${alt}" />`
-        : `<span class="initials">${initials}</span>`);
+${SHAPE_RULES}
+`;
+
+const avatarConfig = {
+  properties: {
+    src: { type: "string" as const, reflect: true },
+    alt: { type: "string" as const, reflect: true },
+    initials: { type: "string" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
+  },
+} as const;
+
+@component(avatarConfig)
+export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
+  declare src: string;
+  declare alt: string;
+  declare initials: string;
+  declare size: string;
+  declare shape: string;
+
+  render() {
+    const src = this.getAttribute("src") || "";
+    const alt = this.getAttribute("alt") || "";
+    const initialsAttr = this.getAttribute("initials") || "";
+    const textContent = this.textContent?.trim() || "";
+    const initials = initialsAttr || this._getInitials(alt || textContent);
+
+    this.mount(
+      STYLES,
+      src
+        ? `<img class="image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`
+        : `<span class="initials">${escapeHtml(initials)}</span>`,
+    );
   }
 
-  private getInitials(name: string): string {
+  private _getInitials(name: string): string {
     return name
       .split(" ")
       .map((n) => n[0])

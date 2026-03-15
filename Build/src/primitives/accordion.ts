@@ -1,34 +1,17 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
 import { ICON_SVGS } from "../icons/index";
 
-export class SazamiAccordion extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const items = Array.from(this.querySelectorAll(":scope > *")).map(
-      (el, i) => ({
-        title:
-          (el as HTMLElement).getAttribute("heading") || `Section ${i + 1}`,
-        content: el.innerHTML,
-        open: el.hasAttribute("open"),
-      }),
-    );
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host { display: block; }
 .item {
-  border-bottom: 1px solid var(--saz-color-border, #e0e0e0);
+  border-bottom: 1px solid var(--saz-color-border);
 }
-.item:first-child { border-top: 1px solid var(--saz-color-border, #e0e0e0); }
+.item:first-child { border-top: 1px solid var(--saz-color-border); }
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--saz-space-medium, 12px) var(--saz-space-small, 8px);
+  padding: var(--saz-space-medium) var(--saz-space-small);
   cursor: pointer;
   background: transparent;
   border: none;
@@ -36,26 +19,32 @@ export class SazamiAccordion extends HTMLElement {
   text-align: left;
   font-size: inherit;
   font-family: inherit;
-  color: var(--saz-color-text, #1f2937);
+  color: var(--saz-color-text);
   transition: background 0.15s ease;
 }
 .header:hover {
-  background: var(--saz-color-surface, #f8f9fa);
+  background: var(--saz-color-surface);
 }
 .header:focus-visible {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
+  outline: 2px solid var(--saz-color-primary);
   outline-offset: -2px;
 }
 .title {
   font-weight: 500;
-  font-size: var(--saz-text-size-medium, 14px);
+  font-size: var(--saz-text-size-medium);
 }
 .chevron {
   width: 20px;
   height: 20px;
-  color: var(--saz-color-text-dim, #6b7280);
+  color: var(--saz-color-text-dim);
   transition: transform 0.2s ease;
   flex-shrink: 0;
+}
+.chevron svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
 }
 .item[open] .chevron {
   transform: rotate(180deg);
@@ -64,63 +53,139 @@ export class SazamiAccordion extends HTMLElement {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease, padding 0.3s ease;
-  padding: 0 var(--saz-space-small, 8px);
+  padding: 0 var(--saz-space-small);
 }
 .item[open] .content {
   max-height: 500px;
-  padding-bottom: var(--saz-space-medium, 12px);
+  padding-bottom: var(--saz-space-medium);
 }
 .inner-content {
-  font-size: var(--saz-text-size-medium, 14px);
-  color: var(--saz-color-text-dim, #6b7280);
+  font-size: var(--saz-text-size-medium);
+  color: var(--saz-color-text-dim);
   line-height: 1.5;
 }
-`) +
-      items
-        .map(
-          (item, i) => `
-        <div class="item" ${item.open ? "open" : ""}>
-          <button class="header" aria-expanded="${item.open}" aria-controls="accordion-content-${i}">
-            <span class="title">${item.title}</span>
-            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="content" id="accordion-content-${i}">
-            <div class="inner-content">${item.content}</div>
-          </div>
-        </div>
-      `,
-        )
-        .join("");
+`;
 
-    const headers = this.shadowRoot!.querySelectorAll(".header");
-    headers.forEach((header, i) => {
-      header.addEventListener("click", () => {
-        const item = header.parentElement;
-        const isOpen = item?.hasAttribute("open");
+const accordionConfig = {
+  properties: {
+    "single-open": { type: "boolean" as const, reflect: false },
+    index: { type: "string" as const, reflect: false },
+    open: { type: "boolean" as const, reflect: false },
+  },
+  events: {
+    change: { name: "saz-change", detail: { index: "index", open: "open" } },
+  },
+} as const;
 
-        if (this.hasAttribute("single-open")) {
-          this.shadowRoot!.querySelectorAll(".item").forEach((el) =>
-            el.removeAttribute("open"),
-          );
-          headers.forEach((h) => h.setAttribute("aria-expanded", "false"));
+@component(accordionConfig)
+export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
+  declare "single-open": boolean;
+  declare index: string;
+  declare open: boolean;
+
+  private _itemElements: HTMLElement[] = [];
+  private _handlersAdded = false;
+
+  render() {
+    const items = Array.from(this.querySelectorAll(":scope > *")).map(
+      (el, i) => ({
+        title:
+          (el as HTMLElement).getAttribute("heading") || `Section ${i + 1}`,
+        element: el as HTMLElement,
+        open: el.hasAttribute("open"),
+      }),
+    );
+
+    if (this._itemElements.length === 0) {
+      this._itemElements = items.map((item, i) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "item";
+        if (item.open) wrapper.setAttribute("open", "");
+
+        const header = document.createElement("button");
+        header.className = "header";
+        header.setAttribute("aria-expanded", String(item.open));
+        header.id = `accordion-header-${i}`;
+
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "title";
+        titleSpan.textContent = item.title;
+
+        const chevron = document.createElement("div");
+        chevron.className = "chevron";
+        chevron.innerHTML = ICON_SVGS["chevron-down"] || "";
+
+        header.appendChild(titleSpan);
+        header.appendChild(chevron);
+
+        const content = document.createElement("div");
+        content.className = "content";
+        content.id = `accordion-content-${i}`;
+
+        const innerContent = document.createElement("div");
+        innerContent.className = "inner-content";
+        while (item.element.firstChild) {
+          innerContent.appendChild(item.element.firstChild);
         }
+        content.appendChild(innerContent);
 
-        if (isOpen) {
-          item?.removeAttribute("open");
-          header.setAttribute("aria-expanded", "false");
-        } else {
-          item?.setAttribute("open", "");
-          header.setAttribute("aria-expanded", "true");
-        }
+        wrapper.appendChild(header);
+        wrapper.appendChild(content);
 
-        this.dispatchEvent(
-          new CustomEvent("saz-change", {
-            detail: { index: i, open: !isOpen },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        return wrapper;
       });
+    }
+
+    this.mount(STYLES, "");
+
+    const container = document.createElement("div");
+    container.className = "accordion-container";
+    this._itemElements.forEach((wrapper, i) => {
+      if (!container.contains(wrapper)) {
+        container.appendChild(wrapper);
+      }
+      const header = wrapper.querySelector(".header") as HTMLElement;
+      const isOpen = wrapper.hasAttribute("open");
+      header.setAttribute("aria-expanded", String(isOpen));
+      header.setAttribute("aria-controls", `accordion-content-${i}`);
     });
+    this.shadow.appendChild(container);
+
+    if (!this._handlersAdded) {
+      this._handlersAdded = true;
+      const headers = this.shadow.querySelectorAll(".header");
+      headers.forEach((header, i) => {
+        const handleClick = () => {
+          const item = header.parentElement;
+          const isOpen = item?.hasAttribute("open");
+
+          if (this.hasAttribute("single-open")) {
+            this._itemElements.forEach((el) => {
+              el.removeAttribute("open");
+            });
+            headers.forEach((h) => {
+              (h as HTMLElement).setAttribute("aria-expanded", "false");
+            });
+          }
+
+          if (isOpen) {
+            item?.removeAttribute("open");
+            (header as HTMLElement).setAttribute("aria-expanded", "false");
+          } else {
+            item?.setAttribute("open", "");
+            (header as HTMLElement).setAttribute("aria-expanded", "true");
+          }
+
+          this.dispatchEventTyped("change", {
+            index: i.toString(),
+            open: !isOpen,
+          });
+        };
+        this.addHandler("click", handleClick, {
+          internal: true,
+          element: header as HTMLElement,
+        });
+      });
+    }
   }
 }

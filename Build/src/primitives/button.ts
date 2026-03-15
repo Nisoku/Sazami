@@ -1,103 +1,106 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import {
+  SIZE_PADDING_RULES,
+  VARIANT_BG_RULES,
+  SHAPE_RULES,
+  STATE_DISABLED,
+  STATE_LOADING,
+  STATE_ACTIVE,
+  INTERACTIVE_FOCUS,
+  INTERACTIVE_HOVER,
+  TYPO_TONE,
+} from "./shared";
 
-export class SazamiButton extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    if (!this.hasAttribute("role")) this.setAttribute("role", "button");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--saz-space-small, 8px);
-  padding: var(--saz-space-small, 8px) var(--saz-space-large, 16px);
+  gap: var(--saz-space-small);
+  padding: var(--saz-space-small) var(--saz-space-large);
   border: 1px solid transparent;
-  border-radius: var(--saz-radius-medium, 8px);
-  font-size: var(--saz-text-size-medium, 14px);
-  font-weight: var(--saz-text-weight-medium, 500);
+  border-radius: var(--saz-radius-medium);
+  font-size: var(--saz-text-size-medium);
+  font-weight: var(--saz-text-weight-medium);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
   transition: background 0.2s ease, color 0.2s ease,
               box-shadow 0.2s ease, opacity 0.2s ease,
               transform 0.15s ease;
-  background: var(--saz-color-primary, #2563eb);
-  color: var(--saz-color-on-primary, #ffffff);
+  background: var(--saz-color-primary);
+  color: var(--saz-color-on-primary);
 }
-:host(:hover) { filter: brightness(1.1); }
-:host(:active) { transform: scale(0.97); }
-:host(:focus-visible) {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
-  outline-offset: 2px;
-}
-:host([size="small"]) {
-  padding: var(--saz-space-tiny, 4px) var(--saz-space-medium, 12px);
-  font-size: var(--saz-text-size-small, 12px);
-}
-:host([size="large"]) {
-  padding: var(--saz-space-medium, 12px) var(--saz-space-xlarge, 24px);
-  font-size: var(--saz-text-size-large, 16px);
-}
-:host([size="xlarge"]) {
-  padding: var(--saz-space-large, 16px) var(--saz-space-xxlarge, 32px);
-  font-size: var(--saz-text-size-xlarge, 20px);
-}
-:host([variant="accent"]) {
-  background: var(--saz-color-accent, #ff4d8a);
-  color: var(--saz-color-on-accent, #ffffff);
-}
-:host([variant="primary"]) {
-  background: var(--saz-color-primary, #2563eb);
-  color: var(--saz-color-on-primary, #ffffff);
-}
-:host([variant="secondary"]) {
-  background: transparent;
-  color: var(--saz-color-text, #1f2937);
-  border-color: var(--saz-color-border, #e0e0e0);
-}
-:host([variant="danger"]) {
-  background: var(--saz-color-danger, #ef4444);
-  color: #ffffff;
-}
-:host([variant="success"]) {
-  background: var(--saz-color-success, #10b981);
-  color: #ffffff;
-}
-:host([variant="dim"]) {
-  background: transparent;
-  color: var(--saz-color-text-dim, #6b7280);
-  border-color: transparent;
-}
-:host([variant="dim"]:hover) { color: var(--saz-color-text, #1f2937); }
-:host([shape="pill"])   { border-radius: var(--saz-radius-round, 9999px); }
-:host([shape="round"])  { border-radius: var(--saz-radius-round, 9999px); }
-:host([shape="square"]) { border-radius: var(--saz-radius-none, 0); }
-:host([disabled]) {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-:host([loading]) {
-  opacity: 0.7;
-  cursor: wait;
-  pointer-events: none;
-}
-:host([active]) { filter: brightness(0.9); }
-`) + "<slot></slot>";
+${SIZE_PADDING_RULES}
+${VARIANT_BG_RULES}
+${SHAPE_RULES}
+${STATE_DISABLED}
+${STATE_LOADING}
+${STATE_ACTIVE}
+${INTERACTIVE_FOCUS}
+${INTERACTIVE_HOVER}
+${TYPO_TONE}
+`;
 
-    this.addEventListener("keydown", (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "Enter" || ke.key === " ") {
-        ke.preventDefault();
-        this.click();
+// Config
+const buttonConfig = {
+  properties: {
+    disabled: { type: "boolean" as const, reflect: true },
+    loading: { type: "boolean" as const, reflect: true },
+    active: { type: "boolean" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
+    tone: { type: "string" as const, reflect: true },
+  },
+  events: {
+    click: { name: "saz-click", detail: {} },
+  },
+} as const;
+
+@component(buttonConfig)
+export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
+  declare disabled: boolean;
+  declare loading: boolean;
+  declare active: boolean;
+  declare size: string;
+  declare variant: string;
+  declare shape: string;
+  declare tone: string;
+
+  render() {
+    this.mount(STYLES, `<slot></slot>`);
+
+    if (!this.hasAttribute("role")) this.setAttribute("role", "button");
+
+    const isInert = this.disabled || this.loading;
+    if (isInert) {
+      this.setAttribute("aria-disabled", "true");
+      this.setAttribute("tabindex", "-1");
+    } else {
+      this.removeAttribute("aria-disabled");
+      const currentTabindex = this.getAttribute("tabindex");
+      if (currentTabindex === "-1" || !this.hasAttribute("tabindex")) {
+        this.setAttribute("tabindex", "0");
       }
-    });
+    }
+
+    this.removeHandler("click", this._handleClick);
+    this.removeHandler("keydown", this._handleKeydown);
+    this.addHandler("click", this._handleClick, { internal: true });
+    this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
+
+  private _handleClick = () => {
+    if (this.disabled || this.loading) return;
+    this.dispatchEventTyped("click", {});
+  };
+
+  private _handleKeydown = (e: KeyboardEvent) => {
+    if (this.disabled || this.loading) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      this.click();
+    }
+  };
 }

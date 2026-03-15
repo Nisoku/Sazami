@@ -1,23 +1,12 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
+import { escapeHtml } from "../escape";
 
-export class SazamiSwitch extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const checked = this.hasAttribute("checked");
-    const disabled = this.hasAttribute("disabled");
-
-    const label = this.textContent?.trim() || "";
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
-  gap: var(--saz-space-small, 8px);
+  gap: var(--saz-space-small);
   cursor: pointer;
   user-select: none;
 }
@@ -25,7 +14,7 @@ export class SazamiSwitch extends HTMLElement {
   width: 44px;
   height: 24px;
   border-radius: 12px;
-  background: var(--saz-color-border, #e0e0e0);
+  background: var(--saz-color-border);
   position: relative;
   transition: background 0.2s ease;
   flex-shrink: 0;
@@ -42,57 +31,108 @@ export class SazamiSwitch extends HTMLElement {
   transition: transform 0.2s ease;
 }
 :host([checked]) .switch {
-  background: var(--saz-color-primary, #2563eb);
+  background: var(--saz-color-primary);
 }
 :host([checked]) .thumb {
   transform: translateX(20px);
 }
 :host([variant="accent"]) .switch {
-  background: var(--saz-color-border, #e0e0e0);
+  background: var(--saz-color-border);
 }
 :host([variant="accent"][checked]) .switch {
-  background: var(--saz-color-accent, #ff4d8a);
+  background: var(--saz-color-accent);
 }
 :host([variant="success"]) .switch {
-  background: var(--saz-color-border, #e0e0e0);
+  background: var(--saz-color-border);
 }
 :host([variant="success"][checked]) .switch {
-  background: var(--saz-color-success, #10b981);
+  background: var(--saz-color-success);
 }
 .label {
-  font-size: var(--saz-text-size-medium, 14px);
-  color: var(--saz-color-text, #1f2937);
+  font-size: var(--saz-text-size-medium);
+  color: var(--saz-color-text);
 }
-:host([disabled]) {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-:host(:focus-visible) .switch {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
-  outline-offset: 2px;
-}
-`) +
-      `<div class="switch"><div class="thumb"></div></div>${label ? `<span class="label">${label}</span>` : ""}`;
+${STATE_DISABLED}
+${INTERACTIVE_FOCUS}
+`;
 
-    if (disabled) return;
+// Config
+const switchConfig = {
+  properties: {
+    checked: { type: "boolean" as const, reflect: true },
+    disabled: { type: "boolean" as const, reflect: true },
+    variant: { type: "string" as const, reflect: false },
+  },
+  events: {
+    change: { name: "saz-change", detail: { checked: "checked" } },
+  },
+  binds: {
+    checked: "attribute" as const,
+    disabled: "attribute" as const,
+  },
+} as const;
 
-    this.addEventListener("click", () => {
-      this.toggleAttribute("checked");
-      this.dispatchEvent(
-        new CustomEvent("saz-change", {
-          detail: { checked: this.hasAttribute("checked") },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    });
+@component(switchConfig)
+export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
+  declare checked: boolean;
+  declare disabled: boolean;
+  declare variant: string;
 
-    this.addEventListener("keydown", (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "Enter" || ke.key === " ") {
-        ke.preventDefault();
-        this.click();
-      }
-    });
+  render() {
+    const label = this.textContent?.trim() || "";
+
+    this.mount(
+      STYLES,
+      `
+      <div class="switch"><div class="thumb"></div></div>
+      ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
+    `,
+    );
+
+    if (!this.hasAttribute("role")) this.setAttribute("role", "switch");
+    this._updateAria();
+
+    this.addHandler("click", this._handleClick, { internal: true });
+    this.addHandler("keydown", this._handleKeydown, { internal: true });
+  }
+
+  private _updateAria() {
+    this.setAttribute("aria-checked", String(this.checked));
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
+  }
+
+  private _handleClick = () => {
+    if (this.disabled) return;
+    this.checked = !this.checked;
+    this._updateAria();
+    this.dispatchEventTyped("change", { checked: this.checked });
+  };
+
+  private _handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      this._handleClick();
+    }
+  };
+
+  static get observedAttributes() {
+    return ["checked", "disabled"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    if (oldVal === newVal) return;
+    if (name === "checked" || name === "disabled") {
+      this._updateAria();
+    }
   }
 }

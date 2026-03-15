@@ -1,43 +1,60 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
-export class SazamiIcon extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
-    const svg = ICON_SVGS[icon];
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--saz-icon-size-medium, 20px);
-  height: var(--saz-icon-size-medium, 20px);
+  width: var(--saz-icon-size-medium);
+  height: var(--saz-icon-size-medium);
   color: inherit;
   line-height: 1;
 }
 :host([size="small"]) {
-  width: var(--saz-icon-size-small, 16px);
-  height: var(--saz-icon-size-small, 16px);
+  width: var(--saz-icon-size-small);
+  height: var(--saz-icon-size-small);
 }
 :host([size="large"]) {
-  width: var(--saz-icon-size-large, 24px);
-  height: var(--saz-icon-size-large, 24px);
+  width: var(--saz-icon-size-large);
+  height: var(--saz-icon-size-large);
 }
 :host([size="xlarge"]) {
-  width: var(--saz-icon-size-xlarge, 32px);
-  height: var(--saz-icon-size-xlarge, 32px);
+  width: var(--saz-icon-size-xlarge);
+  height: var(--saz-icon-size-xlarge);
 }
-:host([variant="accent"]) { color: var(--saz-color-accent, #ff4d8a); }
-:host([variant="primary"]) { color: var(--saz-color-primary, #2563eb); }
-:host([variant="dim"]) { color: var(--saz-color-text-dim, #6b7280); }
+${VARIANT_TEXT_RULES}
 svg { width: 100%; height: 100%; }
-`) + (svg || `<span>${icon}</span>`);
+`;
+
+const iconConfig = {
+  properties: {
+    icon: { type: "string" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+  },
+} as const;
+
+@component(iconConfig)
+export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
+  declare icon: string;
+  declare size: string;
+  declare variant: string;
+
+  static get observedAttributes() {
+    return ["icon", "size", "variant"];
+  }
+
+  render() {
+    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
+    const svg = ICON_SVGS[icon];
+
+    if (svg) {
+      this.mount(STYLES, svg);
+    } else {
+      this.mount(STYLES, `<span>${escapeHtml(icon)}</span>`);
+    }
   }
 }

@@ -6,7 +6,7 @@ order: 5
 
 # API Reference
 
-Complete public API for Sazami. 
+Complete public API for Sazami.
 
 > Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
 
@@ -34,16 +34,18 @@ compileSakko(source, document.getElementById('app'));
 ```
 
 **Parameters:**
+
 - `source: string` - Sakko DSL source code (angle brackets are auto-added if missing)
 - `target: HTMLElement` - DOM element to render into
 - `options?: { tokens?: Record<string, string> }` - Optional custom token overrides
 
 **Behavior:**
+
 1. Registers all Sazami Web Components
 2. Injects theme CSS variables into `<head>`
-3. Parses source → AST (uses `@nisoku/sakko`)
-4. Transforms AST → VNode tree
-5. Renders VNode tree → DOM
+3. Parses source -> AST (uses `@nisoku/sakko`)
+4. Transforms AST -> VNode tree
+5. Renders VNode tree -> DOM
 6. Applies curvomorphism to `[curved]` elements
 
 ---
@@ -161,7 +163,7 @@ enableCurvomorphism(element);
 
 ---
 
-## Primitives
+## Primitives API
 
 ### `registerComponents()`
 
@@ -211,7 +213,7 @@ MODIFIER_MAP['bold'];    // { weight: 'bold' }
 
 ### `ICON_SVGS`
 
-A record mapping icon names to SVG markup strings. All 41 built-in icons use `currentColor` and scale to their container.
+A record mapping icon names to SVG markup strings. All 43 built-in icons use `currentColor` and scale to their container.
 
 ```typescript
 import { ICON_SVGS } from '@nisoku/sazami';
@@ -226,6 +228,111 @@ ICON_SVGS['play'];  // '<svg ...>...</svg>'
 
 ---
 
+## Base Component System
+
+Sazami provides a declarative component system with typed properties, events, and handler management. See [Component Base](/docs/component-base.md) for full documentation.
+
+- `@component(config)` - Decorator for component metadata
+- `SazamiComponent` - Base class for all components
+- `addHandler()` / `removeHandler()` / `removeAllHandlers()` - Handler tracking
+- `dispatch()` / `dispatchEventTyped()` / `onCleanup()` - Event utilities
+
+---
+
+## Error Handling
+
+Sazami uses [Satori](https://github.com/nisoku/satori) for structured logging. Errors are logged with context and suggestions.
+
+### Error Functions
+
+```typescript
+import {
+  propertyError,
+  eventError,
+  renderError,
+  bindingError,
+  unknownComponentError,
+} from '@nisoku/sazami';
+
+// Property configuration errors
+propertyError('Invalid property value', {
+  tag: 'saz-button',
+  suggestion: 'Use a valid variant: default, accent, or ghost',
+});
+
+// Event dispatch errors
+eventError('Event not defined in metadata', {
+  tag: 'saz-input',
+  suggestion: 'Add the event to your @component config',
+});
+
+// Render errors
+renderError('Failed to render component', {
+  suggestion: 'Check template syntax and styles',
+});
+
+// Binding errors
+bindingError('Invalid binding', {
+  property: 'value',
+  suggestion: 'Use bind:value for two-way binding',
+});
+
+// Unknown component warning
+unknownComponentError('my-component', 'Use saz- prefix');
+```
+
+### Integration with Sakko
+
+Sakko (parser) also uses Satori for structured errors:
+
+```typescript
+import {
+  tokenizerError,
+  parserError,
+} from '@nisoku/sakko';
+
+tokenizerError('Invalid syntax', {
+  suggestion: 'Check for missing quotes',
+});
+
+parserError('Unexpected token', {
+  cause: 'missing closing tag',
+});
+```
+
+---
+
+## Accessibility
+
+All interactive primitives include full keyboard support following WAI-ARIA patterns.
+
+For component-specific props and methods, see [Component Base](/docs/component-base.md) and the [Primitives](/docs/primitives.md) reference.
+
+### Keyboard Navigation
+
+| Component | Keys | Behavior |
+| ----------- | ------ | ---------- |
+| Select | Enter/Space | Open/close dropdown |
+| Select | Escape | Close dropdown |
+| Select | Arrow Up/Down | Navigate options |
+| Select | Home/End | First/last option |
+| Tabs | Arrow Left/Right | Switch tabs |
+| Tabs | Enter/Space | Activate focused tab |
+| Modal | Escape | Close modal |
+| Toast | Escape | Dismiss toast |
+| Button | Enter/Space | Activate (native) |
+| Checkbox | Enter/Space | Toggle (native) |
+| Toggle | Enter/Space | Toggle (native) |
+| Slider | Arrow Left/Right | Adjust value |
+
+### Focus Management
+
+- Focus is properly managed when opening/closing modals and selects
+- Tab order follows visual layout
+- Focus indicators are visible
+
+---
+
 ## Types
 
 All TypeScript types are exported:
@@ -235,7 +342,8 @@ import type {
   VNode,
   ComponentDefinition,
   CurvomorphismOptions,
+  SazamiComponentConfig,
+  PropertyConfig,
+  EventConfig,
 } from '@nisoku/sazami';
 ```
-
-Note: AST types (`Token`, `Modifier`, `ASTNode`, `RootNode`, `ElementNode`, `InlineNode`, `ListNode`) are exported from `@nisoku/sakko`.

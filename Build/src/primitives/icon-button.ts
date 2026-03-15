@@ -1,80 +1,159 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import {
+  STATE_DISABLED,
+  INTERACTIVE_FOCUS,
+  INTERACTIVE_HOVER,
+  VARIANT_TEXT_RULES,
+} from "./shared";
 import { ICON_SVGS } from "../icons/index";
 
-export class SazamiIconButton extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    if (!this.hasAttribute("role")) this.setAttribute("role", "button");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
-    if (!this.hasAttribute("aria-label")) {
-      const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
-      this.setAttribute("aria-label", icon);
-    }
-
-    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
-    const svg = ICON_SVGS[icon];
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--saz-space-small, 8px);
+  padding: var(--saz-space-small);
   border: none;
-  border-radius: var(--saz-radius-round, 9999px);
+  border-radius: var(--saz-radius-round);
   background: transparent;
-  color: var(--saz-color-text, #1f2937);
+  color: var(--saz-color-text);
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
   line-height: 1;
 }
-:host(:hover) { background: var(--saz-color-border, #e0e0e0); }
-:host(:active) { transform: scale(0.9); }
-:host([size="small"]) { padding: var(--saz-space-tiny, 4px); }
-:host([size="large"]) { padding: var(--saz-space-medium, 12px); }
-:host([size="xlarge"]) { padding: var(--saz-space-large, 16px); }
-:host([variant="accent"]) { color: var(--saz-color-accent, #ff4d8a); }
-:host([variant="primary"]) { color: var(--saz-color-primary, #2563eb); }
-:host([variant="dim"]) { color: var(--saz-color-text-dim, #6b7280); }
-:host([disabled]) { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-:host(:focus-visible) {
-  outline: 2px solid var(--saz-color-primary, #2563eb);
-  outline-offset: 2px;
-}
+${INTERACTIVE_HOVER}
+${VARIANT_TEXT_RULES}
+${STATE_DISABLED}
+${INTERACTIVE_FOCUS}
+:host([size="small"]) { padding: var(--saz-space-tiny); }
+:host([size="large"]) { padding: var(--saz-space-medium); }
+:host([size="xlarge"]) { padding: var(--saz-space-large); }
 .icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--saz-icon-size-medium, 20px);
-  height: var(--saz-icon-size-medium, 20px);
+  width: var(--saz-icon-size-medium);
+  height: var(--saz-icon-size-medium);
 }
 :host([size="small"]) .icon {
-  width: var(--saz-icon-size-small, 16px);
-  height: var(--saz-icon-size-small, 16px);
+  width: var(--saz-icon-size-small);
+  height: var(--saz-icon-size-small);
 }
 :host([size="large"]) .icon {
-  width: var(--saz-icon-size-large, 24px);
-  height: var(--saz-icon-size-large, 24px);
+  width: var(--saz-icon-size-large);
+  height: var(--saz-icon-size-large);
 }
 :host([size="xlarge"]) .icon {
-  width: var(--saz-icon-size-xlarge, 32px);
-  height: var(--saz-icon-size-xlarge, 32px);
+  width: var(--saz-icon-size-xlarge);
+  height: var(--saz-icon-size-xlarge);
 }
 .icon svg { width: 100%; height: 100%; pointer-events: none; }
-`) + `<div class="icon">${svg || `<span class="glyph">${icon}</span>`}</div>`;
+`;
 
-    this.addEventListener("keydown", (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "Enter" || ke.key === " ") {
-        ke.preventDefault();
-        this.click();
+// Config
+const iconButtonConfig = {
+  properties: {
+    icon: { type: "string" as const, reflect: true },
+    disabled: { type: "boolean" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+  },
+  events: {
+    click: { name: "saz-click", detail: {} },
+  },
+} as const;
+
+@component(iconButtonConfig)
+export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
+  declare icon: string;
+  declare disabled: boolean;
+  declare size: string;
+  declare variant: string;
+
+  private _handlersAdded = false;
+  private _autoAriaLabel = false;
+
+  render() {
+    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
+    const svg = ICON_SVGS[icon];
+
+    if (svg) {
+      this.mount(
+        STYLES,
+        `
+        <div class="icon">${svg}</div>
+      `,
+      );
+    } else {
+      this.mount(STYLES, `<div class="icon"><span class="glyph"></span></div>`);
+      const glyph = this.$(".glyph");
+      if (glyph) glyph.textContent = icon;
+    }
+
+    if (!this.hasAttribute("role")) this.setAttribute("role", "button");
+    this._updateTabIndex();
+    if (!this.hasAttribute("aria-label")) {
+      this.setAttribute("aria-label", icon);
+      this._autoAriaLabel = true;
+    } else {
+      this._autoAriaLabel = false;
+    }
+
+    if (!this._handlersAdded) {
+      this._handlersAdded = true;
+      this.addHandler("click", this._handleClick, { internal: true });
+      this.addHandler("keydown", this._handleKeydown, { internal: true });
+    }
+  }
+
+  private _updateTabIndex() {
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
+  }
+
+  static get observedAttributes() {
+    return ["disabled", "icon", "size", "variant"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    if (oldVal === newVal) return;
+    if (name === "disabled") {
+      this._updateTabIndex();
+    }
+    if (name === "icon") {
+      if (this._autoAriaLabel) {
+        this.removeAttribute("aria-label");
       }
-    });
+      this.render();
+    } else if (name === "size" || name === "variant") {
+      this.render();
+    }
+  }
+
+  private _handleClick = () => {
+    if (this.disabled) return;
+    this.dispatchEventTyped("click", {});
+  };
+
+  private _handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      this._handleClick();
+    }
+  };
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._handlersAdded = false;
   }
 }

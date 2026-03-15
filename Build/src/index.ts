@@ -19,6 +19,8 @@ export { applyCurvomorphism, enableCurvomorphism } from "./curvomorphism/index";
 
 export { ICON_SVGS } from "./icons/index";
 
+export { escapeHtml, unescapeHtml, escapeUrl, escapeCss } from "./escape";
+
 import { parseSakko } from "@nisoku/sakko";
 import {
   transformAST,
@@ -87,14 +89,56 @@ export function compileSakko(
   render(rootVNode, target);
 
   if (typeof window !== "undefined") {
-    requestAnimationFrame(() => {
-      target.querySelectorAll("[curved]").forEach((el) => {
-        if (el instanceof HTMLElement) {
-          enableCurvomorphism(el, {
+    // Disconnect any observer from a previous compileSakko call on this target
+    // so re-renders (e.g. playground live preview) don't leave stale observers.
+    const prev = (target as any).__sazamiRO as ResizeObserver | undefined;
+    if (prev) prev.disconnect();
+
+    // Dispose any previous curvomorphism listeners
+    const prevDisposers = (target as any).__sazamiCurvoDisposers as
+      | Array<() => void>
+      | undefined;
+    if (prevDisposers) {
+      prevDisposers.forEach((d) => { d(); });
+    }
+    const disposers: Array<() => void> = [];
+
+    const ro = new ResizeObserver(() => {
+      const elements = Array.from(target.querySelectorAll("[curved]")).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement,
+      );
+      if (elements.length === 0) return;
+
+      requestAnimationFrame(() => {
+        // Compute a single shared center from the collective bounding box of
+        // all curved elements
+        const rects = elements.map((el) => el.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const right = Math.max(...rects.map((r) => r.right));
+        const top = Math.min(...rects.map((r) => r.top));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
+        const centerX = (left + right) / 2;
+        const centerY = (top + bottom) / 2;
+
+        disposers.forEach((d) => { d(); });
+        disposers.length = 0;
+
+        elements.forEach((el) => {
+          const dispose = enableCurvomorphism(el, {
             radius: el.getAttribute("radius") || undefined,
+            centerX,
+            centerY,
+            groupLeft: left,
+            groupRight: right,
+            groupTop: top,
+            groupBottom: bottom,
           });
-        }
+          disposers.push(dispose);
+        });
       });
     });
+    (target as any).__sazamiRO = ro;
+    (target as any).__sazamiCurvoDisposers = disposers;
+    ro.observe(target);
   }
 }

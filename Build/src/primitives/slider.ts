@@ -1,33 +1,7 @@
-import { baseStyles } from "./shared";
+import { SazamiComponent, component } from "./base";
+import { STATE_DISABLED } from "./shared";
 
-export class SazamiSlider extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
-
-  connectedCallback() {
-    const min = parseFloat(this.getAttribute("min") || "0");
-    const max = parseFloat(this.getAttribute("max") || "100");
-    const value = parseFloat(this.getAttribute("value") || "50");
-    const step = parseFloat(this.getAttribute("step") || "1");
-    const disabled = this.hasAttribute("disabled");
-    const size = this.getAttribute("size") || "medium";
-
-    const percent = ((value - min) / (max - min)) * 100;
-
-    const sizes: Record<string, { track: string; thumb: string }> = {
-      tiny: { track: "4px", thumb: "16px" },
-      small: { track: "6px", thumb: "18px" },
-      medium: { track: "8px", thumb: "20px" },
-      large: { track: "10px", thumb: "24px" },
-      xlarge: { track: "14px", thumb: "28px" },
-    };
-    const trackHeight = sizes[size]?.track || sizes.medium.track;
-    const thumbSize = sizes[size]?.thumb || sizes.medium.thumb;
-
-    this.shadowRoot!.innerHTML =
-      baseStyles(`
+const STYLES = `
 :host {
   display: block;
   width: 100%;
@@ -37,15 +11,15 @@ export class SazamiSlider extends HTMLElement {
 .slider-container {
   position: relative;
   width: 100%;
-  height: ${thumbSize};
+  height: 20px;
   display: flex;
   align-items: center;
 }
 .track {
   position: absolute;
   width: 100%;
-  height: ${trackHeight};
-  background: var(--saz-color-border, #e0e0e0);
+  height: 8px;
+  background: var(--saz-color-border);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -54,13 +28,13 @@ export class SazamiSlider extends HTMLElement {
   left: 0;
   top: 0;
   height: 100%;
-  background: var(--saz-color-primary, #2563eb);
+  background: var(--saz-color-primary);
   border-radius: 999px;
 }
 .slider {
   position: relative;
   width: 100%;
-  height: ${thumbSize};
+  height: 20px;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -70,10 +44,10 @@ export class SazamiSlider extends HTMLElement {
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: ${thumbSize};
-  height: ${thumbSize};
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--saz-color-primary, #2563eb);
+  background: var(--saz-color-primary);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -83,11 +57,11 @@ export class SazamiSlider extends HTMLElement {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 .slider::-moz-range-thumb {
-  width: ${thumbSize};
-  height: ${thumbSize};
+  width: 20px;
+  height: 20px;
   border: none;
   border-radius: 50%;
-  background: var(--saz-color-primary, #2563eb);
+  background: var(--saz-color-primary);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
 }
@@ -100,53 +74,135 @@ export class SazamiSlider extends HTMLElement {
 .labels {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--saz-space-small, 8px);
-  font-size: var(--saz-text-size-small, 12px);
-  color: var(--saz-color-text-dim, #6b7280);
+  margin-top: var(--saz-space-small);
+  font-size: var(--saz-text-size-small);
+  color: var(--saz-color-text-dim);
 }
-:host([disabled]) .slider {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-:host([disabled]) .slider::-webkit-slider-thumb {
-  cursor: not-allowed;
-}
-`) +
-      `<div class="slider-container">
-         <div class="track">
-           <div class="filled" style="width: ${percent}%"></div>
-         </div>
-         <input type="range" class="slider" min="${min}" max="${max}" step="${step}" value="${value}" ${disabled ? "disabled" : ""} />
-       </div>
-       <div class="labels">
-         <span>${min}</span>
-         <span>${max}</span>
-       </div>`;
+${STATE_DISABLED}
+`;
 
-    const slider = this.shadowRoot!.querySelector(
-      ".slider",
-    ) as HTMLInputElement;
-    const filled = this.shadowRoot!.querySelector(".filled") as HTMLElement;
+const sliderConfig = {
+  properties: {
+    value: { type: "number" as const, reflect: false, default: 50 },
+    min: { type: "number" as const, reflect: false, default: 0 },
+    max: { type: "number" as const, reflect: false, default: 100 },
+    step: { type: "number" as const, reflect: false, default: 1 },
+    disabled: { type: "boolean" as const, reflect: true },
+    size: { type: "string" as const, reflect: false, default: "medium" },
+  },
+  events: {
+    input: { name: "saz-input", detail: { value: "value" } },
+  },
+} as const;
 
-    slider?.addEventListener("input", () => {
-      const val = parseFloat(slider.value);
-      const pct = ((val - min) / (max - min)) * 100;
-      filled.style.width = `${pct}%`;
-      this.dispatchEvent(
-        new CustomEvent("saz-input", {
-          detail: { value: val },
-          bubbles: true,
-          composed: true,
-        }),
+@component(sliderConfig)
+export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
+  declare value: number;
+  declare min: number;
+  declare max: number;
+  declare step: number;
+  declare disabled: boolean;
+  declare size: string;
+
+  render() {
+    let min = this.min;
+    let max = this.max;
+    let value = this.value;
+    let step = this.step;
+
+    if (!Number.isFinite(min)) min = 0;
+    if (!Number.isFinite(max)) max = 100;
+    if (!Number.isFinite(value)) value = 50;
+    if (!Number.isFinite(step)) step = 1;
+    if (step <= 0) step = 1;
+
+    if (min > max) [min, max] = [max, min];
+    if (value < min) value = min;
+    if (value > max) value = max;
+
+    const disabled = this.disabled;
+    const size = this.size || "medium";
+
+    const sizes: Record<string, { track: string; thumb: string }> = {
+      tiny: { track: "4px", thumb: "16px" },
+      small: { track: "6px", thumb: "18px" },
+      medium: { track: "8px", thumb: "20px" },
+      large: { track: "10px", thumb: "24px" },
+      xlarge: { track: "14px", thumb: "28px" },
+    };
+    const trackHeight = sizes[size]?.track || sizes.medium.track;
+    const thumbSize = sizes[size]?.thumb || sizes.medium.thumb;
+
+    const range = max - min;
+    const percent = range !== 0 ? ((value - min) / range) * 100 : 0;
+
+    this.mount(
+      STYLES,
+      `
+      <div class="slider-container" style="height: ${thumbSize}">
+        <div class="track" style="height: ${trackHeight}">
+          <div class="filled" style="width: ${percent}%"></div>
+        </div>
+        <input type="range" class="slider" min="${min}" max="${max}" step="${step}" value="${value}" ${disabled ? "disabled" : ""} style="height: ${thumbSize}" />
+      </div>
+      <div class="labels">
+        <span>${min}</span>
+        <span>${max}</span>
+      </div>
+    `,
+    );
+
+    const slider = this.$(".slider") as HTMLInputElement;
+    const filled = this.$(".filled") as HTMLElement;
+
+    if (slider) {
+      this.removeAllHandlers({ type: "input", source: "internal" });
+      this.addHandler(
+        "input",
+        () => {
+          const val = parseFloat(slider.value);
+          const pct = range !== 0 ? ((val - min) / range) * 100 : 0;
+          filled.style.width = `${pct}%`;
+          this.value = val;
+          this.dispatchEventTyped("input", { value: val });
+        },
+        { internal: true, element: slider },
       );
-    });
+    }
   }
 
   static get observedAttributes() {
-    return ["value", "min", "max", "size"];
+    return [...super.observedAttributes, "value", "min", "max", "step", "size"];
   }
 
-  attributeChangedCallback() {
-    this.connectedCallback();
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    if (
+      name === "value" ||
+      name === "min" ||
+      name === "max" ||
+      name === "step"
+    ) {
+      let parsed = newVal !== null ? parseFloat(newVal) : null;
+      if (parsed === null || Number.isNaN(parsed)) {
+        parsed = name === "value" ? 50 : name === "step" ? 1 : name === "max" ? 100 : 0;
+      }
+      if (name === "step" && parsed <= 0) {
+        parsed = 1;
+      }
+      (this as any)[name] = parsed;
+      if (name === "value" || name === "min" || name === "max") {
+        const min = this.min;
+        const max = this.max;
+        if (this.value < min) (this as any).value = min;
+        if (this.value > max) (this as any).value = max;
+      }
+    } else if (name === "size") {
+      (this as any)[name] = newVal ?? "";
+    }
+    super.attributeChangedCallback(name, oldVal, newVal);
   }
 }

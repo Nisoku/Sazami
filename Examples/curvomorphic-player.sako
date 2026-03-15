@@ -1,0 +1,133 @@
+<music {
+  section(center-point) {
+    heading(xlarge): "Your Library"
+    text(dim): "Pick up where you left off."
+
+    spacer(small)
+
+    card(curved row center gap medium) {
+      coverart(round large): "https://placehold.co/80x80/2563eb/ffffff?text=♫"
+      stack(gap tiny) {
+        heading: "Midnight City"
+        text(dim small): "M83 · Hurry Up, We're Dreaming"
+        badge(accent): "Now Playing"
+      }
+      spacer
+      row(gap small center): [
+        icon-btn: "previous",
+        icon-btn(primary large): "pause",
+        icon-btn: "next"
+      ]
+    }
+
+    spacer(small)
+
+    grid(cols 3 gap large) {
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/7c3aed/ffffff?text=♪"
+        heading: "Synthwave Dreams"
+        text(dim small): "Kavinsky"
+        row(gap small center): [
+          badge(primary): "12 tracks",
+          icon-btn(small): "play"
+        ]
+      },
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/db2777/ffffff?text=♩"
+        heading: "Late Night Drive"
+        text(dim small): "Bonobo"
+        row(gap small center): [
+          badge(accent): "9 tracks",
+          icon-btn(small): "play"
+        ]
+      },
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/059669/ffffff?text=♬"
+        heading: "Morning Ritual"
+        text(dim small): "Four Tet"
+        row(gap small center): [
+          badge(success): "15 tracks",
+          icon-btn(small): "play"
+        ]
+      },
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/d97706/ffffff?text=♫"
+        heading: "Focus Mode"
+        text(dim small): "Tycho"
+        row(gap small center): [
+          badge: "8 tracks",
+          icon-btn(small): "play"
+        ]
+      },
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/dc2626/ffffff?text=♪"
+        heading: "Club Nights"
+        text(dim small): "Disclosure"
+        row(gap small center): [
+          badge(danger): "20 tracks",
+          icon-btn(small): "play"
+        ]
+      },
+      card(curved) {
+        coverart(round): "https://placehold.co/120x120/0891b2/ffffff?text=♩"
+        heading: "Chill Sundays"
+        text(dim small): "Nils Frahm"
+        row(gap small center): [
+          badge: "11 tracks",
+          icon-btn(small): "play"
+        ]
+      }
+    }
+
+    spacer(small)
+
+    card(curved) {
+      row(space-between center) {
+        heading: "Recently Played"
+        button(dim small): "See all"
+      }
+      divider
+      column(gap small) {
+        row(space-between center gap medium) {
+          row(gap medium center): [
+            icon(accent): "music",
+            stack(gap tiny) {
+              text(bold): "Midnight City"
+              text(dim small): "M83"
+            }
+          ]
+          row(gap small center): [
+            text(dim small): "4:03",
+            icon-btn(small): "heart"
+          ]
+        },
+        row(space-between center gap medium) {
+          row(gap medium center): [
+            icon(primary): "music",
+            stack(gap tiny) {
+              text(bold): "Nightcall"
+              text(dim small): "Kavinsky"
+            }
+          ]
+          row(gap small center): [
+            text(dim small): "3:48",
+            icon-btn(small): "heart"
+          ]
+        },
+        row(space-between center gap medium) {
+          row(gap medium center): [
+            icon: "music",
+            stack(gap tiny) {
+              text(bold): "Kong"
+              text(dim small): "Bonobo"
+            }
+          ]
+          row(gap small center): [
+            text(dim small): "5:12",
+            icon-btn(small): "heart"
+          ]
+        }
+      }
+    }
+  }
+}>
