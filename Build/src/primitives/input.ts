@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, STATE_DISABLED } from "./shared";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host { display: block; }
@@ -61,7 +62,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     this.mount(
       STYLES,
       `
-      <input type="${type}" placeholder="${placeholder}" value="${this.value || ""}" ${this.disabled ? "disabled" : ""} />
+      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(this.value || "")}" ${this.disabled ? "disabled" : ""} />
     `,
     );
 

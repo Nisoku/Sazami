@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_HOVER, VARIANT_BG_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -112,7 +113,7 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
     this.mount(
       STYLES,
       `
-      ${label}${removable ? `<button class="remove-btn" aria-label="Remove">${ICON_SVGS.close}</button>` : ""}
+      <span class="chip-label">${escapeHtml(label)}</span>${removable ? `<button class="remove-btn" aria-label="Remove">${ICON_SVGS.close}</button>` : ""}
     `,
     );
 

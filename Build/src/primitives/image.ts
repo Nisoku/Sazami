@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES, SIZE_RULES } from "./shared";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -41,6 +42,6 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     const src = this.getAttribute("src") || this.textContent?.trim() || "";
     const alt = this.getAttribute("alt") || "";
 
-    this.mount(STYLES, `<img src="${src}" alt="${alt}" />`);
+    this.mount(STYLES, `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`);
   }
 }

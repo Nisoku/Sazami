@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host { display: block; }
@@ -94,7 +95,7 @@ export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
           (item, i) => `
         <div class="item" ${item.open ? "open" : ""}>
           <button class="header" aria-expanded="${item.open}" aria-controls="accordion-content-${i}">
-            <span class="title">${item.title}</span>
+            <span class="title">${escapeHtml(item.title)}</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="content" id="accordion-content-${i}">
@@ -103,7 +104,7 @@ export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
         </div>
       `,
         )
-        .join(""),
+        .join("")
     );
 
     const headers = this.shadow.querySelectorAll(".header");
