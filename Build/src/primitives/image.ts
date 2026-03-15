@@ -40,6 +40,10 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
 
   render() {
     const src = this.getAttribute("src") || this.textContent?.trim() || "";
+    if (!src) {
+      this.mount(STYLES, "");
+      return;
+    }
     const alt = this.getAttribute("alt") || "";
 
     this.mount(

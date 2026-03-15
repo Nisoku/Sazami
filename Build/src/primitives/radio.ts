@@ -104,16 +104,13 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
 
     const root = this.getRootNode() as ParentNode;
     if (root) {
-      root.querySelectorAll("saz-radio").forEach((el) => {
-        const radio = el as SazamiRadio;
-        if (
-          radio.hasAttribute("name") &&
-          radio.getAttribute("name") === name &&
-          radio.getAttribute("value") !== value
-        ) {
-          radio.removeAttribute("checked");
-        }
-      });
+      const escapedName = CSS.escape(name);
+      root
+        .querySelectorAll(`saz-radio[name="${escapedName}"]`)
+        .forEach((el) => {
+          if (el === this) return;
+          el.removeAttribute("checked");
+        });
     }
 
     this.checked = true;

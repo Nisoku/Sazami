@@ -73,6 +73,8 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
   declare active: string;
 
   private _tabs: Array<{ label: string; panelId: string; tabId: string }> = [];
+  private _panelElements: HTMLElement[] = [];
+  private _handlersAdded = false;
 
   render() {
     this._tabs = Array.from(this.querySelectorAll(':scope > [slot="tab"]')).map(
@@ -86,52 +88,68 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
     const panels = Array.from(this.querySelectorAll(':scope > [slot="panel"]'));
     const activeTab = this.getAttribute("active") || "0";
 
+    if (this._panelElements.length === 0) {
+      this._panelElements = panels.map((panel, i) => {
+        const el = document.createElement("div");
+        el.className = "panel";
+        el.setAttribute("role", "tabpanel");
+        el.id = `panel-${i}`;
+        el.setAttribute("aria-labelledby", `tab-${i}`);
+        while (panel.firstChild) {
+          el.appendChild(panel.firstChild);
+        }
+        return el;
+      });
+    }
+
     this.mount(
       STYLES,
       `
       <div class="tabs" role="tablist">
         ${this._tabs.map((t, i) => `<button class="tab${i.toString() === activeTab ? " active" : ""}" role="tab" id="${t.tabId}" aria-selected="${i.toString() === activeTab}" aria-controls="${t.panelId}">${escapeHtml(t.label)}</button>`).join("")}
       </div>
-      <div class="panels">
-        ${panels
-          .map((panel, i) => {
-            const content = panel.innerHTML || `Panel ${i + 1}`;
-            return `<div class="panel${i.toString() === activeTab ? " active" : ""}" role="tabpanel" id="panel-${i}" aria-labelledby="tab-${i}" style="display: ${i.toString() === activeTab ? "block" : "none"}">${content}</div>`;
-          })
-          .join("")}
-      </div>
+      <div class="panels"></div>
     `,
     );
 
-    const tabButtons = this.shadow.querySelectorAll(".tab");
-    const panelElements = this.shadow.querySelectorAll(".panel");
-
-    // Keyboard support: Left/Right arrows to switch tabs
-    tabButtons.forEach((btn, i) => {
-      this.addHandler("click", () => this._activateTab(i), {
-        internal: true,
-        element: btn as HTMLElement,
-      });
-      const handleKeydown: EventListener = (e) => {
-        const ke = e as KeyboardEvent;
-        if (ke.key === "ArrowRight") {
-          ke.preventDefault();
-          this._activateTab((i + 1) % this._tabs.length);
-        } else if (ke.key === "ArrowLeft") {
-          ke.preventDefault();
-          this._activateTab((i - 1 + this._tabs.length) % this._tabs.length);
-        }
-      };
-      this.addHandler("keydown", handleKeydown, {
-        internal: true,
-        element: btn as HTMLElement,
-      });
+    const panelsContainer = this.shadow.querySelector(".panels") as HTMLElement;
+    this._panelElements.forEach((el, i) => {
+      el.classList.toggle("active", i.toString() === activeTab);
+      el.style.display = i.toString() === activeTab ? "block" : "none";
+      if (!panelsContainer.contains(el)) {
+        panelsContainer.appendChild(el);
+      }
     });
+
+    const tabButtons = this.shadow.querySelectorAll(".tab");
+
+    if (!this._handlersAdded) {
+      this._handlersAdded = true;
+      tabButtons.forEach((btn, i) => {
+        this.addHandler("click", () => this._activateTab(i), {
+          internal: true,
+          element: btn as HTMLElement,
+        });
+        const handleKeydown: EventListener = (e) => {
+          const ke = e as KeyboardEvent;
+          if (ke.key === "ArrowRight") {
+            ke.preventDefault();
+            this._activateTab((i + 1) % this._tabs.length);
+          } else if (ke.key === "ArrowLeft") {
+            ke.preventDefault();
+            this._activateTab((i - 1 + this._tabs.length) % this._tabs.length);
+          }
+        };
+        this.addHandler("keydown", handleKeydown, {
+          internal: true,
+          element: btn as HTMLElement,
+        });
+      });
+    }
   }
 
   private _activateTab(index: number, emit = true) {
     const tabButtons = this.shadow.querySelectorAll(".tab");
-    const panelElements = this.shadow.querySelectorAll(".panel");
     tabButtons.forEach((b, j) => {
       b.classList.toggle("active", j === index);
       (b as HTMLElement).setAttribute(
@@ -139,9 +157,9 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
         j === index ? "true" : "false",
       );
     });
-    panelElements.forEach((p, j) => {
+    this._panelElements.forEach((p, j) => {
       p.classList.toggle("active", j === index);
-      (p as HTMLElement).style.display = j === index ? "block" : "none";
+      p.style.display = j === index ? "block" : "none";
     });
     if (tabButtons[index]) {
       (tabButtons[index] as HTMLElement).focus();

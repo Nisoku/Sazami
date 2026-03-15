@@ -136,7 +136,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       `
       <div class="trigger" role="combobox" tabindex="${this.disabled ? "-1" : "0"}" aria-haspopup="listbox" aria-expanded="${this.hasAttribute("open") ? "true" : "false"}">
         <span class="value">${escapeHtml(selectedOption?.label || placeholder)}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        ${ICON_SVGS["chevron-down"] || ""}
       </div>
       <div class="dropdown" role="listbox">
         ${this._options.map((opt, i) => `<div class="option${opt.value === value ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === value}">${escapeHtml(opt.label)}</div>`).join("")}

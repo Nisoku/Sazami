@@ -29,6 +29,7 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
 
   private _resizeObserver?: ResizeObserver;
   private _boundComputeAndSetCenter = this._computeAndSetCenter.bind(this);
+  private _slot?: HTMLSlotElement;
 
   private _computeAndSetCenter() {
     if (!this.hasAttribute("center-point")) return;
@@ -37,12 +38,25 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
     this.dataset.centerY = (rect.top + rect.height / 2).toString();
   }
 
-  connectedCallback() {
-    super.connectedCallback();
-    const slot = this.shadowRoot?.querySelector("slot");
+  private _attachSlotListener() {
+    const slot = this.shadowRoot?.querySelector(
+      "slot",
+    ) as HTMLSlotElement | null;
+    if (this._slot) {
+      this._slot.removeEventListener(
+        "slotchange",
+        this._boundComputeAndSetCenter,
+      );
+    }
     if (slot) {
       slot.addEventListener("slotchange", this._boundComputeAndSetCenter);
+      this._slot = slot;
     }
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._attachSlotListener();
     this._setupResizeObserver();
   }
 
@@ -60,15 +74,19 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
       this._resizeObserver.disconnect();
       this._resizeObserver = undefined;
     }
-    const slot = this.shadowRoot?.querySelector("slot");
-    if (slot) {
-      slot.removeEventListener("slotchange", this._boundComputeAndSetCenter);
+    if (this._slot) {
+      this._slot.removeEventListener(
+        "slotchange",
+        this._boundComputeAndSetCenter,
+      );
+      this._slot = undefined;
     }
     super.disconnectedCallback();
   }
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
+    this._attachSlotListener();
 
     if (this.hasAttribute("center-point")) {
       requestAnimationFrame(() => {

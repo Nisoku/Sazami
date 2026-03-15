@@ -141,7 +141,9 @@ export class SazamiComponent<
 
   disconnectedCallback() {
     this.removeAllHandlers();
-    this._cleanupFns.forEach((fn) => fn());
+    for (const fn of this._cleanupFns) {
+      fn();
+    }
     this._cleanupFns = [];
   }
 
@@ -328,9 +330,7 @@ export class SazamiComponent<
     if (!props) return;
 
     for (const [prop, cfg] of Object.entries(props)) {
-      if (cfg.reflect) {
-        this._createReflector(prop, cfg.type, cfg.default);
-      }
+      this._createReflector(prop, cfg.type, cfg.default, cfg.reflect);
     }
   }
 
@@ -338,6 +338,7 @@ export class SazamiComponent<
     prop: string,
     type: "string" | "number" | "boolean",
     defaultValue?: string | number | boolean,
+    reflect?: boolean,
   ) {
     const attr = prop;
 
@@ -361,9 +362,9 @@ export class SazamiComponent<
             this.removeAttribute(attr);
           }
         } else {
-          if (value != null && value !== "") {
+          if (reflect && value != null && value !== "") {
             this.setAttribute(attr, String(value));
-          } else {
+          } else if (reflect) {
             this.removeAttribute(attr);
           }
         }

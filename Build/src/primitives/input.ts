@@ -92,16 +92,18 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     const input = this.$("input") as HTMLInputElement;
     if (!input) return;
 
-    if (name === "value" && newVal !== null) {
-      if (input.value !== newVal) {
+    if (name === "value") {
+      if (newVal === null) {
+        if (input.value !== "") input.value = "";
+      } else if (input.value !== newVal) {
         input.value = newVal;
       }
     } else if (name === "disabled") {
       input.disabled = newVal !== null;
-    } else if (name === "placeholder" && newVal !== null) {
-      input.placeholder = newVal;
-    } else if (name === "type" && newVal !== null) {
-      input.type = newVal;
+    } else if (name === "placeholder") {
+      input.placeholder = newVal ?? "";
+    } else if (name === "type") {
+      input.type = newVal ?? "text";
     }
   }
 }

@@ -1,4 +1,5 @@
 import { SazamiComponent, component } from "./base";
+import { ICON_SVGS } from "../icons/index";
 
 const STYLES = `
 :host {
@@ -70,10 +71,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
     this.mount(
       STYLES,
       `
-      <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
-        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
-      </svg>
+      ${ICON_SVGS["spinner"] || ""}
       <span class="label"></span>
     `,
     );

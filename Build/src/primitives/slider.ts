@@ -107,6 +107,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   private _sliderHandlerAdded = false;
 
   render() {
+    this._sliderHandlerAdded = false;
+
     const min = parseFloat(this.getAttribute("min") || "0");
     const max = parseFloat(this.getAttribute("max") || "100");
     const value = parseFloat(this.getAttribute("value") || "50");
@@ -163,7 +165,15 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   static get observedAttributes() {
-    return ["value", "min", "max", "step", "disabled", "size"];
+    return [
+      ...super.observedAttributes,
+      "value",
+      "min",
+      "max",
+      "step",
+      "disabled",
+      "size",
+    ];
   }
 
   attributeChangedCallback(
@@ -171,6 +181,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
     if (oldVal === newVal) return;
     this.render();
   }

@@ -73,6 +73,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   declare variant: string;
 
   private _handlersAdded = false;
+  private _autoAriaLabel = false;
 
   render() {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
@@ -95,6 +96,9 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     this._updateTabIndex();
     if (!this.hasAttribute("aria-label")) {
       this.setAttribute("aria-label", icon);
+      this._autoAriaLabel = true;
+    } else {
+      this._autoAriaLabel = false;
     }
 
     if (!this._handlersAdded) {
@@ -127,8 +131,12 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     if (name === "disabled") {
       this._updateTabIndex();
     }
-    if (name === "icon" || name === "size" || name === "variant") {
-      this.removeAttribute("aria-label");
+    if (name === "icon") {
+      if (this._autoAriaLabel) {
+        this.removeAttribute("aria-label");
+      }
+      this.render();
+    } else if (name === "size" || name === "variant") {
       this.render();
     }
   }
