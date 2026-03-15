@@ -24,11 +24,13 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
   declare for: string;
 
   render() {
-    const forAttr = this.getAttribute("for");
-    const labelContent = forAttr
-      ? `<label for="${forAttr}"><slot></slot></label>`
-      : `<label><slot></label>`;
+    this.mount(STYLES, `<label><slot></slot></label>`);
 
-    this.mount(STYLES, labelContent);
+    if (this.hasAttribute("for")) {
+      const label = this.shadowRoot?.querySelector("label");
+      if (label) {
+        label.setAttribute("for", this.getAttribute("for") || "");
+      }
+    }
   }
 }

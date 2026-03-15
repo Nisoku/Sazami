@@ -74,8 +74,13 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
         <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
         <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
       </svg>
-      ${label ? `<span class="label">${label}</span>` : ""}
+      <span class="label"></span>
     `,
     );
+
+    const labelSpan = this.$(".label");
+    if (labelSpan) {
+      labelSpan.textContent = label;
+    }
   }
 }

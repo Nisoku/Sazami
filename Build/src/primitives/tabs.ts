@@ -1,4 +1,5 @@
 import { SazamiComponent, component } from "./base";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host { display: block; }
@@ -89,7 +90,7 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
       STYLES,
       `
       <div class="tabs" role="tablist">
-        ${this._tabs.map((t, i) => `<button class="tab${i.toString() === activeTab ? " active" : ""}" role="tab" id="${t.tabId}" aria-selected="${i.toString() === activeTab}" aria-controls="${t.panelId}">${t.label}</button>`).join("")}
+        ${this._tabs.map((t, i) => `<button class="tab${i.toString() === activeTab ? " active" : ""}" role="tab" id="${t.tabId}" aria-selected="${i.toString() === activeTab}" aria-controls="${t.panelId}">${escapeHtml(t.label)}</button>`).join("")}
       </div>
       <div class="panels">
         ${panels
@@ -107,7 +108,7 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
 
     // Keyboard support: Left/Right arrows to switch tabs
     tabButtons.forEach((btn, i) => {
-      this.addHandler("click", () => this._activateTab(i), { internal: true, element: btn });
+      this.addHandler("click", () => this._activateTab(i), { internal: true, element: btn as HTMLElement });
       const handleKeydown: EventListener = (e) => {
         const ke = e as KeyboardEvent;
         if (ke.key === "ArrowRight") {
@@ -118,7 +119,7 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
           this._activateTab((i - 1 + this._tabs.length) % this._tabs.length);
         }
       };
-      this.addHandler("keydown", handleKeydown, { internal: true, element: btn });
+      this.addHandler("keydown", handleKeydown, { internal: true, element: btn as HTMLElement });
     });
   }
 
@@ -136,6 +137,9 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
       p.classList.toggle("active", j === index);
       (p as HTMLElement).style.display = j === index ? "block" : "none";
     });
+    if (tabButtons[index]) {
+      (tabButtons[index] as HTMLElement).focus();
+    }
     if (this.active !== index.toString()) {
       this.active = index.toString();
     }

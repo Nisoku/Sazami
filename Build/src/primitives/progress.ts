@@ -36,11 +36,12 @@ const STYLES = `
 
 const progressConfig = {
   properties: {
-    value: { type: "number" as const, reflect: false },
-    max: { type: "number" as const, reflect: false },
-    min: { type: "number" as const, reflect: false },
-    size: { type: "string" as const, reflect: false },
-    variant: { type: "string" as const, reflect: false },
+    value: { type: "number" as const, reflect: true },
+    max: { type: "number" as const, reflect: true },
+    min: { type: "number" as const, reflect: true },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
+    indeterminate: { type: "boolean" as const, reflect: true },
   },
 } as const;
 
@@ -51,6 +52,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   declare min: number;
   declare size: string;
   declare variant: string;
+  declare indeterminate: boolean;
 
   render() {
     const rawValue = Number(this.getAttribute("value") || "50");
@@ -63,6 +65,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
 
     const range = max - min;
     const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+    const clampedValue = min + (percent / 100) * range;
 
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "progressbar");
@@ -72,7 +75,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     if (indeterminate) {
       this.removeAttribute("aria-valuenow");
     } else {
-      this.setAttribute("aria-valuenow", String(value));
+      this.setAttribute("aria-valuenow", String(Math.round(clampedValue)));
     }
 
     this.mount(

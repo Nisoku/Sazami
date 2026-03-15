@@ -235,7 +235,7 @@ export class SazamiComponent<
         : handlers;
 
       toRemove.forEach((h) => {
-        this.removeEventListener(type, h.fn);
+        (h.target || this).removeEventListener(type, h.fn);
       });
 
       if (options?.source) {

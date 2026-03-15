@@ -1,18 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
-
-const escapeHtml = (str: string) =>
-  str.replace(/[&<>"']/g, (c) => {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    };
-    return map[c] || c;
-  });
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {

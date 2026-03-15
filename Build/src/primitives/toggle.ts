@@ -68,7 +68,6 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "switch");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
     this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
@@ -91,6 +90,13 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
 
   private _updateAria() {
     this.setAttribute("aria-checked", this.checked ? "true" : "false");
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
   }
 
   attributeChangedCallback(name: string, oldVal: string, newVal: string) {

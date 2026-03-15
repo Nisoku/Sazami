@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -61,8 +62,8 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     this.mount(
       STYLES,
       src
-        ? `<img class="image" src="${src}" alt="${alt}" />`
-        : `<span class="initials">${initials}</span>`,
+        ? `<img class="image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`
+        : `<span class="initials">${escapeHtml(initials)}</span>`,
     );
   }
 

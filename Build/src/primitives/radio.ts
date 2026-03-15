@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -72,29 +73,46 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
       STYLES,
       `
       <div class="radio"><div class="dot"></div></div>
-      ${label ? `<span class="label">${label}</span>` : ""}
+      ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
     `,
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "radio");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+    this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
 
+  private _updateAria() {
+    this.setAttribute("aria-checked", String(this.checked));
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
+  }
+
   private _handleClick = () => {
     if (this.disabled) return;
+    if (this.checked) return;
 
     const name = this.getAttribute("name") || "";
     const value = this.getAttribute("value") || "";
 
     // Uncheck other radios with same name
-    document.querySelectorAll(`saz-radio[name="${name}"]`).forEach((el) => {
-      el.removeAttribute("checked");
-    });
+    const root = this.getRootNode() as ParentNode;
+    if (root) {
+      const escapedName = CSS.escape(name);
+      root.querySelectorAll(`saz-radio[name="${escapedName}"]:not([value="${CSS.escape(value)}"])`).forEach((el) => {
+        el.removeAttribute("checked");
+      });
+    }
 
     this.checked = true;
+    this._updateAria();
     this.dispatchEventTyped("change", { value });
   };
 

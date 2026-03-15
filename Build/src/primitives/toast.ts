@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -103,14 +104,24 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
             ? "⚠"
             : "ℹ";
 
+    const messageEl = `<span class="message"></span>`;
+    const closeBtnEl = showClose
+      ? `<button class="close-btn" aria-label="Close">${ICON_SVGS.close}</button>`
+      : "";
+
     this.mount(
       STYLES,
       `
       <span class="icon">${icon}</span>
-      <span class="message">${message}</span>
-      ${showClose ? `<button class="close-btn" aria-label="Close">${ICON_SVGS.close}</button>` : ""}
+      ${messageEl}
+      ${closeBtnEl}
     `,
     );
+
+    const messageSpan = this.$(".message");
+    if (messageSpan) {
+      messageSpan.textContent = message;
+    }
 
     if (showClose) {
       const closeBtn = this.$(".close-btn");

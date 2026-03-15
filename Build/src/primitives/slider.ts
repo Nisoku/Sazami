@@ -104,6 +104,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   declare disabled: boolean;
   declare size: string;
 
+  private _sliderHandlerAdded = false;
+
   render() {
     const min = parseFloat(this.getAttribute("min") || "0");
     const max = parseFloat(this.getAttribute("max") || "100");
@@ -143,7 +145,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     const slider = this.$(".slider") as HTMLInputElement;
     const filled = this.$(".filled") as HTMLElement;
 
-    if (slider) {
+    if (slider && !this._sliderHandlerAdded) {
+      this._sliderHandlerAdded = true;
       this.addHandler("input", () => {
         const val = parseFloat(slider.value);
         const pct = ((val - min) / (max - min)) * 100;

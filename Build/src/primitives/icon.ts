@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -46,6 +47,10 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
     const svg = ICON_SVGS[icon];
 
-    this.mount(STYLES, svg || `<span>${icon}</span>`);
+    if (svg) {
+      this.mount(STYLES, svg);
+    } else {
+      this.mount(STYLES, `<span>${escapeHtml(icon)}</span>`);
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -84,7 +85,7 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
       STYLES,
       `
       <div class="switch"><div class="thumb"></div></div>
-      ${label ? `<span class="label">${label}</span>` : ""}
+      ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
     `,
     );
 

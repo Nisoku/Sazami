@@ -19,6 +19,8 @@ export { applyCurvomorphism, enableCurvomorphism } from "./curvomorphism/index";
 
 export { ICON_SVGS } from "./icons/index";
 
+export { escapeHtml, unescapeHtml, escapeUrl, escapeCss, html } from "./escape";
+
 import { parseSakko } from "@nisoku/sakko";
 import {
   transformAST,

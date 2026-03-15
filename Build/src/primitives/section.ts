@@ -28,6 +28,7 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
   declare "center-point": boolean;
 
   private _resizeObserver?: ResizeObserver;
+  private _boundComputeAndSetCenter = this._computeAndSetCenter.bind(this);
 
   private _computeAndSetCenter() {
     if (!this.hasAttribute("center-point")) return;
@@ -40,7 +41,7 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
     super.connectedCallback();
     const slot = this.shadowRoot?.querySelector("slot");
     if (slot) {
-      slot.addEventListener("slotchange", this._computeAndSetCenter);
+      slot.addEventListener("slotchange", this._boundComputeAndSetCenter);
     }
     if (this.hasAttribute("center-point")) {
       this._resizeObserver = new ResizeObserver(() => {
@@ -57,7 +58,7 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
     }
     const slot = this.shadowRoot?.querySelector("slot");
     if (slot) {
-      slot.removeEventListener("slotchange", this._computeAndSetCenter);
+      slot.removeEventListener("slotchange", this._boundComputeAndSetCenter);
     }
     super.disconnectedCallback();
   }

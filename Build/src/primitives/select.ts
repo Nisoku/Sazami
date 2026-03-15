@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -134,11 +135,11 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       STYLES,
       `
       <div class="trigger" role="combobox" tabindex="${this.disabled ? "-1" : "0"}" aria-haspopup="listbox" aria-expanded="${this.hasAttribute("open") ? "true" : "false"}">
-        <span class="value">${selectedOption?.label || placeholder}</span>
+        <span class="value">${escapeHtml(selectedOption?.label || placeholder)}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
       <div class="dropdown" role="listbox">
-        ${this._options.map((opt, i) => `<div class="option${opt.value === value ? " selected" : ""}" role="option" data-value="${opt.value}">${opt.label}</div>`).join("")}
+        ${this._options.map((opt, i) => `<div class="option${opt.value === value ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === value}">${escapeHtml(opt.label)}</div>`).join("")}
       </div>
     `,
     );
@@ -152,6 +153,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
 
     // Keyboard support: Enter/Space to toggle, Escape to close
     const handleKeydown = (e: KeyboardEvent) => {
+      if (this._options.length === 0) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         this.toggleOpen();
@@ -187,12 +189,24 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   }
 
   private _navigateOption(delta: number) {
+    if (!this._options || this._options.length === 0) return;
     const currentIndex = this._options.findIndex((o) => o.value === this.value);
     let newIndex = currentIndex + delta;
     if (newIndex < 0) newIndex = this._options.length - 1;
     if (newIndex >= this._options.length) newIndex = 0;
     this.value = this._options[newIndex].value;
+    this._updateSelectedState();
     this.dispatchEventTyped("change", { value: this.value });
+  }
+
+  private _updateSelectedState() {
+    const options = this.shadow.querySelectorAll(".option");
+    options.forEach((opt) => {
+      const optValue = opt.getAttribute("data-value");
+      const isSelected = optValue === this.value;
+      opt.classList.toggle("selected", isSelected);
+      opt.setAttribute("aria-selected", String(isSelected));
+    });
   }
 
   private _updateDisplay() {

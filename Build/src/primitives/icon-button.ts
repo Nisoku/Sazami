@@ -6,6 +6,7 @@ import {
   VARIANT_TEXT_RULES,
 } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -75,12 +76,21 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
     const svg = ICON_SVGS[icon];
 
-    this.mount(
-      STYLES,
-      `
-      <div class="icon">${svg || `<span class="glyph">${icon}</span>`}</div>
-    `,
-    );
+    if (svg) {
+      this.mount(
+        STYLES,
+        `
+        <div class="icon">${svg}</div>
+      `,
+      );
+    } else {
+      this.mount(
+        STYLES,
+        `<div class="icon"><span class="glyph"></span></div>`,
+      );
+      const glyph = this.$(".glyph");
+      if (glyph) glyph.textContent = icon;
+    }
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
     this._updateTabIndex();
@@ -100,6 +110,17 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
       this.setAttribute("tabindex", "0");
       this.removeAttribute("aria-disabled");
     }
+  }
+
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (oldVal === newVal) return;
+    if (name === "disabled") {
+      this._updateTabIndex();
+    }
+  }
+
+  static get observedAttributes() {
+    return ["disabled"];
   }
 
   private _handleClick = () => {

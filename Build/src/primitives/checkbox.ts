@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -73,12 +74,11 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
       <span class="box">
         <span class="check">${ICON_SVGS.check}</span>
       </span>
-      ${label ? `<span class="label">${label}</span>` : ""}
+      ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
     `,
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "checkbox");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
     this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
@@ -102,6 +102,13 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
 
   private _updateAria() {
     this.setAttribute("aria-checked", this.checked ? "true" : "false");
+    if (this.disabled) {
+      this.setAttribute("tabindex", "-1");
+      this.setAttribute("aria-disabled", "true");
+    } else {
+      this.setAttribute("tabindex", "0");
+      this.removeAttribute("aria-disabled");
+    }
   }
 
   attributeChangedCallback(name: string, oldVal: string, newVal: string) {
