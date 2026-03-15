@@ -133,7 +133,7 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
     this.removeAttribute("open");
   }
 
-  attributeChangedCallback(name: string, oldVal: string, newVal: string) {
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
     if (oldVal === newVal) return;
     if (name === "open") {
       if (newVal !== null) {

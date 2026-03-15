@@ -43,12 +43,16 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
     if (slot) {
       slot.addEventListener("slotchange", this._boundComputeAndSetCenter);
     }
-    if (this.hasAttribute("center-point")) {
-      this._resizeObserver = new ResizeObserver(() => {
-        this._computeAndSetCenter();
-      });
-      this._resizeObserver.observe(this);
-    }
+    this._setupResizeObserver();
+  }
+
+  private _setupResizeObserver() {
+    if (!this.hasAttribute("center-point")) return;
+    if (this._resizeObserver) return;
+    this._resizeObserver = new ResizeObserver(() => {
+      this._computeAndSetCenter();
+    });
+    this._resizeObserver.observe(this);
   }
 
   disconnectedCallback() {
@@ -83,12 +87,7 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
         requestAnimationFrame(() => {
           this._computeAndSetCenter();
         });
-        if (!this._resizeObserver) {
-          this._resizeObserver = new ResizeObserver(() => {
-            this._computeAndSetCenter();
-          });
-          this._resizeObserver.observe(this);
-        }
+        this._setupResizeObserver();
       } else {
         if (this._resizeObserver) {
           this._resizeObserver.disconnect();

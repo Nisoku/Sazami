@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const cssEscape = require("css.escape");
 
 // ResizeObserver is not available in JSDOM
 global.ResizeObserver = class ResizeObserver {
@@ -8,15 +9,11 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// CSS.escape polyfill for JSDOM
+// CSS.escape for JSDOM
 if (!global.CSS) {
   global.CSS = {};
 }
-if (!global.CSS.escape) {
-  global.CSS.escape = function(str) {
-    return str.replace(/[!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~]/g, '\\$&');
-  };
-}
+global.CSS.escape = cssEscape;
 
 global.importMetaGlob = function(pattern, options = {}) {
   const svgsDir = path.join(__dirname, "src", "icons", "svgs");

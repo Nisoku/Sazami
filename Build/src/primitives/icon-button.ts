@@ -55,10 +55,10 @@ ${INTERACTIVE_FOCUS}
 // Config
 const iconButtonConfig = {
   properties: {
-    icon: { type: "string" as const, reflect: false },
+    icon: { type: "string" as const, reflect: true },
     disabled: { type: "boolean" as const, reflect: true },
-    size: { type: "string" as const, reflect: false },
-    variant: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
   },
   events: {
     click: { name: "saz-click", detail: {} },

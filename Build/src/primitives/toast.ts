@@ -104,6 +104,15 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
             ? "⚠"
             : "ℹ";
 
+    const urgent = variant === "error" || variant === "danger";
+    if (!this.hasAttribute("role")) {
+      this.setAttribute("role", urgent ? "alert" : "status");
+    }
+    if (!this.hasAttribute("aria-live")) {
+      this.setAttribute("aria-live", urgent ? "assertive" : "polite");
+    }
+    this.setAttribute("aria-atomic", "true");
+
     const messageEl = `<span class="message"></span>`;
     const closeBtnEl = showClose
       ? `<button class="close-btn" aria-label="Close">${ICON_SVGS.close}</button>`

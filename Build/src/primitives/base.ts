@@ -135,8 +135,16 @@ export class SazamiComponent<
   }
 
   disconnectedCallback() {
+    this.removeAllHandlers();
     this._cleanupFns.forEach((fn) => fn());
     this._cleanupFns = [];
+  }
+
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (oldVal === newVal) return;
+    if (this._rendered) {
+      this.render();
+    }
   }
 
   // Override in subclass

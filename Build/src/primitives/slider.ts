@@ -158,10 +158,11 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   static get observedAttributes() {
-    return ["value", "min", "max", "size"];
+    return ["value", "min", "max", "step", "disabled", "size"];
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (oldVal === newVal) return;
     this.render();
   }
 }

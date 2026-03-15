@@ -122,4 +122,15 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
       this._handleClick();
     }
   };
+
+  static get observedAttributes() {
+    return ["checked", "disabled"];
+  }
+
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (oldVal === newVal) return;
+    if (name === "checked" || name === "disabled") {
+      this._updateAria();
+    }
+  }
 }
