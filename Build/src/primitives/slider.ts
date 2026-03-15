@@ -104,11 +104,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   declare disabled: boolean;
   declare size: string;
 
-  private _sliderHandlerAdded = false;
-
   render() {
-    this._sliderHandlerAdded = false;
-
     const min = parseFloat(this.getAttribute("min") || "0");
     const max = parseFloat(this.getAttribute("max") || "100");
     const value = parseFloat(this.getAttribute("value") || "50");
@@ -148,8 +144,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     const slider = this.$(".slider") as HTMLInputElement;
     const filled = this.$(".filled") as HTMLElement;
 
-    if (slider && !this._sliderHandlerAdded) {
-      this._sliderHandlerAdded = true;
+    if (slider) {
+      this.removeAllHandlers({ type: "input", source: "internal" });
       this.addHandler(
         "input",
         () => {
@@ -182,7 +178,5 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     newVal: string | null,
   ) {
     super.attributeChangedCallback(name, oldVal, newVal);
-    if (oldVal === newVal) return;
-    this.render();
   }
 }

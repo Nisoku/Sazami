@@ -66,6 +66,8 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   declare name: string;
   declare value: string;
 
+  private _handlersInstalled = false;
+
   render() {
     const label = this.textContent?.trim() || "";
 
@@ -80,8 +82,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     if (!this.hasAttribute("role")) this.setAttribute("role", "radio");
     this._updateAria();
 
-    this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    if (!this._handlersInstalled) {
+      this._handlersInstalled = true;
+      this.addHandler("click", this._handleClick, { internal: true });
+      this.addHandler("keydown", this._handleKeydown, { internal: true });
+    }
   }
 
   private _updateAria() {
@@ -134,9 +139,15 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
     if (oldVal === newVal) return;
     if (name === "checked" || name === "disabled") {
       this._updateAria();
     }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._handlersInstalled = false;
   }
 }

@@ -13,9 +13,9 @@ ${GAP_RULES}
 
 const sectionConfig = {
   properties: {
-    layout: { type: "string" as const, reflect: false },
-    align: { type: "string" as const, reflect: false },
-    gap: { type: "string" as const, reflect: false },
+    layout: { type: "string" as const, reflect: true },
+    align: { type: "string" as const, reflect: true },
+    gap: { type: "string" as const, reflect: true },
     "center-point": { type: "boolean" as const, reflect: false },
   },
 } as const;

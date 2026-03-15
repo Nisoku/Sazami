@@ -12,6 +12,12 @@ const STYLES = `
   animation: spin 1s linear infinite;
   color: var(--saz-color-primary);
 }
+.spinner svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+}
 :host(:not([size])) .spinner,
 :host([size="medium"]) .spinner { width: 24px; height: 24px; }
 :host([size="tiny"]) .spinner { width: 12px; height: 12px; }
@@ -44,8 +50,8 @@ const STYLES = `
 
 const spinnerConfig = {
   properties: {
-    size: { type: "string" as const, reflect: false },
-    variant: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: true },
+    variant: { type: "string" as const, reflect: true },
     label: { type: "string" as const, reflect: false },
   },
 } as const;
@@ -71,7 +77,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
     this.mount(
       STYLES,
       `
-      ${ICON_SVGS["spinner"] || ""}
+      <div class="spinner">${ICON_SVGS["spinner"] || ""}</div>
       <span class="label"></span>
     `,
     );

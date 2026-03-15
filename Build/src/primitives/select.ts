@@ -37,6 +37,10 @@ const STYLES = `
   color: var(--saz-color-text-dim);
   transition: transform 0.2s ease;
 }
+.trigger svg {
+  fill: none;
+  stroke: currentColor;
+}
 :host([open]) .trigger svg {
   transform: rotate(180deg);
 }
@@ -70,11 +74,14 @@ ${INTERACTIVE_FOCUS}
   cursor: pointer;
   transition: background 0.1s ease;
 }
-.option:hover {
+.option:hover:not(.selected) {
   background: var(--saz-color-surface);
 }
-.option.selected,
-.option:hover {
+.option.selected {
+  background: var(--saz-color-primary);
+  color: var(--saz-color-on-primary);
+}
+.option.selected:hover {
   background: var(--saz-color-primary);
   color: var(--saz-color-on-primary);
 }
@@ -187,7 +194,6 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this.value = newValue;
         this.open = false;
         this.dispatchEventTyped("change", { value: newValue });
-        this._updateDisplay();
       }
     };
     this.addHandler("click", handleDropdownClick, {
@@ -226,9 +232,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     const trigger = this.$(".trigger") as HTMLElement;
     const placeholder = this.getAttribute("placeholder") || "Select...";
     const selectedOption = this._options.find((o) => o.value === this.value);
-    if (trigger) {
-      trigger.querySelector(".value")!.textContent =
-        selectedOption?.label || placeholder;
+    const valueEl = trigger?.querySelector(".value");
+    if (valueEl) {
+      valueEl.textContent = selectedOption?.label || placeholder;
     }
   }
 

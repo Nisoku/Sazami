@@ -40,6 +40,12 @@ const STYLES = `
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }
+.chevron svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+}
 .item[open] .chevron {
   transform: rotate(180deg);
 }

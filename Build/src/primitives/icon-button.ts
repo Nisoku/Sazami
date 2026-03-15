@@ -6,7 +6,6 @@ import {
   VARIANT_TEXT_RULES,
 } from "./shared";
 import { ICON_SVGS } from "../icons/index";
-import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -152,4 +151,9 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
       this._handleClick();
     }
   };
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._handlersAdded = false;
+  }
 }

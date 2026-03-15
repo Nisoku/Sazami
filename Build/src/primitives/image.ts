@@ -26,8 +26,8 @@ const imageConfig = {
   properties: {
     src: { type: "string" as const, reflect: false },
     alt: { type: "string" as const, reflect: false },
-    size: { type: "string" as const, reflect: false },
-    shape: { type: "string" as const, reflect: false },
+    size: { type: "string" as const, reflect: true },
+    shape: { type: "string" as const, reflect: true },
   },
 } as const;
 

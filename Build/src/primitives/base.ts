@@ -1,16 +1,16 @@
-export interface SazamiComponentConfig {
-  observedAttributes?: readonly string[] | string[];
-  properties?: Record<string, PropertyConfig>;
-  events?: Record<string, EventConfig>;
-  binds?: Record<string, BindingType>;
-}
-
 import {
   propertyError,
   eventError,
   bindingError,
   renderError,
 } from "../errors";
+
+export interface SazamiComponentConfig {
+  observedAttributes?: readonly string[] | string[];
+  properties?: Record<string, PropertyConfig>;
+  events?: Record<string, EventConfig>;
+  binds?: Record<string, BindingType>;
+}
 
 export interface PropertyConfig {
   type: "string" | "number" | "boolean";
@@ -90,6 +90,7 @@ export class SazamiComponent<
   protected shadow: ShadowRoot;
   protected _cleanupFns: Array<() => void> = [];
   private _rendered = false;
+  private _propStorage: Map<string, string | number | boolean> = new Map();
 
   // Handler registry: { type: [{ id, fn, source, target }] }
   private _handlerId = 0;
@@ -163,7 +164,12 @@ export class SazamiComponent<
     // no-op, subclass must implement
   }
 
-  // mount template + styles
+  /**
+   * Mounts the component's shadow DOM with the given styles and template.
+   * @param styles - CSS styles to inject
+   * @param template - HTML template string. Callers are responsible for escaping
+   *   user-provided data using escapeHtml() before interpolating into the template.
+   */
   protected mount(styles: string, template: string) {
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
@@ -348,11 +354,17 @@ export class SazamiComponent<
           return this.hasAttribute(attr);
         }
         const raw = this.getAttribute(attr);
-        if (type === "number") {
-          const val = raw !== null ? parseFloat(raw) : defaultValue;
-          return typeof val === "number" && !isNaN(val) ? val : 0;
+        if (raw !== null) {
+          if (type === "number") {
+            const val = parseFloat(raw);
+            return !isNaN(val) ? val : (defaultValue ?? 0);
+          }
+          return raw;
         }
-        return raw ?? defaultValue ?? "";
+        if (this._propStorage.has(attr)) {
+          return this._propStorage.get(attr);
+        }
+        return defaultValue ?? (type === "number" ? 0 : "");
       },
       set(value: boolean | string | number) {
         if (type === "boolean") {
@@ -366,6 +378,8 @@ export class SazamiComponent<
             this.setAttribute(attr, String(value));
           } else if (reflect) {
             this.removeAttribute(attr);
+          } else {
+            this._propStorage.set(attr, value);
           }
         }
       },
