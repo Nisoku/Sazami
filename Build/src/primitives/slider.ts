@@ -180,15 +180,26 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
-    // Sync non-reflected attributes into their properties so that render()
-    // reads the up-to-date value from this.* rather than getAttribute().
     if (
       name === "value" ||
       name === "min" ||
       name === "max" ||
       name === "step"
     ) {
-      (this as any)[name] = newVal !== null ? parseFloat(newVal) : 0;
+      let parsed = newVal !== null ? parseFloat(newVal) : null;
+      if (parsed === null || Number.isNaN(parsed)) {
+        parsed = name === "value" ? 50 : name === "step" ? 1 : 0;
+      }
+      if (name === "step" && parsed <= 0) {
+        parsed = 1;
+      }
+      (this as any)[name] = parsed;
+      if (name === "value") {
+        const min = this.min;
+        const max = this.max;
+        if (this.value < min) (this as any).value = min;
+        if (this.value > max) (this as any).value = max;
+      }
     } else if (name === "size") {
       (this as any)[name] = newVal ?? "";
     }

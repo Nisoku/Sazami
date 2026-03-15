@@ -32,6 +32,7 @@ const STYLES = `
 }
 :host([variant="success"]) .icon { color: var(--saz-color-success); }
 :host([variant="error"]) .icon { color: var(--saz-color-danger); }
+:host([variant="danger"]) .icon { color: var(--saz-color-danger); }
 :host([variant="warning"]) .icon { color: #f59e0b; }
 :host([variant="info"]) .icon { color: var(--saz-color-primary); }
 
@@ -65,7 +66,7 @@ const toastConfig = {
     message: { type: "string" as const, reflect: false },
     variant: { type: "string" as const, reflect: false },
     duration: { type: "number" as const, reflect: false, default: 3000 },
-    visible: { type: "boolean" as const, reflect: true },
+    visible: { type: "boolean" as const, reflect: false },
   },
   events: {
     close: { name: "saz-close", detail: {} },
@@ -167,7 +168,7 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
       clearTimeout(this._hideTimeout);
       this._hideTimeout = undefined;
     }
-    this.visible = false;
+    this.removeAttribute("visible");
     setTimeout(() => {
       this.dispatchEventTyped("close", {});
       this.remove();
