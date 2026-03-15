@@ -30,6 +30,7 @@
   "scripts": {
     "build": "vite build",
     "test": "jest --no-cache",
+    "typecheck": "tsc --noEmit",
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"
   },
   "dependencies": {
