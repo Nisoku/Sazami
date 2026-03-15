@@ -167,7 +167,7 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
       clearTimeout(this._hideTimeout);
       this._hideTimeout = undefined;
     }
-    this.removeAttribute("visible");
+    this.visible = false;
     setTimeout(() => {
       this.dispatchEventTyped("close", {});
       this.remove();
