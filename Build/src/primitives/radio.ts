@@ -9,6 +9,7 @@ const STYLES = `
   gap: var(--saz-space-small);
   cursor: pointer;
   user-select: none;
+  vertical-align: middle;
 }
 .radio {
   width: 18px;
@@ -20,6 +21,7 @@ const STYLES = `
   justify-content: center;
   transition: border-color 0.15s ease;
   flex-shrink: 0;
+  align-self: center;
   background: var(--saz-color-background);
 }
 .dot {

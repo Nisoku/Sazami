@@ -7,6 +7,9 @@ const STYLES = `
 :host {
   display: inline-flex;
   align-items: center;
+  align-self: center;
+  vertical-align: middle;
+  height: fit-content;
   gap: var(--saz-space-small);
   cursor: pointer;
   user-select: none;
@@ -21,6 +24,7 @@ const STYLES = `
   justify-content: center;
   transition: background 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+  align-self: center;
   background: var(--saz-color-background);
 }
 :host([checked]) .box {
@@ -33,8 +37,12 @@ const STYLES = `
   height: 12px;
   opacity: 0;
   transition: opacity 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
-.check svg { width: 100%; height: 100%; }
+.check svg { width: 100%; height: 100%; display: block; }
 :host([checked]) .check { opacity: 1; }
 .label {
   font-size: var(--saz-text-size-medium);

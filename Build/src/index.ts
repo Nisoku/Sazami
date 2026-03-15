@@ -89,14 +89,45 @@ export function compileSakko(
   render(rootVNode, target);
 
   if (typeof window !== "undefined") {
-    requestAnimationFrame(() => {
-      target.querySelectorAll("[curved]").forEach((el) => {
-        if (el instanceof HTMLElement) {
+    // Disconnect any observer from a previous compileSakko call on this target
+    // so re-renders (e.g. playground live preview) don't leave stale observers.
+    const prev = (target as any).__sazamiRO as ResizeObserver | undefined;
+    if (prev) prev.disconnect();
+
+    const ro = new ResizeObserver(() => {
+      ro.disconnect();
+      delete (target as any).__sazamiRO;
+
+      const elements = Array.from(target.querySelectorAll("[curved]")).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement,
+      );
+      if (elements.length === 0) return;
+
+      requestAnimationFrame(() => {
+        // Compute a single shared center from the collective bounding box of
+        // all curved elements
+        const rects = elements.map((el) => el.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const right = Math.max(...rects.map((r) => r.right));
+        const top = Math.min(...rects.map((r) => r.top));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
+        const centerX = (left + right) / 2;
+        const centerY = (top + bottom) / 2;
+
+        elements.forEach((el) => {
           enableCurvomorphism(el, {
             radius: el.getAttribute("radius") || undefined,
+            centerX,
+            centerY,
+            groupLeft: left,
+            groupRight: right,
+            groupTop: top,
+            groupBottom: bottom,
           });
-        }
+        });
       });
     });
+    (target as any).__sazamiRO = ro;
+    ro.observe(target);
   }
 }

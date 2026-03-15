@@ -29,6 +29,7 @@
   ],
   "scripts": {
     "build": "vite build",
+    "build:demo": "vite build && rm -rf ../Demo/dist && cp -r dist ../Demo/",
     "test": "jest --no-cache",
     "typecheck": "tsc --noEmit",
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"
