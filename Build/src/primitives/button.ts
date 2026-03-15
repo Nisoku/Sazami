@@ -79,7 +79,10 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
       this.setAttribute("tabindex", "-1");
     } else {
       this.removeAttribute("aria-disabled");
-      if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+      const currentTabindex = this.getAttribute("tabindex");
+      if (currentTabindex === "-1" || !this.hasAttribute("tabindex")) {
+        this.setAttribute("tabindex", "0");
+      }
     }
 
     this.removeHandler("click", this._handleClick);

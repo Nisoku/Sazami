@@ -172,10 +172,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   static get observedAttributes() {
-    return [
-      ...super.observedAttributes,
-      "value", "min", "max", "step", "size",
-    ];
+    return [...super.observedAttributes, "value", "min", "max", "step", "size"];
   }
 
   attributeChangedCallback(
@@ -185,7 +182,12 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   ) {
     // Sync non-reflected attributes into their properties so that render()
     // reads the up-to-date value from this.* rather than getAttribute().
-    if (name === "value" || name === "min" || name === "max" || name === "step") {
+    if (
+      name === "value" ||
+      name === "min" ||
+      name === "max" ||
+      name === "step"
+    ) {
       (this as any)[name] = newVal !== null ? parseFloat(newVal) : 0;
     } else if (name === "size") {
       (this as any)[name] = newVal ?? "";

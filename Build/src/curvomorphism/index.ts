@@ -20,9 +20,9 @@ export function applyCurvomorphism(
   const tx = Math.max(1, ((groupRight - groupLeft) / 2) * 0.02);
   const ty = Math.max(1, ((groupBottom - groupTop) / 2) * 0.02);
 
-  const leftIn   = elCenterX > centerX + tx;
-  const rightIn  = elCenterX < centerX - tx;
-  const topIn    = elCenterY > centerY + ty;
+  const leftIn = elCenterX > centerX + tx;
+  const rightIn = elCenterX < centerX - tx;
+  const topIn = elCenterY > centerY + ty;
   const bottomIn = elCenterY < centerY - ty;
 
   // When an element lands exactly on a center axis (within the dead zone),
@@ -31,10 +31,14 @@ export function applyCurvomorphism(
   const xBoth = !leftIn && !rightIn;
   const yBoth = !topIn && !bottomIn;
 
-  element.style.borderTopLeftRadius     = (topIn || yBoth) && (leftIn || xBoth)  ? r : s;
-  element.style.borderTopRightRadius    = (topIn || yBoth) && (rightIn || xBoth) ? r : s;
-  element.style.borderBottomLeftRadius  = (bottomIn || yBoth) && (leftIn || xBoth)  ? r : s;
-  element.style.borderBottomRightRadius = (bottomIn || yBoth) && (rightIn || xBoth) ? r : s;
+  element.style.borderTopLeftRadius =
+    (topIn || yBoth) && (leftIn || xBoth) ? r : s;
+  element.style.borderTopRightRadius =
+    (topIn || yBoth) && (rightIn || xBoth) ? r : s;
+  element.style.borderBottomLeftRadius =
+    (bottomIn || yBoth) && (leftIn || xBoth) ? r : s;
+  element.style.borderBottomRightRadius =
+    (bottomIn || yBoth) && (rightIn || xBoth) ? r : s;
 }
 
 function findCenter(el: HTMLElement): { x: number; y: number } {

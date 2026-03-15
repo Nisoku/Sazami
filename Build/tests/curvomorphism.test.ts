@@ -61,7 +61,7 @@ describe("Curvomorphism - applyCurvomorphism", () => {
     expect(el.style.borderBottomRightRadius).toBe("0px");
   });
 
-  test("element exactly at center: no corners round (not strictly > or <)", () => {
+  test("element exactly at center: all corners rounded (dead-zone)", () => {
     const el = mockElement(450, 450, 100, 100);
     applyCurvomorphism(el, 500, 500, "8px");
     expect(el.style.borderTopLeftRadius).toBe("8px");
@@ -82,6 +82,8 @@ describe("Curvomorphism - applyCurvomorphism", () => {
   test("element to the left of center, vertically centered: right-side corners round", () => {
     const el = mockElement(0, 200, 100, 100);
     applyCurvomorphism(el, 500, 250, "10px");
+    expect(el.style.borderTopLeftRadius).toBe("0px");
+    expect(el.style.borderBottomLeftRadius).toBe("0px");
     expect(el.style.borderTopRightRadius).toBe("10px");
     expect(el.style.borderBottomRightRadius).toBe("10px");
   });

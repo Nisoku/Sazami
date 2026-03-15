@@ -95,16 +95,15 @@ export function compileSakko(
     if (prev) prev.disconnect();
 
     // Dispose any previous curvomorphism listeners
-    const prevDisposers = (target as any).__sazamiCurvoDisposers as Array<() => void> | undefined;
+    const prevDisposers = (target as any).__sazamiCurvoDisposers as
+      | Array<() => void>
+      | undefined;
     if (prevDisposers) {
-      prevDisposers.forEach((d) => d());
+      prevDisposers.forEach((d) => { d(); });
     }
     const disposers: Array<() => void> = [];
 
     const ro = new ResizeObserver(() => {
-      ro.disconnect();
-      delete (target as any).__sazamiRO;
-
       const elements = Array.from(target.querySelectorAll("[curved]")).filter(
         (el): el is HTMLElement => el instanceof HTMLElement,
       );
@@ -121,7 +120,7 @@ export function compileSakko(
         const centerX = (left + right) / 2;
         const centerY = (top + bottom) / 2;
 
-        disposers.forEach((d) => d());
+        disposers.forEach((d) => { d(); });
         disposers.length = 0;
 
         elements.forEach((el) => {

@@ -39,7 +39,7 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   declare shape: string;
 
   render() {
-    const src = this.src || this.textContent?.trim() || "";
+    const src = this.src;
     if (!src) {
       this.mount(STYLES, "");
       return;

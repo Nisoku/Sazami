@@ -28,7 +28,10 @@ export interface PropertyConfigBoolean {
   default?: boolean;
 }
 
-export type AnyPropertyConfig = PropertyConfig | PropertyConfigNumber | PropertyConfigBoolean;
+export type AnyPropertyConfig =
+  | PropertyConfig
+  | PropertyConfigNumber
+  | PropertyConfigBoolean;
 
 export interface EventConfig {
   name: string;

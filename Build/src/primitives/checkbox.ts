@@ -80,7 +80,7 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
       STYLES,
       `
       <span class="box">
-        <span class="check">${ICON_SVGS.check}</span>
+        <span class="check">${ICON_SVGS.check || ""}</span>
       </span>
       ${label ? `<span class="label">${escapeHtml(label)}</span>` : ""}
     `,
@@ -118,14 +118,6 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
     } else {
       this.setAttribute("tabindex", "0");
       this.removeAttribute("aria-disabled");
-    }
-  }
-
-  attributeChangedCallback(name: string, oldVal: string, newVal: string) {
-    super.attributeChangedCallback(name, oldVal, newVal);
-    if (oldVal === newVal) return;
-    if (name === "checked" || name === "disabled") {
-      this._updateAria();
     }
   }
 }
