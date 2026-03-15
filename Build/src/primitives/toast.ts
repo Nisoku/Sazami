@@ -1,7 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
-import { escapeHtml } from "../escape";
 
 const STYLES = `
 :host {
@@ -100,7 +99,14 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
     const variant = this.getAttribute("variant") || "default";
     const message =
       this.getAttribute("message") || this.textContent?.trim() || "";
-    const duration = parseInt(this.getAttribute("duration") || "3000") || 3000;
+    const rawDuration = this.getAttribute("duration");
+    let duration = 3000;
+    if (rawDuration !== null && rawDuration !== "") {
+      const parsed = parseInt(rawDuration, 10);
+      if (!Number.isNaN(parsed)) {
+        duration = parsed;
+      }
+    }
     const showClose = !this.hasAttribute("no-close");
 
     const icon =

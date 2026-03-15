@@ -194,7 +194,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
         parsed = 1;
       }
       (this as any)[name] = parsed;
-      if (name === "value") {
+      if (name === "value" || name === "min" || name === "max") {
         const min = this.min;
         const max = this.max;
         if (this.value < min) (this as any).value = min;

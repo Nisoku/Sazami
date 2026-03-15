@@ -64,16 +64,9 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
 
   render() {
     const label = this.label || "Loading...";
-    const hasCustomLabel =
-      this.label !== undefined && this.label !== null && this.label !== "";
 
-    if (!hasCustomLabel) {
-      this.setAttribute("role", "status");
-      this.setAttribute("aria-live", "polite");
-    } else {
-      this.removeAttribute("role");
-      this.removeAttribute("aria-live");
-    }
+    this.setAttribute("role", "status");
+    this.setAttribute("aria-live", "polite");
 
     this.mount(
       STYLES,
