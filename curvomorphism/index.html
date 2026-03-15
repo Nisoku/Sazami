@@ -209,8 +209,8 @@
 <p><strong>Traditional UI</strong> gives all corners the same radius: every card looks identical regardless of position.</p>
 <p><strong>Curvomorphism</strong> makes corners directional:</p>
 <ul>
-<li>Corners facing the <strong>center</strong> of the layout → <strong>rounded</strong></li>
-<li>Corners facing the <strong>edges</strong> of the viewport → <strong>sharp</strong></li>
+<li>Corners facing the <strong>center</strong> of the layout -&gt; <strong>rounded</strong></li>
+<li>Corners facing the <strong>edges</strong> of the viewport -&gt; <strong>sharp</strong></li>
 </ul>
 <p>This creates an organic visual flow that guides the user’s eye toward the content center.</p>
 <pre class="hljs"><code>Layout with center point (C):
@@ -218,18 +218,18 @@
 ┌─────────┐          ┌─────────┐         ┌─────────┐
 │ TL      │          │    T    │         │      TR │
 │         │          │         │         │         │
-└─────────╯         ╰────────╯        ╰─────────┘
+└─────────╯          ╰─────────╯         ╰─────────┘
  Bottom-right        Bottom L+R          Bottom-left
    rounded            rounded              rounded
 
-┌─────────╮                             ╭─────────┐
-│ L        │       ←──── (C) ────→       │       R │
-│          │                             │         │
-└─────────╯                             ╰─────────┘
-  Right-side                            Left-side
-   rounded                              rounded
+┌─────────╮                              ╭─────────┐
+│ L       │       &lt;-──── (C) ────-&gt;      │       R │
+│         │                              │         │
+└─────────╯                              ╰─────────┘
+  Right-side                             Left-side
+   rounded                               rounded
 
-┌─────────╮         ╭─────────╮       ╭─────────┐
+┌─────────╮          ╭─────────╮         ╭─────────┐
 │ BL      │          │    B    │         │      BR │
 │         │          │         │         │         │
 └─────────┘          └─────────┘         └─────────┘

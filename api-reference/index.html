@@ -233,9 +233,9 @@
 <p><strong>Behavior:</strong></p>
 <ol><li>Registers all Sazami Web Components</li>
 <li>Injects theme CSS variables into <code>&lt;head&gt;</code></li>
-<li>Parses source → AST (uses <code>@nisoku/sakko</code>)</li>
-<li>Transforms AST → VNode tree</li>
-<li>Renders VNode tree → DOM</li>
+<li>Parses source -&gt; AST (uses <code>@nisoku/sakko</code>)</li>
+<li>Transforms AST -&gt; VNode tree</li>
+<li>Renders VNode tree -&gt; DOM</li>
 <li>Applies curvomorphism to <code>[curved]</code> elements</li>
 </ol>
 <hr>
@@ -310,7 +310,7 @@
 <span class="hljs-title function_">enableCurvomorphism</span>(element);
 </code></pre>
 <hr>
-<h2 id="primitives">Primitives</h2>
+<h2 id="primitives-api">Primitives API</h2>
 <h3 id="registercomponents"><code>registerComponents()</code></h3>
 <p>Register all Sazami Web Components with the browser’s custom elements registry. Called automatically by <code>compileSakko</code>.</p>
 <pre class="hljs"><code><span class="hljs-keyword">import</span> { registerComponents } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
@@ -342,7 +342,7 @@
 <span class="hljs-variable constant_">MODIFIER_MAP</span>[<span class="hljs-string">&#x27;bold&#x27;</span>];    <span class="hljs-comment">// { weight: &#x27;bold&#x27; }</span>
 </code></pre>
 <h3 id="icon_svgs"><code>ICON_SVGS</code></h3>
-<p>A record mapping icon names to SVG markup strings. All 41 built-in icons use <code>currentColor</code> and scale to their container.</p>
+<p>A record mapping icon names to SVG markup strings. All 43 built-in icons use <code>currentColor</code> and scale to their container.</p>
 <pre class="hljs"><code><span class="hljs-keyword">import</span> { <span class="hljs-variable constant_">ICON_SVGS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 
 <span class="hljs-comment">// Available: play, pause, stop, previous, next, skip, close, menu,</span>
@@ -353,15 +353,161 @@
 <span class="hljs-variable constant_">ICON_SVGS</span>[<span class="hljs-string">&#x27;play&#x27;</span>];  <span class="hljs-comment">// &#x27;&lt;svg ...&gt;...&lt;/svg&gt;&#x27;</span>
 </code></pre>
 <hr>
+<h2 id="base-component-system">Base Component System</h2>
+<p>Sazami provides a declarative component system with typed properties, events, and handler management. See <a href="/docs/component-base.md">Component Base</a> for full documentation.</p>
+<ul>
+<li><code>@component(config)</code> - Decorator for component metadata</li>
+<li><code>SazamiComponent</code> - Base class for all components</li>
+<li><code>addHandler()</code> / <code>removeHandler()</code> / <code>removeAllHandlers()</code> - Handler tracking</li>
+<li><code>dispatch()</code> / <code>dispatchEventTyped()</code> / <code>onCleanup()</code> - Event utilities</li>
+</ul>
+<hr>
+<h2 id="error-handling">Error Handling</h2>
+<p>Sazami uses <a href="https://github.com/nisoku/satori">Satori</a> for structured logging. Errors are logged with context and suggestions.</p>
+<h3 id="error-functions">Error Functions</h3>
+<pre class="hljs"><code><span class="hljs-keyword">import</span> {
+  propertyError,
+  eventError,
+  renderError,
+  bindingError,
+  unknownComponentError,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
+
+<span class="hljs-comment">// Property configuration errors</span>
+<span class="hljs-title function_">propertyError</span>(<span class="hljs-string">&#x27;Invalid property value&#x27;</span>, {
+  <span class="hljs-attr">tag</span>: <span class="hljs-string">&#x27;saz-button&#x27;</span>,
+  <span class="hljs-attr">suggestion</span>: <span class="hljs-string">&#x27;Use a valid variant: default, accent, or ghost&#x27;</span>,
+});
+
+<span class="hljs-comment">// Event dispatch errors</span>
+<span class="hljs-title function_">eventError</span>(<span class="hljs-string">&#x27;Event not defined in metadata&#x27;</span>, {
+  <span class="hljs-attr">tag</span>: <span class="hljs-string">&#x27;saz-input&#x27;</span>,
+  <span class="hljs-attr">suggestion</span>: <span class="hljs-string">&#x27;Add the event to your @component config&#x27;</span>,
+});
+
+<span class="hljs-comment">// Render errors</span>
+<span class="hljs-title function_">renderError</span>(<span class="hljs-string">&#x27;Failed to render component&#x27;</span>, {
+  <span class="hljs-attr">suggestion</span>: <span class="hljs-string">&#x27;Check template syntax and styles&#x27;</span>,
+});
+
+<span class="hljs-comment">// Binding errors</span>
+<span class="hljs-title function_">bindingError</span>(<span class="hljs-string">&#x27;Invalid binding&#x27;</span>, {
+  <span class="hljs-attr">property</span>: <span class="hljs-string">&#x27;value&#x27;</span>,
+  <span class="hljs-attr">suggestion</span>: <span class="hljs-string">&#x27;Use bind:value for two-way binding&#x27;</span>,
+});
+
+<span class="hljs-comment">// Unknown component warning</span>
+<span class="hljs-title function_">unknownComponentError</span>(<span class="hljs-string">&#x27;my-component&#x27;</span>, <span class="hljs-string">&#x27;Use saz- prefix&#x27;</span>);
+</code></pre>
+<h3 id="integration-with-sakko">Integration with Sakko</h3>
+<p>Sakko (parser) also uses Satori for structured errors:</p>
+<pre class="hljs"><code><span class="hljs-keyword">import</span> {
+  tokenizerError,
+  parserError,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sakko&#x27;</span>;
+
+<span class="hljs-title function_">tokenizerError</span>(<span class="hljs-string">&#x27;Invalid syntax&#x27;</span>, {
+  <span class="hljs-attr">suggestion</span>: <span class="hljs-string">&#x27;Check for missing quotes&#x27;</span>,
+});
+
+<span class="hljs-title function_">parserError</span>(<span class="hljs-string">&#x27;Unexpected token&#x27;</span>, {
+  <span class="hljs-attr">cause</span>: <span class="hljs-string">&#x27;missing closing tag&#x27;</span>,
+});
+</code></pre>
+<hr>
+<h2 id="accessibility">Accessibility</h2>
+<p>All interactive primitives include full keyboard support following WAI-ARIA patterns.</p>
+<p>For component-specific props and methods, see <a href="/docs/component-base.md">Component Base</a> and the <a href="/docs/primitives.md">Primitives</a> reference.</p>
+<h3 id="keyboard-navigation">Keyboard Navigation</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Keys</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Select</td>
+<td>Enter/Space</td>
+<td>Open/close dropdown</td>
+</tr>
+<tr>
+<td>Select</td>
+<td>Escape</td>
+<td>Close dropdown</td>
+</tr>
+<tr>
+<td>Select</td>
+<td>Arrow Up/Down</td>
+<td>Navigate options</td>
+</tr>
+<tr>
+<td>Select</td>
+<td>Home/End</td>
+<td>First/last option</td>
+</tr>
+<tr>
+<td>Tabs</td>
+<td>Arrow Left/Right</td>
+<td>Switch tabs</td>
+</tr>
+<tr>
+<td>Tabs</td>
+<td>Enter/Space</td>
+<td>Activate focused tab</td>
+</tr>
+<tr>
+<td>Modal</td>
+<td>Escape</td>
+<td>Close modal</td>
+</tr>
+<tr>
+<td>Toast</td>
+<td>Escape</td>
+<td>Dismiss toast</td>
+</tr>
+<tr>
+<td>Button</td>
+<td>Enter/Space</td>
+<td>Activate (native)</td>
+</tr>
+<tr>
+<td>Checkbox</td>
+<td>Enter/Space</td>
+<td>Toggle (native)</td>
+</tr>
+<tr>
+<td>Toggle</td>
+<td>Enter/Space</td>
+<td>Toggle (native)</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>Arrow Left/Right</td>
+<td>Adjust value</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="focus-management">Focus Management</h3>
+<ul>
+<li>Focus is properly managed when opening/closing modals and selects</li>
+<li>Tab order follows visual layout</li>
+<li>Focus indicators are visible</li>
+</ul>
+<hr>
 <h2 id="types">Types</h2>
 <p>All TypeScript types are exported:</p>
 <pre class="hljs"><code><span class="hljs-keyword">import</span> <span class="hljs-keyword">type</span> {
   <span class="hljs-title class_">VNode</span>,
   <span class="hljs-title class_">ComponentDefinition</span>,
   <span class="hljs-title class_">CurvomorphismOptions</span>,
+  <span class="hljs-title class_">SazamiComponentConfig</span>,
+  <span class="hljs-title class_">PropertyConfig</span>,
+  <span class="hljs-title class_">EventConfig</span>,
 } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 </code></pre>
-<p>Note: AST types (<code>Token</code>, <code>Modifier</code>, <code>ASTNode</code>, <code>RootNode</code>, <code>ElementNode</code>, <code>InlineNode</code>, <code>ListNode</code>) are exported from <code>@nisoku/sakko</code>.</p>
 
 
                     
@@ -448,7 +594,7 @@
         </li>
       
         <li class="toc-item toc-level-2">
-          <a href="#primitives" class="toc-link">Primitives</a>
+          <a href="#primitives-api" class="toc-link">Primitives API</a>
         </li>
       
         <li class="toc-item toc-level-3">
@@ -469,6 +615,34 @@
       
         <li class="toc-item toc-level-3">
           <a href="#icon_svgs" class="toc-link">ICON_SVGS</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#base-component-system" class="toc-link">Base Component System</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#error-handling" class="toc-link">Error Handling</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#error-functions" class="toc-link">Error Functions</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#integration-with-sakko" class="toc-link">Integration with Sakko</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#accessibility" class="toc-link">Accessibility</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#keyboard-navigation" class="toc-link">Keyboard Navigation</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#focus-management" class="toc-link">Focus Management</a>
         </li>
       
         <li class="toc-item toc-level-2">
