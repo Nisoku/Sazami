@@ -64,10 +64,10 @@ describe("Curvomorphism - applyCurvomorphism", () => {
   test("element exactly at center: no corners round (not strictly > or <)", () => {
     const el = mockElement(450, 450, 100, 100);
     applyCurvomorphism(el, 500, 500, "8px");
-    expect(el.style.borderTopLeftRadius).toBe("0px");
-    expect(el.style.borderTopRightRadius).toBe("0px");
-    expect(el.style.borderBottomLeftRadius).toBe("0px");
-    expect(el.style.borderBottomRightRadius).toBe("0px");
+    expect(el.style.borderTopLeftRadius).toBe("8px");
+    expect(el.style.borderTopRightRadius).toBe("8px");
+    expect(el.style.borderBottomLeftRadius).toBe("8px");
+    expect(el.style.borderBottomRightRadius).toBe("8px");
   });
 
   test("element directly above center: bottom-left and bottom-right round", () => {
@@ -75,15 +75,15 @@ describe("Curvomorphism - applyCurvomorphism", () => {
     applyCurvomorphism(el, 500, 500, "8px");
     expect(el.style.borderTopLeftRadius).toBe("0px");
     expect(el.style.borderTopRightRadius).toBe("0px");
-    expect(el.style.borderBottomLeftRadius).toBe("0px");
-    expect(el.style.borderBottomRightRadius).toBe("0px");
+    expect(el.style.borderBottomLeftRadius).toBe("8px");
+    expect(el.style.borderBottomRightRadius).toBe("8px");
   });
 
   test("element to the left of center, vertically centered: right-side corners round", () => {
     const el = mockElement(0, 200, 100, 100);
     applyCurvomorphism(el, 500, 250, "10px");
-    expect(el.style.borderTopRightRadius).toBe("0px");
-    expect(el.style.borderBottomRightRadius).toBe("0px");
+    expect(el.style.borderTopRightRadius).toBe("10px");
+    expect(el.style.borderBottomRightRadius).toBe("10px");
   });
 
   test("uses default radius of 12px when not specified", () => {

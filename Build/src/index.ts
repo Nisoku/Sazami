@@ -94,6 +94,13 @@ export function compileSakko(
     const prev = (target as any).__sazamiRO as ResizeObserver | undefined;
     if (prev) prev.disconnect();
 
+    // Dispose any previous curvomorphism listeners
+    const prevDisposers = (target as any).__sazamiCurvoDisposers as Array<() => void> | undefined;
+    if (prevDisposers) {
+      prevDisposers.forEach((d) => d());
+    }
+    const disposers: Array<() => void> = [];
+
     const ro = new ResizeObserver(() => {
       ro.disconnect();
       delete (target as any).__sazamiRO;
@@ -114,8 +121,11 @@ export function compileSakko(
         const centerX = (left + right) / 2;
         const centerY = (top + bottom) / 2;
 
+        disposers.forEach((d) => d());
+        disposers.length = 0;
+
         elements.forEach((el) => {
-          enableCurvomorphism(el, {
+          const dispose = enableCurvomorphism(el, {
             radius: el.getAttribute("radius") || undefined,
             centerX,
             centerY,
@@ -124,10 +134,12 @@ export function compileSakko(
             groupTop: top,
             groupBottom: bottom,
           });
+          disposers.push(dispose);
         });
       });
     });
     (target as any).__sazamiRO = ro;
+    (target as any).__sazamiCurvoDisposers = disposers;
     ro.observe(target);
   }
 }

@@ -51,7 +51,7 @@ const buttonConfig = {
     size: { type: "string" as const, reflect: true },
     variant: { type: "string" as const, reflect: true },
     shape: { type: "string" as const, reflect: true },
-    tone: { type: "string" as const, reflect: false },
+    tone: { type: "string" as const, reflect: true },
   },
   events: {
     click: { name: "saz-click", detail: {} },
@@ -72,7 +72,15 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
     this.mount(STYLES, `<slot></slot>`);
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
-    if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+
+    const isInert = this.disabled || this.loading;
+    if (isInert) {
+      this.setAttribute("aria-disabled", "true");
+      this.setAttribute("tabindex", "-1");
+    } else {
+      this.removeAttribute("aria-disabled");
+      if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "0");
+    }
 
     this.removeHandler("click", this._handleClick);
     this.removeHandler("keydown", this._handleKeydown);

@@ -80,6 +80,7 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
   declare visible: boolean;
 
   private _hideTimeout?: ReturnType<typeof setTimeout>;
+  private _closeHandler = () => this.hide();
 
   disconnectedCallback() {
     if (this._hideTimeout) {
@@ -134,7 +135,8 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
 
     if (showClose) {
       const closeBtn = this.$(".close-btn");
-      this.addHandler("click", () => this.hide(), {
+      this.removeHandler("click", this._closeHandler);
+      this.addHandler("click", this._closeHandler, {
         internal: true,
         element: closeBtn as HTMLElement,
       });
@@ -147,11 +149,13 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
         this.hide();
       }
     };
+    this.removeHandler("keydown", handleKeydown);
     this.addHandler("keydown", handleKeydown, { internal: true });
 
     this.setAttribute("visible", "");
 
     if (duration > 0) {
+      if (this._hideTimeout) clearTimeout(this._hideTimeout);
       this._hideTimeout = setTimeout(() => this.hide(), duration);
     }
   }

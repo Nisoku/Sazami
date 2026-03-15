@@ -89,6 +89,8 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
     if (!this.hasAttribute("role")) this.setAttribute("role", "checkbox");
     this._updateAria();
 
+    this.removeHandler("click", this._handleClick);
+    this.removeHandler("keydown", this._handleKeydown);
     this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
@@ -120,6 +122,7 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
   }
 
   attributeChangedCallback(name: string, oldVal: string, newVal: string) {
+    super.attributeChangedCallback(name, oldVal, newVal);
     if (oldVal === newVal) return;
     if (name === "checked" || name === "disabled") {
       this._updateAria();
