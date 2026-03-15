@@ -104,7 +104,7 @@ export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
         </div>
       `,
         )
-        .join("")
+        .join(""),
     );
 
     const headers = this.shadow.querySelectorAll(".header");
@@ -114,12 +114,12 @@ export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
         const isOpen = item?.hasAttribute("open");
 
         if (this.hasAttribute("single-open")) {
-          this.shadow
-            .querySelectorAll(".item")
-            .forEach((el) => el.removeAttribute("open"));
-          headers.forEach((h) =>
-            (h as HTMLElement).setAttribute("aria-expanded", "false"),
-          );
+          this.shadow.querySelectorAll(".item").forEach((el) => {
+            el.removeAttribute("open");
+          });
+          headers.forEach((h) => {
+            (h as HTMLElement).setAttribute("aria-expanded", "false");
+          });
         }
 
         if (isOpen) {
@@ -135,7 +135,10 @@ export class SazamiAccordion extends SazamiComponent<typeof accordionConfig> {
           open: !isOpen,
         });
       };
-      this.addHandler("click", handleClick, { internal: true, element: header });
+      this.addHandler("click", handleClick, {
+        internal: true,
+        element: header,
+      });
     });
   }
 }

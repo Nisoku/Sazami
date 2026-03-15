@@ -144,14 +144,21 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     `,
     );
 
+    this._updateTabIndex();
+    this._wireHandlers();
+  }
+
+  private _wireHandlers() {
     if (this.disabled) return;
 
     const trigger = this.$(".trigger");
     const dropdown = this.$(".dropdown");
 
-    this.addHandler("click", () => this.toggleOpen(), { internal: true, element: trigger as HTMLElement });
+    this.addHandler("click", () => this.toggleOpen(), {
+      internal: true,
+      element: trigger as HTMLElement,
+    });
 
-    // Keyboard support: Enter/Space to toggle, Escape to close
     const handleKeydown = (e: KeyboardEvent) => {
       if (this._options.length === 0) return;
       if (e.key === "Enter" || e.key === " ") {
@@ -168,7 +175,10 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._navigateOption(e.key === "ArrowDown" ? 1 : -1);
       }
     };
-    this.addHandler("keydown", handleKeydown, { internal: true, element: trigger as HTMLElement });
+    this.addHandler("keydown", handleKeydown, {
+      internal: true,
+      element: trigger as HTMLElement,
+    });
 
     const handleDropdownClick = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -180,7 +190,10 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._updateDisplay();
       }
     };
-    this.addHandler("click", handleDropdownClick, { internal: true, element: dropdown as HTMLElement });
+    this.addHandler("click", handleDropdownClick, {
+      internal: true,
+      element: dropdown as HTMLElement,
+    });
   }
 
   private toggleOpen() {
@@ -219,7 +232,22 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     }
   }
 
-  attributeChangedCallback(name: string, oldVal: string, newVal: string) {
+  private _updateTabIndex() {
+    const trigger = this.$(".trigger") as HTMLElement;
+    if (trigger) {
+      trigger.setAttribute("tabindex", this.disabled ? "-1" : "0");
+    }
+  }
+
+  static get observedAttributes() {
+    return ["open", "value", "disabled"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (name === "open") {
       const trigger = this.$(".trigger");
@@ -233,6 +261,13 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     }
     if (name === "value") {
       this._updateDisplay();
+      this._updateSelectedState();
+    }
+    if (name === "disabled") {
+      this.removeAllHandlers({ type: "click" });
+      this.removeAllHandlers({ type: "keydown" });
+      this._updateTabIndex();
+      this._wireHandlers();
     }
   }
 }

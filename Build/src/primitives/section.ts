@@ -81,7 +81,12 @@ export class SazamiSection extends SazamiComponent<typeof sectionConfig> {
     return ["center-point"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
     if (name === "center-point" && oldVal !== newVal) {
       if (newVal !== null) {
         requestAnimationFrame(() => {

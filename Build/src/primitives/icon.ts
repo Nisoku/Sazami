@@ -43,6 +43,10 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
   declare size: string;
   declare variant: string;
 
+  static get observedAttributes() {
+    return ["icon", "size", "variant"];
+  }
+
   render() {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
     const svg = ICON_SVGS[icon];

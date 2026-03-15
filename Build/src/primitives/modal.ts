@@ -111,10 +111,16 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
     );
 
     const closeBtn = this.$(".close-btn");
-    this.addHandler("click", () => this._close(), { internal: true, element: closeBtn as HTMLElement });
+    this.addHandler("click", () => this._close(), {
+      internal: true,
+      element: closeBtn as HTMLElement,
+    });
 
     const overlay = this.$(".overlay");
-    this.addHandler("click", () => this._close(), { internal: true, element: overlay as HTMLElement });
+    this.addHandler("click", () => this._close(), {
+      internal: true,
+      element: overlay as HTMLElement,
+    });
 
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && this.hasAttribute("open")) {
@@ -122,7 +128,9 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
       }
     };
     document.addEventListener("keydown", handleKeydown);
-    this.onCleanup(() => document.removeEventListener("keydown", handleKeydown));
+    this.onCleanup(() =>
+      document.removeEventListener("keydown", handleKeydown),
+    );
   }
 
   private _open() {
@@ -133,7 +141,11 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
     this.removeAttribute("open");
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (name === "open") {
       if (newVal !== null) {

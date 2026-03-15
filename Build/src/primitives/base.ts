@@ -95,7 +95,12 @@ export class SazamiComponent<
   private _handlerId = 0;
   private _handlers: Map<
     string,
-    Array<{ id: number; fn: EventListener; source: "internal" | "user"; target: EventTarget }>
+    Array<{
+      id: number;
+      fn: EventListener;
+      source: "internal" | "user";
+      target: EventTarget;
+    }>
   > = new Map();
 
   constructor() {
@@ -140,7 +145,11 @@ export class SazamiComponent<
     this._cleanupFns = [];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (this._rendered) {
       this.render();
@@ -195,7 +204,10 @@ export class SazamiComponent<
 
   // Remove handler by ID, function reference, or type+id/type+fn
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected removeHandler(typeOrId: string | number, idOrFn?: number | Function) {
+  protected removeHandler(
+    typeOrId: string | number,
+    idOrFn?: number | Function,
+  ) {
     // If only one arg and it's a number, remove by ID across all types
     if (typeof typeOrId === "number") {
       for (const [type, handlers] of this._handlers) {

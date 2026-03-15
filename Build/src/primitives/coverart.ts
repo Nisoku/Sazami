@@ -45,6 +45,9 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     const src = this.getAttribute("src") || this.textContent?.trim() || "";
     const alt = this.getAttribute("alt") || "Cover art";
 
-    this.mount(STYLES, src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />` : "");
+    this.mount(
+      STYLES,
+      src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />` : "",
+    );
   }
 }

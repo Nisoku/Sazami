@@ -125,7 +125,11 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
     return ["checked", "disabled"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (name === "checked" || name === "disabled") {
       this._updateAria();

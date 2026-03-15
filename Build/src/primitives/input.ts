@@ -68,19 +68,27 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
 
     const input = this.$("input") as HTMLInputElement;
     if (input) {
-      this.addHandler("input", (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        this.value = target.value;
-        this.dispatchEventTyped("input", { value: target.value });
-      }, { internal: true, element: input });
+      this.addHandler(
+        "input",
+        (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          this.value = target.value;
+          this.dispatchEventTyped("input", { value: target.value });
+        },
+        { internal: true, element: input },
+      );
     }
   }
 
   static get observedAttributes() {
-    return ["value", "disabled"];
+    return ["value", "disabled", "placeholder", "type"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     const input = this.$("input") as HTMLInputElement;
     if (!input) return;
 
@@ -90,6 +98,10 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
       }
     } else if (name === "disabled") {
       input.disabled = newVal !== null;
+    } else if (name === "placeholder" && newVal !== null) {
+      input.placeholder = newVal;
+    } else if (name === "type" && newVal !== null) {
+      input.type = newVal;
     }
   }
 }

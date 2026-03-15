@@ -64,7 +64,8 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     const indeterminate = this.hasAttribute("indeterminate");
 
     const range = max - min;
-    const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+    const percent =
+      range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
     const clampedValue = min + (percent / 100) * range;
 
     if (!this.hasAttribute("role")) {

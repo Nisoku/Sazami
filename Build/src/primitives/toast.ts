@@ -134,7 +134,10 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
 
     if (showClose) {
       const closeBtn = this.$(".close-btn");
-      this.addHandler("click", () => this.hide(), { internal: true, element: closeBtn as HTMLElement });
+      this.addHandler("click", () => this.hide(), {
+        internal: true,
+        element: closeBtn as HTMLElement,
+      });
     }
 
     // Keyboard support: Escape to dismiss

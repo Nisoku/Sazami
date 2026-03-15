@@ -108,7 +108,10 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
 
     // Keyboard support: Left/Right arrows to switch tabs
     tabButtons.forEach((btn, i) => {
-      this.addHandler("click", () => this._activateTab(i), { internal: true, element: btn as HTMLElement });
+      this.addHandler("click", () => this._activateTab(i), {
+        internal: true,
+        element: btn as HTMLElement,
+      });
       const handleKeydown: EventListener = (e) => {
         const ke = e as KeyboardEvent;
         if (ke.key === "ArrowRight") {
@@ -119,7 +122,10 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
           this._activateTab((i - 1 + this._tabs.length) % this._tabs.length);
         }
       };
-      this.addHandler("keydown", handleKeydown, { internal: true, element: btn as HTMLElement });
+      this.addHandler("keydown", handleKeydown, {
+        internal: true,
+        element: btn as HTMLElement,
+      });
     });
   }
 
@@ -152,9 +158,20 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
     return ["active"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
-    if (name === "active" && oldVal !== newVal && this.shadow.childNodes.length) {
-      this._activateTab(Number(newVal ?? 0), false);
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    if (
+      name === "active" &&
+      oldVal !== newVal &&
+      this.shadow.childNodes.length
+    ) {
+      const parsedIndex = Number(newVal ?? 0);
+      const tabCount = this._tabs.length;
+      const validIndex = Math.max(0, Math.min(parsedIndex, tabCount - 1));
+      this._activateTab(validIndex, false);
     }
   }
 }

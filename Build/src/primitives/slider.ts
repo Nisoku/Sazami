@@ -124,7 +124,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     const trackHeight = sizes[size]?.track || sizes.medium.track;
     const thumbSize = sizes[size]?.thumb || sizes.medium.thumb;
 
-    const percent = ((value - min) / (max - min)) * 100;
+    const range = max - min;
+    const percent = range !== 0 ? ((value - min) / range) * 100 : 0;
 
     this.mount(
       STYLES,
@@ -147,13 +148,17 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
 
     if (slider && !this._sliderHandlerAdded) {
       this._sliderHandlerAdded = true;
-      this.addHandler("input", () => {
-        const val = parseFloat(slider.value);
-        const pct = ((val - min) / (max - min)) * 100;
-        filled.style.width = `${pct}%`;
-        this.value = val;
-        this.dispatchEventTyped("input", { value: val });
-      }, { internal: true, element: slider });
+      this.addHandler(
+        "input",
+        () => {
+          const val = parseFloat(slider.value);
+          const pct = range !== 0 ? ((val - min) / range) * 100 : 0;
+          filled.style.width = `${pct}%`;
+          this.value = val;
+          this.dispatchEventTyped("input", { value: val });
+        },
+        { internal: true, element: slider },
+      );
     }
   }
 
@@ -161,7 +166,11 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     return ["value", "min", "max", "step", "disabled", "size"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     this.render();
   }

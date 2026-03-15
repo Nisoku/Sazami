@@ -306,6 +306,8 @@ parserError('Unexpected token', {
 
 All interactive primitives include full keyboard support following WAI-ARIA patterns.
 
+For component-specific props and methods, see [Component Base](/docs/component-base.md) and the [Primitives](/docs/primitives.md) reference.
+
 ### Keyboard Navigation
 
 | Component | Keys | Behavior |

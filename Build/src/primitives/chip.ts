@@ -118,15 +118,20 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
     );
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
+    this.setAttribute("aria-pressed", String(this.selected));
     this._updateTabIndex();
 
     if (removable) {
       const btn = this.$(".remove-btn") as HTMLButtonElement;
-      this.addHandler("click", (e: Event) => {
-        e.stopPropagation();
-        this.dispatchEventTyped("remove", {});
-        this.remove();
-      }, { internal: true, element: btn });
+      this.addHandler(
+        "click",
+        (e: Event) => {
+          e.stopPropagation();
+          this.dispatchEventTyped("remove", {});
+          this.remove();
+        },
+        { internal: true, element: btn },
+      );
     }
 
     this.addHandler("click", this._handleClick, { internal: true });

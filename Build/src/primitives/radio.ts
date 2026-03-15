@@ -102,12 +102,17 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     const name = this.getAttribute("name") || "";
     const value = this.getAttribute("value") || "";
 
-    // Uncheck other radios with same name
     const root = this.getRootNode() as ParentNode;
     if (root) {
-      const escapedName = CSS.escape(name);
-      root.querySelectorAll(`saz-radio[name="${escapedName}"]:not([value="${CSS.escape(value)}"])`).forEach((el) => {
-        el.removeAttribute("checked");
+      root.querySelectorAll("saz-radio").forEach((el) => {
+        const radio = el as SazamiRadio;
+        if (
+          radio.hasAttribute("name") &&
+          radio.getAttribute("name") === name &&
+          radio.getAttribute("value") !== value
+        ) {
+          radio.removeAttribute("checked");
+        }
       });
     }
 
@@ -127,7 +132,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     return ["checked", "disabled"];
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (name === "checked" || name === "disabled") {
       this._updateAria();

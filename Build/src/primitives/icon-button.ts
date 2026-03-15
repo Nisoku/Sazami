@@ -72,6 +72,8 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   declare size: string;
   declare variant: string;
 
+  private _handlersAdded = false;
+
   render() {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
     const svg = ICON_SVGS[icon];
@@ -84,10 +86,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
       `,
       );
     } else {
-      this.mount(
-        STYLES,
-        `<div class="icon"><span class="glyph"></span></div>`,
-      );
+      this.mount(STYLES, `<div class="icon"><span class="glyph"></span></div>`);
       const glyph = this.$(".glyph");
       if (glyph) glyph.textContent = icon;
     }
@@ -98,8 +97,11 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
       this.setAttribute("aria-label", icon);
     }
 
-    this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    if (!this._handlersAdded) {
+      this._handlersAdded = true;
+      this.addHandler("click", this._handleClick, { internal: true });
+      this.addHandler("keydown", this._handleKeydown, { internal: true });
+    }
   }
 
   private _updateTabIndex() {
@@ -112,15 +114,23 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     }
   }
 
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+  static get observedAttributes() {
+    return ["disabled", "icon", "size", "variant"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
     if (oldVal === newVal) return;
     if (name === "disabled") {
       this._updateTabIndex();
     }
-  }
-
-  static get observedAttributes() {
-    return ["disabled"];
+    if (name === "icon" || name === "size" || name === "variant") {
+      this.removeAttribute("aria-label");
+      this.render();
+    }
   }
 
   private _handleClick = () => {
