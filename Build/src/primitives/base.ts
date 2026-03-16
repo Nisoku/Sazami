@@ -107,6 +107,14 @@ export class SazamiComponent<
   private _rendered = false;
   private _propStorage: Map<string, string | number | boolean> = new Map();
 
+  // Batching and backpressure
+  private _dirty = false;
+  private _pendingStyles: string | null = null;
+  private _pendingTemplate: string | null = null;
+
+  // Template identity, skip no-op renders
+  private _lastTemplate = "";
+
   // Handler registry: { type: [{ id, fn, source, target }] }
   private _handlerId = 0;
   private _handlers: Map<
@@ -187,6 +195,52 @@ export class SazamiComponent<
    *   user-provided data using escapeHtml() before interpolating into the template.
    */
   protected mount(styles: string, template: string) {
+    if (!this._rendered) {
+      // First render: synchronous, establishes DOM structure for Sairin to bind to
+      try {
+        this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      } catch (e) {
+        renderError(`Failed to render component: ${(e as Error).message}`, {
+          suggestion: "Check the template syntax and styles",
+        });
+      }
+    } else {
+      // Subsequent renders: batched, backpressured
+      // Once Sairin is wired this path should rarely fire
+      this.scheduleRender(styles, template);
+    }
+  }
+
+  /**
+   * Schedules a render to occur in the next microtask.
+   * Collapses multiple render() calls within the same tick into one DOM write.
+   * Uses backpressure, if a render is already queued, subsequent calls are dropped.
+   */
+  protected scheduleRender(styles: string, template: string): void {
+    this._pendingStyles = styles;
+    this._pendingTemplate = template;
+    if (this._dirty) return;
+    this._dirty = true;
+    queueMicrotask(() => {
+      this._dirty = false;
+      if (this._pendingTemplate !== null) {
+        this._flush(this._pendingStyles!, this._pendingTemplate);
+        this._pendingStyles = null;
+        this._pendingTemplate = null;
+      }
+    });
+  }
+
+  /**
+   * Flushes pending styles and template to the shadow DOM.
+   * Called by scheduleRender when the microtask runs.
+   * Phase 2: skips no-op renders if template is identical.
+   */
+  private _flush(styles: string, template: string): void {
+    // Template identity check, skip if template hasn't changed
+    if (template === this._lastTemplate) return;
+    this._lastTemplate = template;
+
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
     } catch (e) {
