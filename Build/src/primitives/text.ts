@@ -86,7 +86,15 @@ export class SazamiText extends SazamiComponent<typeof textConfig> {
     if (this._isReadable(this._content)) {
       this._bindContentSignal(this._content);
     } else {
-      this._setTextContent(this._content as string);
+      const staticContent = this._content as string;
+      if (staticContent) {
+        this._setTextContent(staticContent);
+      } else {
+        const slottedText = this.textContent?.trim() || "";
+        if (slottedText) {
+          this._setTextContent(slottedText);
+        }
+      }
     }
   }
 }

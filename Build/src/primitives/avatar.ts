@@ -80,6 +80,11 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     const dispose = bindProperty(img, "src", sig);
     this.onCleanup(dispose);
     
+    const altDispose = bindProperty(img, "alt", {
+      get: () => this.getAttribute("alt") || ""
+    } as unknown as Signal<string>);
+    this.onCleanup(altDispose);
+    
     this.onCleanup(
       bindProperty(initials, "textContent", {
         get: () => {

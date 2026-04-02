@@ -281,6 +281,8 @@ text.set("World");
 ### Derived Signals
 
 ```typescript
+import { signal, derived, path } from '@nisoku/sairin';
+
 const firstName = signal(path("app", "firstName"), "John");
 const lastName = signal(path("app", "lastName"), "Doe");
 
@@ -299,6 +301,8 @@ el.content = fullName;
 For form controls, changes in the UI automatically update the signal:
 
 ```typescript
+import { signal, path } from '@nisoku/sairin';
+
 const inputValue = signal(path("app", "inputValue"), "");
 
 // Input updates the signal on every keystroke
@@ -313,6 +317,8 @@ inputValue.set("Hello");
 ### Boolean State
 
 ```typescript
+import { signal, path } from '@nisoku/sairin';
+
 const isDisabled = signal(path("app", "disabled"), false);
 
 const button = document.createElement('saz-button');
@@ -325,8 +331,7 @@ isDisabled.set(true);
 ### Resource Integration
 
 ```typescript
-import { signal, effect } from '@nisoku/sairin';
-import { resource } from '@nisoku/sairin';
+import { signal, path, effect, resource } from '@nisoku/sairin';
 
 const userData = resource(
   () => fetch('/api/user').then(r => r.json()),

@@ -327,7 +327,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   private _updateTabIndex() {
     const trigger = this.$(".trigger") as HTMLElement;
     if (trigger) {
-      trigger.setAttribute("tabindex", this.disabled ? "-1" : "0");
+      trigger.setAttribute("tabindex", this._getIsDisabled() ? "-1" : "0");
     }
   }
 

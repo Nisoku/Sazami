@@ -10,7 +10,6 @@ import {
   bindHtml,
   bindAttribute,
   bindProperty,
-  bindClass,
   bindStyle,
   bindInputValue,
   bindInputChecked,
@@ -367,16 +366,6 @@ export class SazamiComponent<
       return;
     }
     const dispose = bindStyle(element, styleProp, readable);
-    this._cleanupFns.push(dispose);
-  }
-
-  protected bindClass(selector: string, className: string, readable: Readable<boolean>): void {
-    const element = this.$(selector);
-    if (!element) {
-      bindingError(`Element not found: ${selector}`, {});
-      return;
-    }
-    const dispose = bindClass(element, readable as unknown as Readable<string>);
     this._cleanupFns.push(dispose);
   }
 

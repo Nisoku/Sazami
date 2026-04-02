@@ -89,7 +89,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   set visible(value: boolean | Readable<boolean>) {
     if (this._isReadableBool(value)) {
       this._visibleSignal = value;
-      this.bindDisabled(":host", value);
+      this.bindVisible(":host", value);
     } else {
       this._visibleSignal = null;
       if (value) {
