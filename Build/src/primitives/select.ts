@@ -7,7 +7,6 @@ import {
   Derived,
   isSignal,
   effect,
-  onCleanup,
   type Readable,
 } from "@nisoku/sairin";
 

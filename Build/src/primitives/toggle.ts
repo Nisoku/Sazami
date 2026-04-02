@@ -142,9 +142,11 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
     if (this._checkedSignal) {
       if ("set" in this._checkedSignal) {
         (this._checkedSignal as Signal<boolean>).set(newValue);
+        this._updateAria();
       }
     } else {
       this._setChecked(newValue);
+      this._updateAria();
     }
     this.dispatchEventTyped("change", { checked: newValue });
   };

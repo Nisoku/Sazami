@@ -274,6 +274,10 @@ export class SazamiComponent<
    */
   protected mountSync(styles: string, template: string) {
     const newRootElement = this._extractRootElement(template);
+    this._pendingStyles = null;
+    this._pendingTemplate = null;
+    this._lastTemplate = template;
+    this._lastStyles = styles;
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
       this._currentRootElement = newRootElement;
@@ -371,7 +375,7 @@ export class SazamiComponent<
           if ("set" in readable) {
             dispose = bindSelectValue(element, readable as Signal<string>);
           } else {
-            dispose = bindAttribute(element, "value", readable);
+            dispose = bindProperty(element, "value", readable);
           }
         } else {
           bindingError(

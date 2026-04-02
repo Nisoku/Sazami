@@ -106,8 +106,10 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
 
   private _getCurrentSrc(): string {
     if (this._srcSignal) return this._srcSignal.get();
-    if (this._pendingSrc) return this._pendingSrc;
-    if ((this as any)._src) return (this as any)._src;
+    if (this._pendingSrc !== undefined && this._pendingSrc !== null)
+      return this._pendingSrc;
+    if ((this as any)._src !== undefined && (this as any)._src !== null)
+      return (this as any)._src;
     return this.getAttribute("src") || "";
   }
 

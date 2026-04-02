@@ -158,9 +158,9 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
     const svg = ICON_SVGS[iconName];
 
     if (svg) {
-      this.mount(STYLES, svg);
+      this.mountSync(STYLES, svg);
     } else {
-      this.mount(STYLES, `<span>${escapeHtml(iconName)}</span>`);
+      this.mountSync(STYLES, `<span>${escapeHtml(iconName)}</span>`);
     }
 
     this._iconElement = (this.shadowRoot?.querySelector("svg") ||

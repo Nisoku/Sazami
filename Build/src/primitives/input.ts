@@ -71,7 +71,29 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
 
   set value(valueOrSignal: string | Readable<string>) {
     if (this._isReadableStr(valueOrSignal)) {
+      this._disposeValueBindings();
       this._valueSignal = valueOrSignal;
+      if (this._input) {
+        this._input.value = valueOrSignal.get();
+        const dispose = effect(() => {
+          const val = valueOrSignal.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this._valueEffectDisposer = dispose;
+        this.onCleanup(dispose);
+        this._inputHandler = (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          (valueOrSignal as Signal<string>).set(target.value);
+        };
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
+      }
     } else {
       this._disposeValueBindings();
       this._valueSignal = null;

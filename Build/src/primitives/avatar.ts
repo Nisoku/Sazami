@@ -153,7 +153,6 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     });
     this.onCleanup(() => this._altObserver?.disconnect());
 
-    let previousSrc = sig.get();
     const checkModeChange = () => {
       const currentSrc = sig.get();
       const shouldBeImageMode = !!currentSrc;
@@ -161,7 +160,6 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
         this._disposeSrcBinding();
         this.render();
       }
-      previousSrc = currentSrc;
     };
 
     this._modeEffectDisposer = effect(() => {
@@ -209,6 +207,11 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
 
       if (this._srcSignal) {
         this._setupSrcBinding();
+      } else {
+        const currentSrc = this._getCurrentSrc();
+        if (currentSrc && this._imgElement) {
+          this._imgElement.src = currentSrc;
+        }
       }
     } else {
       this.mount(STYLES, `<span class="initials"></span>`);

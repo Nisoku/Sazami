@@ -183,6 +183,9 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     if (this._getIsDisabled()) return;
     if (this._getIsChecked()) return;
 
+    const canWrite = !this._checkedSignal || "set" in this._checkedSignal;
+    if (!canWrite) return;
+
     const name = this.getAttribute("name") || "";
     const value = this.getAttribute("value") || "";
 
