@@ -10,6 +10,8 @@ import {
   INTERACTIVE_HOVER,
   TYPO_TONE,
 } from "./shared";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { bindDisabled } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -60,20 +62,49 @@ const buttonConfig = {
 
 @component(buttonConfig)
 export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
-  declare disabled: boolean;
-  declare loading: boolean;
-  declare active: boolean;
-  declare size: string;
-  declare variant: string;
-  declare shape: string;
-  declare tone: string;
+  private _disabledSignal: Readable<boolean> | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = bindDisabled(this, value);
+      this.onCleanup(dispose);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this.hasAttribute("disabled")) return true;
+    return !!(this as any).loading;
+  }
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
 
-    const isInert = this.disabled || this.loading;
+    const isInert = this._getIsDisabled();
     if (isInert) {
       this.setAttribute("aria-disabled", "true");
       this.setAttribute("tabindex", "-1");
@@ -92,12 +123,12 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled || this.loading) return;
+    if (this._getIsDisabled()) return;
     this.dispatchEventTyped("click", {});
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
-    if (this.disabled || this.loading) return;
+    if (this._getIsDisabled()) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       this.click();

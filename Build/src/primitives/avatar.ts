@@ -1,6 +1,8 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
 import { escapeHtml } from "../escape";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { bindProperty } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -36,7 +38,6 @@ ${SHAPE_RULES}
 
 const avatarConfig = {
   properties: {
-    src: { type: "string" as const, reflect: true },
     alt: { type: "string" as const, reflect: true },
     initials: { type: "string" as const, reflect: true },
     size: { type: "string" as const, reflect: true },
@@ -46,25 +47,103 @@ const avatarConfig = {
 
 @component(avatarConfig)
 export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
-  declare src: string;
-  declare alt: string;
-  declare initials: string;
-  declare size: string;
-  declare shape: string;
+  private _srcSignal: Readable<string> | null = null;
+  private _imgElement: HTMLImageElement | null = null;
+  private _initialsElement: HTMLElement | null = null;
 
-  render() {
-    const src = this.getAttribute("src") || "";
+  private _isReadableStr(value: unknown): value is Readable<string> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set src(value: string | Readable<string>) {
+    if (this._isReadableStr(value)) {
+      this._srcSignal = value;
+      this._setupSrcBinding();
+    } else {
+      this._srcSignal = null;
+      (this as any)._src = value;
+      this._updateDisplay();
+    }
+  }
+
+  get src(): string | Readable<string> {
+    return this._srcSignal || (this as any)._src || "";
+  }
+
+  private _setupSrcBinding() {
+    if (!this._imgElement || !this._initialsElement) return;
+
+    const img = this._imgElement;
+    const initials = this._initialsElement;
+    const sig = this._srcSignal!;
+    
+    const dispose = bindProperty(img, "src", sig);
+    this.onCleanup(dispose);
+    
+    this.onCleanup(
+      bindProperty(initials, "textContent", {
+        get: () => {
+          const src = sig.get();
+          if (src) {
+            img.style.display = "block";
+            initials.style.display = "none";
+            return "";
+          } else {
+            img.style.display = "none";
+            initials.style.display = "";
+            const alt = this.getAttribute("alt") || "";
+            const textContent = this.textContent?.trim() || "";
+            const initialsAttr = this.getAttribute("initials") || "";
+            return initialsAttr || this._getInitials(alt || textContent);
+          }
+        }
+      } as unknown as Signal<string>)
+    );
+  }
+
+  private _updateDisplay() {
+    const currentSrc = this._srcSignal ? this._srcSignal.get() : ((this as any)._src || "");
     const alt = this.getAttribute("alt") || "";
-    const initialsAttr = this.getAttribute("initials") || "";
     const textContent = this.textContent?.trim() || "";
+    const initialsAttr = this.getAttribute("initials") || "";
     const initials = initialsAttr || this._getInitials(alt || textContent);
 
+    if (currentSrc) {
+      if (this._imgElement) {
+        this._imgElement.src = currentSrc;
+        this._imgElement.style.display = "block";
+      }
+      if (this._initialsElement) {
+        this._initialsElement.style.display = "none";
+      }
+    } else {
+      if (this._initialsElement) {
+        this._initialsElement.textContent = initials;
+        this._initialsElement.style.display = "";
+      }
+      if (this._imgElement) {
+        this._imgElement.style.display = "none";
+      }
+    }
+  }
+
+  render() {
     this.mount(
       STYLES,
-      src
-        ? `<img class="image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`
-        : `<span class="initials">${escapeHtml(initials)}</span>`,
+      `
+      <img class="image" alt="" style="display: none;" />
+      <span class="initials"></span>
+    `,
     );
+
+    this._imgElement = this.$(".image");
+    this._initialsElement = this.$(".initials");
+
+    this._updateDisplay();
+
+    if (this._srcSignal) {
+      this._setupSrcBinding();
+    }
   }
 
   private _getInitials(name: string): string {

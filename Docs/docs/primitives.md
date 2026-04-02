@@ -6,7 +6,9 @@ order: 2
 
 # Sazami Primitives
 
-Sazami primitives are semantic Web Components that the Sakko compiler targets. Each primitive is a custom element (`<saz-*>`) with Shadow DOM encapsulation and theme-driven styling.
+Sazami primitives are semantic Web Components that the [Sakko](https://github.com/nisoku/sakko) compiler targets. Each primitive is a custom element (`<saz-*>`) with Shadow DOM encapsulation and theme-driven styling.
+
+> **Tip:** See the [Sakko Language Reference](/Sakko/language-reference/) for how to use these components in Sakko markup syntax.
 
 All interactive primitives have ARIA roles, keyboard navigation (Enter/Space), focus-visible outlines, and attribute reflection.
 

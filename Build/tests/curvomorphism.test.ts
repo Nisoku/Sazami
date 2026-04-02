@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { describe, test, expect, it } from '@jest/globals';
 import { applyCurvomorphism } from "../src/curvomorphism/index";
 
 function mockElement(

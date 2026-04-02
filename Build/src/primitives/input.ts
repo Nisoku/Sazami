@@ -1,6 +1,8 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, STATE_DISABLED } from "./shared";
 import { escapeHtml } from "../escape";
+import { Signal, Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
+import { bindInputValue } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; }
@@ -33,12 +35,11 @@ ${STATE_DISABLED}
 // Config
 const inputConfig = {
   properties: {
-    value: { type: "string" as const, reflect: true },
     placeholder: { type: "string" as const, reflect: false },
     type: { type: "string" as const, reflect: false },
-    disabled: { type: "boolean" as const, reflect: true },
     size: { type: "string" as const, reflect: false },
     variant: { type: "string" as const, reflect: false },
+    disabled: { type: "boolean" as const, reflect: false },
   },
   events: {
     input: { name: "saz-input", detail: { value: "value" } },
@@ -47,36 +48,81 @@ const inputConfig = {
 
 @component(inputConfig)
 export class SazamiInput extends SazamiComponent<typeof inputConfig> {
-  declare value: string;
   declare placeholder: string;
   declare type: string;
   declare disabled: boolean;
   declare size: string;
   declare variant: string;
 
+  private _valueSignal: Readable<string> | null = null;
+
+  private _isReadableStr(value: unknown): value is Readable<string> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set value(valueOrSignal: string | Readable<string>) {
+    if (this._isReadableStr(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+    } else {
+      this._valueSignal = null;
+      (this as any)._value = valueOrSignal;
+      const input = this.$("input") as HTMLInputElement | null;
+      if (input && input.value !== valueOrSignal) {
+        input.value = valueOrSignal || "";
+      }
+    }
+  }
+
+  get value(): string | Readable<string> {
+    return this._valueSignal || (this as any)._value || "";
+  }
+
   render() {
-    // Read attributes directly for non-reflected properties
     const placeholder = this.getAttribute("placeholder") || "";
     const type = this.getAttribute("type") || "text";
+    const initialValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || "");
 
     this.mount(
       STYLES,
       `
-      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(this.value || "")}" ${this.disabled ? "disabled" : ""} />
+      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(initialValue)}" ${this.disabled ? "disabled" : ""} />
     `,
     );
 
     const input = this.$("input") as HTMLInputElement;
     if (input) {
-      this.addHandler(
-        "input",
-        (e: Event) => {
+      this.removeAllHandlers({ type: "input", source: "internal" });
+      
+      if (this._valueSignal) {
+        this.onCleanup(
+          effect(() => {
+            const val = this._valueSignal!.get();
+            if (input.value !== val) {
+              input.value = val;
+            }
+          })
+        );
+
+        const handler = (e: Event) => {
           const target = e.target as HTMLInputElement;
-          this.value = target.value;
-          this.dispatchEventTyped("input", { value: target.value });
-        },
-        { internal: true, element: input },
-      );
+          if ('set' in this._valueSignal!) {
+            (this._valueSignal as Signal<string>).set(target.value);
+          }
+          (this.dispatchEventTyped as any)("input", { value: target.value });
+        };
+        input.addEventListener("input", handler);
+        this.onCleanup(() => input.removeEventListener("input", handler));
+      } else {
+        this.addHandler(
+          "input",
+          (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            (this as any)._value = target.value;
+            (this.dispatchEventTyped as any)("input", { value: target.value });
+          },
+          { internal: true, element: input },
+        );
+      }
     }
   }
 
@@ -90,7 +136,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     newVal: string | null,
   ) {
     const input = this.$("input") as HTMLInputElement;
-    if (!input) return;
+    if (!input || this._valueSignal) return;
 
     if (name === "value") {
       if (newVal === null) {

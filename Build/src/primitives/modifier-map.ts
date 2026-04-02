@@ -61,7 +61,7 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
             `Valid modifiers: ${Object.keys(MODIFIER_MAP).join(", ")}`,
         );
       }
-    } else {
+    } else if (mod.type === "pair") {
       props[mod.key] = mod.value;
     }
   });

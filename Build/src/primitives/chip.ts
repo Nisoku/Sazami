@@ -2,6 +2,7 @@ import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_HOVER, VARIANT_BG_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
+import { Signal } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -102,9 +103,12 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
   declare label: string;
   declare variant: string;
   declare removable: boolean;
+  declare size: string;
   declare selected: boolean;
   declare disabled: boolean;
-  declare size: string;
+
+  disabledSignal?: Signal<boolean>;
+  selectedSignal?: Signal<boolean>;
 
   render() {
     const label = this.getAttribute("label") || this.textContent?.trim() || "";
@@ -136,6 +140,13 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
 
     this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
+
+    if (this.disabledSignal) {
+      this.bindDisabled(":host", this.disabledSignal);
+    }
+    if (this.selectedSignal) {
+      this.bindAttribute(":host", "selected", this.selectedSignal);
+    }
   }
 
   private _updateTabIndex() {

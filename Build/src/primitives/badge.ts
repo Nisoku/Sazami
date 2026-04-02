@@ -1,5 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, VARIANT_BG_RULES, SHAPE_RULES } from "./shared";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { bindText } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -35,7 +37,45 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
   declare variant: string;
   declare shape: string;
 
+  private _contentSignal: Readable<string> | null = null;
+  private _textNode: Text | null = null;
+  private _textContent: string = "";
+
+  private _isReadable(value: unknown): value is Readable<string> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set content(value: string | Readable<string>) {
+    if (this._isReadable(value)) {
+      this._contentSignal = value;
+      if (this._textNode) {
+        const dispose = bindText(this._textNode, value);
+        this.onCleanup(dispose);
+      }
+    } else {
+      this._contentSignal = null;
+      this._textContent = value;
+      if (this._textNode) {
+        this._textNode.textContent = value ?? "";
+      }
+    }
+  }
+
+  get content(): string | Readable<string> | undefined {
+    return this._contentSignal || this._textContent;
+  }
+
   render() {
     this.mount(STYLES, `<slot></slot>`);
+    
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      this._textNode = document.createTextNode(this._textContent);
+      slot.replaceWith(this._textNode);
+    }
+    
+    if (this._contentSignal) {
+      this.content = this._contentSignal;
+    }
   }
 }

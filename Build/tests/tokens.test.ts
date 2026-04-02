@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { describe, test, expect, it } from '@jest/globals';
 import { generateThemeCSS, generateCSSVariables, getTokenValue } from "../src/config/generator";
 import { defaultTokens } from "../src/config/tokens";
 

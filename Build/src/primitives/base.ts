@@ -4,6 +4,30 @@ import {
   bindingError,
   renderError,
 } from "../errors";
+import { type Signal, type Readable } from "@nisoku/sairin";
+import {
+  bindText,
+  bindHtml,
+  bindAttribute,
+  bindProperty,
+  bindClass,
+  bindStyle,
+  bindInputValue,
+  bindInputChecked,
+  bindSelectValue,
+  bindVisibility,
+  bindDisabled,
+  bindBooleanAttribute,
+} from "@nisoku/sairin";
+
+export type BindTarget =
+  | "textContent"
+  | "innerHTML"
+  | "value"
+  | "checked"
+  | "disabled"
+  | "visible"
+  | string;
 
 export interface SazamiComponentConfig {
   observedAttributes?: readonly string[] | string[];
@@ -101,6 +125,8 @@ export class SazamiComponent<
 > extends HTMLElement {
   // Declare sazamiConfig, set by decorator on prototype
   declare sazamiConfig: C;
+
+  componentId: string = `${this.tagName?.toLowerCase() ?? "element"}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
   protected shadow: ShadowRoot;
   protected _cleanupFns: Array<() => void> = [];
@@ -248,6 +274,175 @@ export class SazamiComponent<
         suggestion: "Check the template syntax and styles",
       });
     }
+  }
+
+  // Unified binding API - delegates to Sairin's dom/bindings
+  protected bind(selector: string, target: BindTarget, readable: Readable<any>): void {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+
+    let dispose: (() => void) | undefined;
+
+    switch (target) {
+      case "textContent":
+        dispose = bindText(element, readable as Readable<string>);
+        break;
+      case "innerHTML":
+        dispose = bindHtml(element, readable as Readable<string>);
+        break;
+      case "value":
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          dispose = bindInputValue(element, readable as Signal<string>);
+        }
+        break;
+      case "checked":
+        if (element instanceof HTMLInputElement) {
+          dispose = bindInputChecked(element, readable as Signal<boolean>);
+        } else {
+          dispose = bindBooleanAttribute(element, "checked", readable as Readable<boolean>);
+        }
+        break;
+      case "disabled":
+        dispose = bindDisabled(element, readable as Readable<boolean>);
+        break;
+      case "visible":
+        dispose = bindVisibility(element, readable as Readable<boolean>);
+        break;
+      default:
+        if (typeof target === "string") {
+          dispose = bindAttribute(element, target, readable);
+        }
+    }
+
+    if (dispose) {
+      this._cleanupFns.push(dispose);
+    }
+  }
+
+  protected bindText(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "textContent", readable);
+  }
+
+  protected bindHtml(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "innerHTML", readable);
+  }
+
+  protected bindValue(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "value", readable);
+  }
+
+  protected bindChecked(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "checked", readable);
+  }
+
+  protected bindDisabled(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "disabled", readable);
+  }
+
+  protected bindVisible(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "visible", readable);
+  }
+
+  protected bindAttribute(selector: string, attr: string, readable: Readable<any>): void {
+    this.bind(selector, attr, readable);
+  }
+
+  protected bindProperty<T>(selector: string, prop: string, readable: Readable<T>): void {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindProperty(element, prop as any, readable);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindStyle(selector: string, styleProp: string, readable: Readable<string>): void {
+    const element = this.$(selector) as HTMLElement;
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindStyle(element, styleProp, readable);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindClass(selector: string, className: string, readable: Readable<boolean>): void {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindClass(element, readable as unknown as Readable<string>);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindToggleClass(selector: string, className: string, readable: Readable<boolean>): void {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindProperty(element, "className", {
+      get: () => {
+        const current = element.className;
+        const active = readable.get();
+        if (active) {
+          return current ? `${current} ${className}` : className;
+        } else {
+          return current.split(" ").filter(c => c !== className).join(" ");
+        }
+      }
+    } as unknown as Readable<string>);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindWidthPercent(
+    selector: string,
+    readable: Readable<number>,
+    min: number = 0,
+    max: number = 100
+  ): void {
+    const element = selector === ":host" ? this : this.$(selector) as HTMLElement;
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindStyle(element, "width", {
+      get: () => {
+        const value = readable.get();
+        const range = max - min;
+        const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+        return `${percent}%`;
+      }
+    } as unknown as Readable<string>);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindWidthPercentAttribute(
+    selector: string,
+    attr: string,
+    readable: Readable<number>,
+    min: number = 0,
+    max: number = 100
+  ): void {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindAttribute(element, attr, {
+      get: () => {
+        const value = readable.get();
+        const range = max - min;
+        const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+        return String(percent);
+      }
+    } as unknown as Readable<string>);
+    this._cleanupFns.push(dispose);
   }
 
   // query stable internal nodes
@@ -406,6 +601,14 @@ export class SazamiComponent<
     if (!props) return;
 
     for (const [prop, cfg] of Object.entries(props)) {
+      // Skip if subclass has a custom setter for this property
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(this),
+        prop
+      );
+      if (descriptor && 'set' in descriptor) {
+        continue;
+      }
       this._createReflector(prop, cfg.type, cfg.default, cfg.reflect);
     }
   }

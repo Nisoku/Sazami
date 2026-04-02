@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { escapeHtml } from "../escape";
+import { Signal } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; }
@@ -71,6 +72,7 @@ const tabsConfig = {
 @component(tabsConfig)
 export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
   declare active: string;
+  activeSignal?: Signal<string>;
 
   private _tabs: Array<{ label: string; panelId: string; tabId: string }> = [];
   private _panelElements: HTMLElement[] = [];
@@ -145,6 +147,10 @@ export class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
           element: btn as HTMLElement,
         });
       });
+    }
+
+    if (this.activeSignal) {
+      this.bindAttribute(":host", "active", this.activeSignal);
     }
   }
 

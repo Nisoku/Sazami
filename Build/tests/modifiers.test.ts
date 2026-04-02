@@ -1,3 +1,4 @@
+import { describe, test, expect, it } from '@jest/globals';
 import { parseModifiers, MODIFIER_MAP } from "../src/primitives/modifier-map";
 import type { Modifier } from "@nisoku/sakko";
 
@@ -50,7 +51,7 @@ describe("Modifier Map", () => {
 
   test("maps key-value modifiers", () => {
     const modifiers: Modifier[] = [
-      { type: "modifier", key: "custom", value: "value" },
+      { type: "pair", key: "custom", value: "value" },
     ];
     const result = parseModifiers(modifiers);
     expect(result.custom).toBe("value");

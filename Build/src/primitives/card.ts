@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { GAP_RULES, VARIANT_BG_RULES } from "./shared";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -49,7 +50,33 @@ export class SazamiCard extends SazamiComponent<typeof cardConfig> {
   declare variant: string;
   declare gap: string;
 
+  private _loadingSignal: Readable<boolean> | null = null;
+  private _contentSlot: HTMLElement | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set loading(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._loadingSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._loadingSignal = null;
+      if (value) {
+        this.setAttribute("loading", "");
+      } else {
+        this.removeAttribute("loading");
+      }
+    }
+  }
+
+  get loading(): boolean | Readable<boolean> {
+    return this._loadingSignal || this.hasAttribute("loading");
+  }
+
   render() {
     this.mount(STYLES, `<slot></slot>`);
+    this._contentSlot = this.shadowRoot?.querySelector("slot") || null;
   }
 }

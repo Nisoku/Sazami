@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { describe, test, expect, it, beforeEach } from '@jest/globals';
 import { render } from "../src/runtime/renderer";
 import { VNode } from "../src/runtime/transformer";
 

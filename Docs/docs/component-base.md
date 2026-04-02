@@ -168,7 +168,7 @@ this.dispatchEventTyped('change', { variant: 'primary' });
 
 ### `onCleanup(fn)`
 
-Register cleanup functions for Sairin bindings. Called on disconnect.
+Register cleanup functions for Sairin bindings. Called on disconnect. This integrates with [Sairin's `effect()`](https://github.com/nisoku/sairin) cleanup system.
 
 ```typescript
 this.onCleanup(() => {
