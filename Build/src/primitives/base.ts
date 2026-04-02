@@ -16,6 +16,7 @@ import {
   bindVisibility,
   bindDisabled,
   bindBooleanAttribute,
+  bindSelectValue,
 } from "@nisoku/sairin";
 
 export type BindTarget =
@@ -238,6 +239,7 @@ export class SazamiComponent<
   /**
    * Mounts the component's shadow DOM with the given styles and template.
    * Auto-detects structural changes and renders synchronously when needed.
+   * For non-structural re-renders, defers to a microtask for batching.
    * @param styles - CSS styles to inject
    * @param template - HTML template string. Callers are responsible for escaping
    *   user-provided data using escapeHtml() before interpolating into the template.
@@ -258,6 +260,25 @@ export class SazamiComponent<
       }
     } else {
       this.scheduleRender(styles, template);
+    }
+  }
+
+  /**
+   * Mounts the component's shadow DOM synchronously.
+   * Use this when you need to query/bind immediately after mounting.
+   * @param styles - CSS styles to inject
+   * @param template - HTML template string. Callers are responsible for escaping
+   *   user-provided data using escapeHtml() before interpolating into the template.
+   */
+  protected mountSync(styles: string, template: string) {
+    const newRootElement = this._extractRootElement(template);
+    try {
+      this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = newRootElement;
+    } catch (e) {
+      renderError(`Failed to render component: ${(e as Error).message}`, {
+        suggestion: "Check the template syntax and styles",
+      });
     }
   }
 
@@ -345,7 +366,11 @@ export class SazamiComponent<
           }
           dispose = bindInputValue(element, readable as Signal<string>);
         } else if (element instanceof HTMLSelectElement) {
-          dispose = bindAttribute(element, "value", readable);
+          if ("set" in readable) {
+            dispose = bindSelectValue(element, readable as Signal<string>);
+          } else {
+            dispose = bindAttribute(element, "value", readable);
+          }
         } else {
           bindingError(
             `Cannot bind "value" to element type: ${element.constructor.name}`,

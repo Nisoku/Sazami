@@ -57,15 +57,8 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
       this._setupSrcBinding();
     } else {
       this._srcSignal = null;
-      if (this._srcDispose) {
-        this._srcDispose();
-        this._srcDispose = null;
-      }
       this._pendingSrc = value;
       (this as any)._src = value;
-      if (!this._imgElement) {
-        this._createImageElement();
-      }
       this._updateSrc(value);
     }
   }
@@ -75,6 +68,17 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   }
 
   private _updateSrc(value: string) {
+    if (!value) {
+      if (this._srcDispose) {
+        this._srcDispose();
+        this._srcDispose = null;
+      }
+      this._imgElement = null;
+      return;
+    }
+    if (!this._imgElement) {
+      this._createImageElement();
+    }
     if (this._imgElement) {
       this._imgElement.src = value;
     }
@@ -83,7 +87,7 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   private _createImageElement() {
     const alt = this.alt || "";
     const currentSrc = this._getCurrentSrc();
-    this.mount(
+    this.mountSync(
       STYLES,
       `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`,
     );
@@ -111,12 +115,12 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   render() {
     const currentSrc = this._getCurrentSrc();
     if (!currentSrc) {
-      this.mount(STYLES, "");
+      this.mountSync(STYLES, "");
       return;
     }
     const alt = this.alt || "";
 
-    this.mount(
+    this.mountSync(
       STYLES,
       `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`,
     );

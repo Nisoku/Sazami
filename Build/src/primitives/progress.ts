@@ -113,8 +113,12 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
       const clamped =
         range > 0
           ? Math.min(this._rangeMax, Math.max(this._rangeMin, val))
-          : this._rangeMin;
-      this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+          : undefined;
+      if (clamped !== undefined) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
     });
     cleanups.push(ariaDisposer);
 
@@ -164,7 +168,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
       this.setAttribute("aria-valuenow", String(Math.round(value)));
     }
 
-    this.mount(
+    this.mountSync(
       STYLES,
       `
       <div class="track">

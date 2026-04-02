@@ -138,6 +138,12 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
     return this.hasAttribute("disabled");
   }
 
+  private _getIsChecked(): boolean {
+    if (this._checkedSignal) return this._checkedSignal.get();
+    if (this.hasAttribute("checked")) return true;
+    return !!(this as any)._checked;
+  }
+
   render() {
     const label = this.textContent?.trim() || "";
 
@@ -157,9 +163,7 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
   }
 
   private _updateAria() {
-    const isChecked = this._checkedSignal
-      ? this._checkedSignal.get()
-      : !!(this as any)._checked;
+    const isChecked = this._getIsChecked();
     const isDisabled = this._getIsDisabled();
     this.setAttribute("aria-checked", String(isChecked));
     if (isDisabled) {
@@ -173,17 +177,17 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
 
   private _handleClick = () => {
     if (this._getIsDisabled()) return;
-    const newValue = this._checkedSignal
-      ? !this._checkedSignal.get()
-      : !((this as any)._checked || false);
+    const newValue = !this._getIsChecked();
     if (this._checkedSignal) {
       if ("set" in this._checkedSignal) {
         (this._checkedSignal as Signal<boolean>).set(newValue);
+        this._updateAria();
+        this.dispatchEventTyped("change", { checked: newValue });
       }
     } else {
       this._setChecked(newValue);
+      this.dispatchEventTyped("change", { checked: newValue });
     }
-    this.dispatchEventTyped("change", { checked: newValue });
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
