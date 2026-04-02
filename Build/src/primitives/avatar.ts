@@ -1,13 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
-import { escapeHtml } from "../escape";
-import {
-  Signal,
-  Derived,
-  isSignal,
-  effect,
-  type Readable,
-} from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindProperty } from "@nisoku/sairin";
 
 const STYLES = `
@@ -92,17 +85,13 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
 
     this.onCleanup(bindProperty(img, "src", sig));
 
-    this.onCleanup(
-      effect(() => {
-        img.alt = this.getAttribute("alt") || "";
-      }),
-    );
+    img.alt = this.getAttribute("alt") || "";
 
-    this.onCleanup(
-      effect(() => {
-        sig.get();
-      }),
-    );
+    const observer = new MutationObserver(() => {
+      img.alt = this.getAttribute("alt") || "";
+    });
+    observer.observe(this, { attributes: true, attributeFilter: ["alt"] });
+    this.onCleanup(() => observer.disconnect());
   }
 
   private _updateDisplay() {
