@@ -1,10 +1,7 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const imageConfig: {
     readonly properties: {
-        readonly src: {
-            readonly type: "string";
-            readonly reflect: true;
-        };
         readonly alt: {
             readonly type: "string";
             readonly reflect: true;
@@ -20,10 +17,20 @@ declare const imageConfig: {
     };
 };
 export declare class SazamiImage extends SazamiComponent<typeof imageConfig> {
-    src: string;
     alt: string;
     size: string;
     shape: string;
+    private _srcSignal;
+    private _imgElement;
+    private _pendingSrc;
+    private _srcDispose;
+    private _isReadableStr;
+    set src(value: string | Readable<string>);
+    get src(): string | Readable<string>;
+    private _updateSrc;
+    private _createImageElement;
+    private _setupSrcBinding;
+    private _getCurrentSrc;
     render(): void;
 }
 export {};

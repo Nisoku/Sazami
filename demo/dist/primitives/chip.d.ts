@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { Signal } from "@nisoku/sairin";
 declare const chipConfig: {
     readonly properties: {
         readonly label: {
@@ -43,9 +44,11 @@ export declare class SazamiChip extends SazamiComponent<typeof chipConfig> {
     label: string;
     variant: string;
     removable: boolean;
+    size: string;
     selected: boolean;
     disabled: boolean;
-    size: string;
+    disabledSignal?: Signal<boolean>;
+    selectedSignal?: Signal<boolean>;
     render(): void;
     private _updateTabIndex;
     private _handleClick;

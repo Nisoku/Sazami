@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const toggleConfig: {
     readonly properties: {
         readonly checked: {
@@ -28,9 +29,19 @@ declare const toggleConfig: {
     };
 };
 export declare class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
-    checked: boolean;
-    disabled: boolean;
     variant: string;
+    private _checkedSignal;
+    private _checkedBindingDispose;
+    private _disabledSignal;
+    private _disabledBindingDispose;
+    private _isReadableBool;
+    set checked(value: boolean | Readable<boolean>);
+    get checked(): boolean | Readable<boolean>;
+    private _setChecked;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
     render(): void;
     private _handleClick;
     private _handleKeydown;

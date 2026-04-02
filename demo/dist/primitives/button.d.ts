@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const buttonConfig: {
     readonly properties: {
         readonly disabled: {
@@ -38,13 +39,15 @@ declare const buttonConfig: {
     };
 };
 export declare class SazamiButton extends SazamiComponent<typeof buttonConfig> {
-    disabled: boolean;
     loading: boolean;
-    active: boolean;
-    size: string;
-    variant: string;
-    shape: string;
-    tone: string;
+    private _disabledSignal;
+    private _disabledValue;
+    private _disabledDispose;
+    private _isReadableBool;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
     render(): void;
     private _handleClick;
     private _handleKeydown;

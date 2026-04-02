@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const iconConfig: {
     readonly properties: {
         readonly icon: {
@@ -16,10 +17,16 @@ declare const iconConfig: {
     };
 };
 export declare class SazamiIcon extends SazamiComponent<typeof iconConfig> {
-    icon: string;
     size: string;
     variant: string;
-    static get observedAttributes(): string[];
+    private _iconSignal;
+    private _iconElement;
+    private _iconEffectDispose;
+    private _isReadableStr;
+    set icon(value: string | Readable<string>);
+    get icon(): string | Readable<string>;
+    private _updateIcon;
+    private _setupIconBinding;
     render(): void;
 }
 export {};

@@ -1,12 +1,9 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const iconButtonConfig: {
     readonly properties: {
         readonly icon: {
             readonly type: "string";
-            readonly reflect: true;
-        };
-        readonly disabled: {
-            readonly type: "boolean";
             readonly reflect: true;
         };
         readonly size: {
@@ -27,11 +24,16 @@ declare const iconButtonConfig: {
 };
 export declare class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     icon: string;
-    disabled: boolean;
     size: string;
     variant: string;
     private _handlersAdded;
     private _autoAriaLabel;
+    private _disabledSignal;
+    private _isReadableBool;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
     render(): void;
     private _updateTabIndex;
     static get observedAttributes(): string[];

@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const badgeConfig: {
     readonly properties: {
         readonly size: {
@@ -19,6 +20,13 @@ export declare class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
     size: string;
     variant: string;
     shape: string;
+    private _contentSignal;
+    private _textNode;
+    private _textContent;
+    private _contentDispose;
+    private _isReadable;
+    set content(value: string | Readable<string>);
+    get content(): string | Readable<string> | undefined;
     render(): void;
 }
 export {};

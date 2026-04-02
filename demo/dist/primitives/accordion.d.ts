@@ -1,4 +1,4 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
 declare const accordionConfig: {
     readonly properties: {
         readonly "single-open": {

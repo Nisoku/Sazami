@@ -1,5 +1,5 @@
-import { ASTNode } from '@nisoku/sakko';
-export type VNode = {
+import type { ASTNode } from "@nisoku/sakko";
+export declare type VNode = {
     type: string;
     props: Record<string, any>;
     children: (VNode | string)[];

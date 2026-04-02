@@ -1,11 +1,7 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const sliderConfig: {
     readonly properties: {
-        readonly value: {
-            readonly type: "number";
-            readonly reflect: false;
-            readonly default: 50;
-        };
         readonly min: {
             readonly type: "number";
             readonly reflect: false;
@@ -20,10 +16,6 @@ declare const sliderConfig: {
             readonly type: "number";
             readonly reflect: false;
             readonly default: 1;
-        };
-        readonly disabled: {
-            readonly type: "boolean";
-            readonly reflect: true;
         };
         readonly size: {
             readonly type: "string";
@@ -41,12 +33,26 @@ declare const sliderConfig: {
     };
 };
 export declare class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
-    value: number;
     min: number;
     max: number;
     step: number;
-    disabled: boolean;
     size: string;
+    private _valueSignal;
+    private _disabledSignal;
+    private _sliderElement;
+    private _filledElement;
+    private _rangeMin;
+    private _rangeMax;
+    private _isReadableNum;
+    private _isReadableBool;
+    set value(valueOrSignal: number | Readable<number>);
+    get value(): number | Readable<number>;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
+    private _setupValueBinding;
+    private _updateSliderValue;
     render(): void;
     static get observedAttributes(): string[];
     attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void;

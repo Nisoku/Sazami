@@ -1,10 +1,7 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const coverartConfig: {
     readonly properties: {
-        readonly src: {
-            readonly type: "string";
-            readonly reflect: false;
-        };
         readonly alt: {
             readonly type: "string";
             readonly reflect: false;
@@ -20,10 +17,18 @@ declare const coverartConfig: {
     };
 };
 export declare class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
-    src: string;
     alt: string;
     size: string;
     shape: string;
+    private _srcSignal;
+    private _imgElement;
+    private _pendingSrc;
+    private _srcEffectDispose;
+    private _isReadableStr;
+    set src(value: string | Readable<string>);
+    get src(): string | Readable<string>;
+    private _updateSrc;
+    private _setupSrcEffect;
     render(): void;
 }
 export {};

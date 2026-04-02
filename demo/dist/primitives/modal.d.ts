@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { Signal } from "@nisoku/sairin";
 declare const modalConfig: {
     readonly properties: {
         readonly title: {
@@ -24,6 +25,7 @@ declare const modalConfig: {
 export declare class SazamiModal extends SazamiComponent<typeof modalConfig> {
     title: string;
     open: boolean;
+    openSignal?: Signal<boolean>;
     render(): void;
     private _open;
     private _close;

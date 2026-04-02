@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { Signal } from "@nisoku/sairin";
 declare const toastConfig: {
     readonly properties: {
         readonly message: {
@@ -31,6 +32,7 @@ export declare class SazamiToast extends SazamiComponent<typeof toastConfig> {
     variant: string;
     duration: number;
     visible: boolean;
+    messageSignal?: Signal<string>;
     private _hideTimeout?;
     private _removeTimeout?;
     private _closeHandler;

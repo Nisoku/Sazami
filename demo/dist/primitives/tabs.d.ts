@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { Signal } from "@nisoku/sairin";
 declare const tabsConfig: {
     readonly properties: {
         readonly active: {
@@ -17,6 +18,7 @@ declare const tabsConfig: {
 };
 export declare class SazamiTabs extends SazamiComponent<typeof tabsConfig> {
     active: string;
+    activeSignal?: Signal<string>;
     private _tabs;
     private _panelElements;
     private _handlersAdded;

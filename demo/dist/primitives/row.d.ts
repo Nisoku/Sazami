@@ -1,4 +1,4 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
 declare const rowConfig: {
     readonly properties: {
         readonly justify: {

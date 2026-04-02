@@ -1,10 +1,7 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const inputConfig: {
     readonly properties: {
-        readonly value: {
-            readonly type: "string";
-            readonly reflect: true;
-        };
         readonly placeholder: {
             readonly type: "string";
             readonly reflect: false;
@@ -13,16 +10,16 @@ declare const inputConfig: {
             readonly type: "string";
             readonly reflect: false;
         };
-        readonly disabled: {
-            readonly type: "boolean";
-            readonly reflect: true;
-        };
         readonly size: {
             readonly type: "string";
             readonly reflect: false;
         };
         readonly variant: {
             readonly type: "string";
+            readonly reflect: false;
+        };
+        readonly disabled: {
+            readonly type: "boolean";
             readonly reflect: false;
         };
     };
@@ -36,12 +33,19 @@ declare const inputConfig: {
     };
 };
 export declare class SazamiInput extends SazamiComponent<typeof inputConfig> {
-    value: string;
     placeholder: string;
     type: string;
     disabled: boolean;
     size: string;
     variant: string;
+    private _valueSignal;
+    private _input;
+    private _valueEffectDisposer;
+    private _inputHandler;
+    private _isReadableStr;
+    set value(valueOrSignal: string | Readable<string>);
+    private _disposeValueBindings;
+    get value(): string | Readable<string>;
     render(): void;
     static get observedAttributes(): string[];
     attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void;

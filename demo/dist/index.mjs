@@ -120,38 +120,42 @@ function parseModifiers(modifiers) {
           `Unknown modifier "${mod.value}". Valid modifiers: ${Object.keys(MODIFIER_MAP).join(", ")}`
         );
       }
-    } else {
+    } else if (mod.type === "pair") {
       props[mod.key] = mod.value;
+    } else {
+      throw new Error(
+        `Unknown modifier type "${mod.type}". Expected "flag" or "pair". Modifier: ${JSON.stringify(mod)}`
+      );
     }
   });
   return props;
 }
-let logger = null;
-function getLogger(scope) {
-  if (!logger) {
+let logger$1 = null;
+function getLogger$1(scope) {
+  if (!logger$1) {
     try {
       const satori = require("@nisoku/satori-log");
       const s = satori.createSatori({ logLevel: "error", enableConsole: true });
-      logger = s.createLogger(scope);
+      logger$1 = s.createLogger(scope);
     } catch {
-      logger = {
+      logger$1 = {
         info: (msg, opts) => console.log(`[${scope}] ${msg}`, opts),
         warn: (msg, opts) => console.warn(`[${scope}] ${msg}`, opts),
         error: (msg, opts) => console.error(`[${scope}] ${msg}`, opts)
       };
     }
   }
-  return logger;
+  return logger$1;
 }
 function unknownComponentError(component2, suggestion) {
-  const log = getLogger("sazami");
+  const log = getLogger$1("sazami");
   log.warn(`Unknown component "${component2}", using saz-${component2}`, {
     suggest: suggestion,
     tags: ["registry", "warning"]
   });
 }
 function eventError(message, options) {
-  const log = getLogger("sazami");
+  const log = getLogger$1("sazami");
   log.error(message, {
     state: { tag: options.tag },
     suggest: options.suggestion,
@@ -160,11 +164,1846 @@ function eventError(message, options) {
   });
 }
 function renderError(message, options) {
-  const log = getLogger("sazami");
+  const log = getLogger$1("sazami");
   log.error(message, {
     suggest: options.suggestion,
     cause: options.cause,
     tags: ["renderer", "error"]
+  });
+}
+function bindingError(message, options) {
+  const log = getLogger$1("sazami");
+  log.error(message, {
+    state: { property: options.property },
+    suggest: options.suggestion,
+    tags: ["binding", "error"]
+  });
+}
+var globalActiveComputation = null;
+function getGlobalActiveComputation() {
+  return globalActiveComputation;
+}
+function setGlobalActiveComputation(computation) {
+  globalActiveComputation = computation;
+}
+var uniqueIdCounter = 0;
+var uniqueIdRandom = Math.random().toString(36).slice(2, 8);
+function generateUniqueId() {
+  uniqueIdCounter++;
+  return `${uniqueIdRandom}${uniqueIdCounter.toString(36)}`;
+}
+var M = class {
+  constructor(e) {
+    this.config = e;
+  }
+  eventTimestamps = [];
+  buffer = [];
+  droppedCount = 0;
+  sampledCount = 0;
+  /**
+   * Check if an event should be allowed through
+   * Returns: { allowed: boolean, sampled?: boolean }
+   */
+  shouldAllow(e) {
+    if (!this.config.enabled)
+      return { allowed: true, sampled: false };
+    const t = Date.now();
+    if (this.eventTimestamps = this.eventTimestamps.filter((r) => t - r < 1e3), this.eventTimestamps.length < this.config.maxEventsPerSecond)
+      return this.eventTimestamps.push(t), { allowed: true, sampled: false };
+    switch (this.config.strategy) {
+      case "drop":
+        return this.droppedCount++, { allowed: false, sampled: false };
+      case "sample":
+        return Math.random() < this.config.samplingRate ? (this.eventTimestamps.push(t), this.sampledCount++, { allowed: true, sampled: true }) : (this.droppedCount++, { allowed: false, sampled: false });
+      case "buffer":
+        return this.buffer.length < (this.config.bufferSize || 100) ? this.buffer.push(e) : this.droppedCount++, { allowed: false, sampled: false };
+      default:
+        return { allowed: true, sampled: false };
+    }
+  }
+  /**
+   * Get buffered events and clear the buffer
+   */
+  flushBuffer() {
+    const e = [...this.buffer];
+    return this.buffer = [], e;
+  }
+  /**
+   * Get current rate (events per second)
+   */
+  getCurrentRate() {
+    const e = Date.now();
+    return this.eventTimestamps = this.eventTimestamps.filter((t) => e - t < 1e3), this.eventTimestamps.length;
+  }
+  /**
+   * Get statistics
+   */
+  getStats() {
+    return {
+      dropped: this.droppedCount,
+      sampled: this.sampledCount,
+      buffered: this.buffer.length,
+      currentRate: this.getCurrentRate()
+    };
+  }
+  /**
+   * Reset statistics
+   */
+  reset() {
+    this.eventTimestamps = [], this.buffer = [], this.droppedCount = 0, this.sampledCount = 0;
+  }
+  /**
+   * Update configuration
+   */
+  updateConfig(e) {
+    this.config = { ...this.config, ...e };
+  }
+};
+function g(s, e, t = /* @__PURE__ */ new WeakMap()) {
+  if (s === e) return true;
+  if (typeof s == "number" && typeof e == "number")
+    return Number.isNaN(s) && Number.isNaN(e) ? true : s === e;
+  if (s === null || e === null || s === void 0 || e === void 0) return s === e;
+  if (typeof s != typeof e || typeof s != "object") return false;
+  const i = s, r = e;
+  if (t.has(i))
+    return t.get(i) === r;
+  if (t.set(i, r), s instanceof Date && e instanceof Date)
+    return s.getTime() === e.getTime();
+  if (s instanceof Date || e instanceof Date) return false;
+  if (s instanceof RegExp && e instanceof RegExp)
+    return s.source === e.source && s.flags === e.flags;
+  if (s instanceof RegExp || e instanceof RegExp) return false;
+  if (s instanceof Map && e instanceof Map) {
+    if (s.size !== e.size) return false;
+    for (const [c, l] of s)
+      if (!e.has(c) || !g(l, e.get(c), t)) return false;
+    return true;
+  }
+  if (s instanceof Map || e instanceof Map) return false;
+  if (s instanceof Set && e instanceof Set) {
+    if (s.size !== e.size) return false;
+    const c = Array.from(s), l = Array.from(e);
+    for (const u of c) {
+      let d = false;
+      for (const h of l)
+        if (g(u, h, t)) {
+          d = true;
+          break;
+        }
+      if (!d) return false;
+    }
+    return true;
+  }
+  if (s instanceof Set || e instanceof Set) return false;
+  if (Array.isArray(s) && Array.isArray(e)) {
+    if (s.length !== e.length) return false;
+    const c = Object.keys(s).filter((h) => /^\d+$/.test(h)).map(Number), l = Object.keys(e).filter((h) => /^\d+$/.test(h)).map(Number);
+    if (c.length !== l.length) return false;
+    for (const h of c)
+      if (!l.includes(h)) return false;
+    for (let h = 0; h < s.length; h++) {
+      const T = Object.prototype.hasOwnProperty.call(s, h), $ = Object.prototype.hasOwnProperty.call(e, h);
+      if (T !== $ || T && !g(s[h], e[h], t)) return false;
+    }
+    const u = Object.keys(s).filter((h) => !/^\d+$/.test(h)), d = Object.keys(e).filter((h) => !/^\d+$/.test(h));
+    if (u.length !== d.length) return false;
+    for (const h of u)
+      if (!Object.prototype.hasOwnProperty.call(e, h) || !g(s[h], e[h], t)) return false;
+    return true;
+  }
+  if (Array.isArray(s) !== Array.isArray(e)) return false;
+  const n = s, o = e, a = Object.keys(n), f = Object.keys(o);
+  if (a.length !== f.length) return false;
+  for (const c of a)
+    if (!Object.prototype.hasOwnProperty.call(o, c) || !g(n[c], o[c], t)) return false;
+  return true;
+}
+function p(s, e = /* @__PURE__ */ new WeakMap()) {
+  if (s == null || typeof s != "object") return s;
+  const t = s;
+  if (e.has(t))
+    return e.get(t);
+  if (s instanceof Date)
+    return new Date(s.getTime());
+  if (s instanceof RegExp)
+    return new RegExp(s.source, s.flags);
+  if (s instanceof Map) {
+    const r = /* @__PURE__ */ new Map();
+    e.set(t, r);
+    for (const [n, o] of s)
+      r.set(p(n, e), p(o, e));
+    return r;
+  }
+  if (s instanceof Set) {
+    const r = /* @__PURE__ */ new Set();
+    e.set(t, r);
+    for (const n of s)
+      r.add(p(n, e));
+    return r;
+  }
+  if (Array.isArray(s)) {
+    const r = [];
+    e.set(t, r);
+    for (let n = 0; n < s.length; n++)
+      Object.prototype.hasOwnProperty.call(s, n) && (r[n] = p(s[n], e));
+    for (const n of Object.keys(s))
+      /^\d+$/.test(n) || (r[n] = p(s[n], e));
+    return r;
+  }
+  const i = {};
+  e.set(t, i);
+  for (const r of Object.keys(s))
+    i[r] = p(s[r], e);
+  return i;
+}
+function b(s, e = /* @__PURE__ */ new WeakSet()) {
+  return s === null ? "null" : s === void 0 ? "undefined" : typeof s == "string" ? `s:${s}` : typeof s == "number" ? Number.isNaN(s) ? "n:NaN" : `n:${s}` : typeof s == "boolean" ? `b:${s}` : typeof s != "object" ? String(s) : e.has(s) ? "[Circular]" : (e.add(s), s instanceof Date ? `d:${s.getTime()}` : s instanceof RegExp ? `r:${s.source}:${s.flags}` : s instanceof Map ? `m:{${Array.from(s.entries()).map(([r, n]) => `${b(r, e)}=>${b(n, e)}`).sort().join(",")}}` : s instanceof Set ? `set:{${Array.from(s).map((r) => b(r, e)).sort().join(",")}}` : Array.isArray(s) ? `a:[${s.map((r, n) => Object.prototype.hasOwnProperty.call(s, n) ? b(r, e) : "<empty>").join(",")}]` : `o:{${Object.entries(s).sort(([i], [r]) => i.localeCompare(r)).map(([i, r]) => `${i}:${b(r, e)}`).join(",")}}`);
+}
+var F = class {
+  constructor(e) {
+    this.config = e;
+  }
+  cache = /* @__PURE__ */ new Map();
+  deduplicatedCount = 0;
+  /**
+   * Compute a deduplication key for an entry based on configured fields
+   */
+  computeDedupKey(e) {
+    const t = [];
+    for (const i of this.config.fields)
+      switch (i) {
+        case "message":
+          t.push(`m:${e.message}`);
+          break;
+        case "scope":
+          t.push(`s:${e.scope}`);
+          break;
+        case "level":
+          t.push(`l:${e.level}`);
+          break;
+        case "tags":
+          t.push(`t:${e.tags.sort().join(",")}`);
+          break;
+        case "state":
+          e.state && t.push(`st:${b(e.state)}`);
+          break;
+      }
+    return t.join("|");
+  }
+  /**
+   * Check if an event is a duplicate
+   * Returns: { isDuplicate: boolean, originalId?: string, duplicateCount: number }
+   */
+  isDuplicate(e) {
+    if (!this.config.enabled)
+      return { isDuplicate: false, duplicateCount: 0 };
+    const t = Date.now(), i = this.computeDedupKey(e);
+    this.cleanExpired(t);
+    const r = this.cache.get(i);
+    return r && t - r.timestamp < this.config.windowMs ? (r.count++, this.deduplicatedCount++, { isDuplicate: true, duplicateCount: r.count }) : (this.cache.set(i, {
+      hash: i,
+      timestamp: t,
+      count: 1
+    }), this.cache.size > this.config.maxCacheSize && this.evictOldest(), { isDuplicate: false, duplicateCount: 1 });
+  }
+  /**
+   * Clean expired entries from cache
+   */
+  cleanExpired(e) {
+    for (const [t, i] of this.cache.entries())
+      e - i.timestamp >= this.config.windowMs && this.cache.delete(t);
+  }
+  /**
+   * Evict oldest entries when cache is full
+   */
+  evictOldest() {
+    let e = null, t = 1 / 0;
+    for (const [i, r] of this.cache.entries())
+      r.timestamp < t && (t = r.timestamp, e = i);
+    e && this.cache.delete(e);
+  }
+  /**
+   * Get statistics
+   */
+  getStats() {
+    return {
+      cacheSize: this.cache.size,
+      deduplicatedCount: this.deduplicatedCount
+    };
+  }
+  /**
+   * Reset the deduplicator
+   */
+  reset() {
+    this.cache.clear(), this.deduplicatedCount = 0;
+  }
+  /**
+   * Update configuration
+   */
+  updateConfig(e) {
+    this.config = { ...this.config, ...e };
+  }
+};
+var I = class {
+  constructor(e, t = {}) {
+    this.config = e, this.events = t;
+  }
+  state = "closed";
+  failureCount = 0;
+  successCount = 0;
+  lastFailureTime = 0;
+  totalFailures = 0;
+  totalSuccesses = 0;
+  /**
+   * Execute a function with circuit breaker protection
+   */
+  async execute(e) {
+    if (!this.config.enabled)
+      return e();
+    if (!this.canExecute())
+      throw new L("Circuit breaker is open");
+    try {
+      const t = await e();
+      return this.recordSuccess(), t;
+    } catch (t) {
+      throw this.recordFailure(
+        t instanceof Error ? t : new Error(String(t))
+      ), t;
+    }
+  }
+  /**
+   * Execute synchronously with circuit breaker protection
+   */
+  executeSync(e) {
+    if (!this.config.enabled)
+      return e();
+    if (!this.canExecute())
+      throw new L("Circuit breaker is open");
+    try {
+      const t = e();
+      return this.recordSuccess(), t;
+    } catch (t) {
+      throw this.recordFailure(
+        t instanceof Error ? t : new Error(String(t))
+      ), t;
+    }
+  }
+  /**
+   * Check if execution is allowed
+   */
+  canExecute() {
+    return this.state === "closed" ? true : this.state === "open" ? Date.now() - this.lastFailureTime >= this.config.resetTimeout ? (this.transitionTo("half-open"), true) : false : true;
+  }
+  /**
+   * Record a successful execution
+   */
+  recordSuccess() {
+    this.totalSuccesses++, this.events.onSuccess?.(this.successCount + 1), this.state === "half-open" ? (this.successCount++, this.successCount >= this.config.successThreshold && this.transitionTo("closed")) : this.state === "closed" && (this.failureCount = 0);
+  }
+  /**
+   * Record a failed execution
+   */
+  recordFailure(e) {
+    this.totalFailures++, this.failureCount++, this.lastFailureTime = Date.now(), this.events.onFailure?.(e, this.failureCount), this.state === "half-open" ? this.transitionTo("open") : this.state === "closed" && this.failureCount >= this.config.failureThreshold && this.transitionTo("open");
+  }
+  /**
+   * Transition to a new state
+   */
+  transitionTo(e) {
+    const t = this.state;
+    this.state = e, e === "closed" ? (this.failureCount = 0, this.successCount = 0, this.events.onClose?.()) : e === "open" ? (this.successCount = 0, this.events.onOpen?.()) : e === "half-open" && (this.successCount = 0, this.events.onHalfOpen?.()), this.events.onStateChange?.(e, t);
+  }
+  /**
+   * Get current state
+   */
+  getState() {
+    return this.state;
+  }
+  /**
+   * Get statistics
+   */
+  getStats() {
+    return {
+      state: this.state,
+      failureCount: this.failureCount,
+      successCount: this.successCount,
+      totalFailures: this.totalFailures,
+      totalSuccesses: this.totalSuccesses,
+      lastFailureTime: this.lastFailureTime
+    };
+  }
+  /**
+   * Manually reset the circuit breaker
+   */
+  reset() {
+    this.transitionTo("closed"), this.failureCount = 0, this.successCount = 0, this.totalFailures = 0, this.totalSuccesses = 0, this.lastFailureTime = 0;
+  }
+  /**
+   * Force the circuit open (for testing/manual intervention)
+   */
+  forceOpen() {
+    this.transitionTo("open"), this.lastFailureTime = Date.now();
+  }
+  /**
+   * Force the circuit closed (for testing/manual intervention)
+   */
+  forceClose() {
+    this.transitionTo("closed");
+  }
+};
+var L = class extends Error {
+  constructor(e) {
+    super(e), this.name = "CircuitOpenError";
+  }
+};
+var C = class {
+  startTime;
+  totalPublished = 0;
+  totalDropped = 0;
+  totalSampled = 0;
+  totalDeduplicated = 0;
+  recentEvents = [];
+  loggerCount = 0;
+  watcherCount = 0;
+  subscriberCount = 0;
+  bufferSize = 0;
+  circuitState = "closed";
+  // For tracking events per second
+  eventTimestamps = [];
+  // Historical snapshots for trending
+  snapshots = [];
+  maxSnapshots = 60;
+  // Keep last 60 snapshots (e.g., 1 per second = 1 minute)
+  constructor() {
+    this.startTime = Date.now();
+  }
+  /**
+   * Record a published event
+   */
+  recordPublished() {
+    this.totalPublished++;
+    const e = Date.now();
+    this.eventTimestamps.push(e), this.eventTimestamps = this.eventTimestamps.filter((t) => e - t < 1e3);
+  }
+  /**
+   * Record a dropped event
+   */
+  recordDropped() {
+    this.totalDropped++;
+  }
+  /**
+   * Record a sampled event
+   */
+  recordSampled() {
+    this.totalSampled++;
+  }
+  /**
+   * Record a deduplicated event
+   */
+  recordDeduplicated() {
+    this.totalDeduplicated++;
+  }
+  /**
+   * Update logger count
+   */
+  setLoggerCount(e) {
+    this.loggerCount = e;
+  }
+  /**
+   * Update watcher count
+   */
+  setWatcherCount(e) {
+    this.watcherCount = e;
+  }
+  /**
+   * Update subscriber count
+   */
+  setSubscriberCount(e) {
+    this.subscriberCount = e;
+  }
+  /**
+   * Update buffer size
+   */
+  setBufferSize(e) {
+    this.bufferSize = e;
+  }
+  /**
+   * Update circuit state
+   */
+  setCircuitState(e) {
+    this.circuitState = e;
+  }
+  /**
+   * Get current events per second
+   */
+  getEventsPerSecond() {
+    const e = Date.now();
+    return this.eventTimestamps = this.eventTimestamps.filter((t) => e - t < 1e3), this.eventTimestamps.length;
+  }
+  /**
+   * Get current bus metrics
+   */
+  getBusMetrics() {
+    return {
+      totalPublished: this.totalPublished,
+      totalDropped: this.totalDropped,
+      totalSampled: this.totalSampled,
+      totalDeduplicated: this.totalDeduplicated,
+      eventsPerSecond: this.getEventsPerSecond(),
+      bufferSize: this.bufferSize,
+      subscriberCount: this.subscriberCount
+    };
+  }
+  /**
+   * Get full Satori metrics
+   */
+  getMetrics() {
+    return {
+      bus: this.getBusMetrics(),
+      loggerCount: this.loggerCount,
+      watcherCount: this.watcherCount,
+      circuitState: this.circuitState,
+      uptime: Date.now() - this.startTime
+    };
+  }
+  /**
+   * Take a snapshot for historical tracking
+   */
+  takeSnapshot() {
+    const e = {
+      timestamp: Date.now(),
+      bus: this.getBusMetrics(),
+      loggerCount: this.loggerCount,
+      watcherCount: this.watcherCount,
+      circuitState: this.circuitState,
+      uptime: Date.now() - this.startTime
+    };
+    return this.snapshots.push(e), this.snapshots.length > this.maxSnapshots && (this.snapshots = this.snapshots.slice(-this.maxSnapshots)), e;
+  }
+  /**
+   * Get historical snapshots
+   */
+  getSnapshots() {
+    return [...this.snapshots];
+  }
+  /**
+   * Get average events per second over time
+   */
+  getAverageEventsPerSecond() {
+    return this.snapshots.length === 0 ? 0 : this.snapshots.reduce(
+      (t, i) => t + i.bus.eventsPerSecond,
+      0
+    ) / this.snapshots.length;
+  }
+  /**
+   * Reset all metrics
+   */
+  reset() {
+    this.startTime = Date.now(), this.totalPublished = 0, this.totalDropped = 0, this.totalSampled = 0, this.totalDeduplicated = 0, this.eventTimestamps = [], this.snapshots = [];
+  }
+};
+var k = {
+  enabled: false,
+  maxEventsPerSecond: 1e3,
+  samplingRate: 0.1,
+  strategy: "sample",
+  bufferSize: 100
+};
+var B = {
+  enabled: false,
+  windowMs: 5e3,
+  fields: ["message", "scope", "level"],
+  maxCacheSize: 1e3
+};
+var E = {
+  enabled: false,
+  failureThreshold: 5,
+  resetTimeout: 3e4,
+  successThreshold: 3
+};
+var y = {
+  enableCallsite: true,
+  enableEnvInfo: true,
+  enableStateSnapshot: false,
+  enableCausalLinks: true,
+  enableMetrics: true,
+  enableConsole: true,
+  stateSelectors: [],
+  maxBufferSize: 1e3,
+  logLevel: "info",
+  appVersion: "1.0.0",
+  pollingInterval: 250,
+  // More reasonable default
+  customLevels: [],
+  rateLimiting: k,
+  deduplication: B,
+  circuitBreaker: E
+};
+var R = class {
+  subscribers = [];
+  middleware = [];
+  buffer = [];
+  maxBufferSize;
+  rateLimiter;
+  deduplicator;
+  circuitBreaker;
+  metrics;
+  enableMetrics;
+  constructor(e = {}) {
+    typeof e == "number" && (e = { maxBufferSize: e }), this.maxBufferSize = e.maxBufferSize || 1e3, this.enableMetrics = e.enableMetrics ?? true, this.rateLimiter = new M({
+      ...k,
+      ...e.rateLimiting
+    }), this.deduplicator = new F({
+      ...B,
+      ...e.deduplication
+    }), this.circuitBreaker = new I(
+      {
+        ...E,
+        ...e.circuitBreaker
+      },
+      {
+        onStateChange: (t) => {
+          this.enableMetrics && this.metrics.setCircuitState(t);
+        }
+      }
+    ), this.metrics = new C();
+  }
+  publish(e) {
+    if (!e.__internal?.isReplay && !e.skipDedup && this.deduplicator.isDuplicate(e).isDuplicate) {
+      this.enableMetrics && this.metrics.recordDeduplicated();
+      return;
+    }
+    if (!e.__internal?.isReplay && !e.skipRateLimit) {
+      const t = this.rateLimiter.shouldAllow(e);
+      if (!t.allowed) {
+        this.enableMetrics && this.metrics.recordDropped();
+        return;
+      }
+      t.sampled && (e.__internal = e.__internal || {}, e.__internal.sampled = true, this.enableMetrics && this.metrics.recordSampled());
+    }
+    try {
+      this.circuitBreaker.executeSync(() => {
+        this.doPublish(e);
+      }), this.enableMetrics && (this.metrics.recordPublished(), this.metrics.setBufferSize(this.buffer.length), this.metrics.setSubscriberCount(this.subscribers.length));
+    } catch {
+      this.enableMetrics && this.metrics.recordDropped();
+    }
+  }
+  doPublish(e) {
+    let t = 0;
+    const i = () => {
+      if (t >= this.middleware.length) {
+        this.subscribers.forEach((n) => n(e)), this.addToBuffer(e);
+        return;
+      }
+      const r = this.middleware[t];
+      t++, r(e, i);
+    };
+    i();
+  }
+  subscribe(e) {
+    return this.subscribers.push(e), this.enableMetrics && this.metrics.setSubscriberCount(this.subscribers.length), () => {
+      const t = this.subscribers.indexOf(e);
+      t >= 0 && (this.subscribers.splice(t, 1), this.enableMetrics && this.metrics.setSubscriberCount(this.subscribers.length));
+    };
+  }
+  use(e) {
+    this.middleware.push(e);
+  }
+  getReplayBuffer() {
+    return [...this.buffer];
+  }
+  getMetrics() {
+    return this.metrics.getBusMetrics();
+  }
+  /**
+   * Get the rate limiter instance for advanced configuration
+   */
+  getRateLimiter() {
+    return this.rateLimiter;
+  }
+  /**
+   * Get the deduplicator instance for advanced configuration
+   */
+  getDeduplicator() {
+    return this.deduplicator;
+  }
+  /**
+   * Get the circuit breaker instance for advanced configuration
+   */
+  getCircuitBreaker() {
+    return this.circuitBreaker;
+  }
+  /**
+   * Clear the event buffer
+   */
+  clearBuffer() {
+    this.buffer.length = 0, this.enableMetrics && this.metrics.setBufferSize(0);
+  }
+  /**
+   * Reset all state
+   */
+  reset() {
+    this.buffer.length = 0, this.middleware.length = 0, this.rateLimiter.reset(), this.deduplicator.reset(), this.circuitBreaker.reset(), this.metrics.reset();
+  }
+  addToBuffer(e) {
+    this.buffer.push(e), this.buffer.length > this.maxBufferSize && this.buffer.shift();
+  }
+};
+var A = 0;
+var N = Date.now().toString(36);
+function O() {
+  return `${N}-${++A}`;
+}
+function z() {
+  return Date.now();
+}
+function j(s = 2) {
+  try {
+    const e = new Error().stack;
+    if (!e) return;
+    const i = e.split(`
+`)[s];
+    if (!i) return;
+    const r = i.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || i.match(/at\s+(.+?):(\d+):(\d+)/);
+    if (r) {
+      const [, n, o, a, f] = r;
+      return `${o}:${a}:${f}${n ? ` (${n})` : ""}`;
+    }
+    return i.trim();
+  } catch {
+    return;
+  }
+}
+function P() {
+  return typeof globalThis < "u" && "Deno" in globalThis ? "deno" : typeof globalThis < "u" && "Bun" in globalThis ? "bun" : typeof globalThis < "u" && "caches" in globalThis && typeof globalThis.caches == "object" && !("window" in globalThis) ? "cloudflare-workers" : typeof globalThis < "u" && "EdgeRuntime" in globalThis ? "edge" : typeof window < "u" && typeof document < "u" ? "browser" : typeof process < "u" && process.versions && process.versions.node ? "node" : "unknown";
+}
+function V(s) {
+  const e = P(), t = {
+    platform: e,
+    appVersion: s.appVersion
+  };
+  switch (e) {
+    case "browser":
+      typeof navigator < "u" && (t.userAgent = navigator.userAgent), typeof window < "u" && (t.url = window.location?.href, typeof document < "u" && (t.referrer = document.referrer));
+      break;
+    case "node":
+      typeof process < "u" && (t.nodeVersion = process.version, t.arch = process.arch, process.env.NODE_ENV && (t.nodeEnv = process.env.NODE_ENV));
+      break;
+    case "deno":
+      try {
+        const i = globalThis.Deno;
+        i?.version && (t.denoVersion = i.version.deno, t.v8Version = i.version.v8, t.typescriptVersion = i.version.typescript), i?.build && (t.os = i.build.os, t.arch = i.build.arch);
+      } catch {
+      }
+      break;
+    case "bun":
+      try {
+        const i = globalThis.Bun;
+        i?.version && (t.bunVersion = i.version), i?.revision && (t.bunRevision = i.revision);
+      } catch {
+      }
+      break;
+    case "cloudflare-workers":
+      t.runtime = "cloudflare-workers";
+      break;
+    case "edge":
+      try {
+        const i = globalThis.EdgeRuntime;
+        t.edgeRuntime = i;
+      } catch {
+      }
+      break;
+  }
+  return t;
+}
+function _(s) {
+  if (!s.stateSelectors || s.stateSelectors.length === 0)
+    return;
+  const e = {};
+  for (let t = 0; t < s.stateSelectors.length; t++) {
+    const i = s.stateSelectors[t], r = typeof i == "function" ? i : i.selector, n = typeof i == "function" ? `selector_${t}` : i.name || `selector_${t}`;
+    try {
+      const o = r();
+      o != null && (e[n] = p(o));
+    } catch (o) {
+      e[`${n}_error`] = o instanceof Error ? o.message : String(o);
+    }
+  }
+  return Object.keys(e).length > 0 ? e : void 0;
+}
+var W = class {
+  nodes = /* @__PURE__ */ new Map();
+  scopeLastEvent = /* @__PURE__ */ new Map();
+  globalLastEvent;
+  maxNodes = 1e4;
+  /**
+   * Add a new event to the causal graph
+   */
+  addEvent(e, t, i) {
+    const r = {
+      eventId: e,
+      scope: t,
+      timestamp: Date.now(),
+      causes: i || [],
+      effects: []
+    };
+    if (i)
+      for (const n of i) {
+        const o = this.nodes.get(n);
+        o && o.effects.push(e);
+      }
+    this.nodes.set(e, r), this.scopeLastEvent.set(t, e), this.globalLastEvent = e, this.nodes.size > this.maxNodes && this.pruneOldest(Math.floor(this.maxNodes * 0.1));
+  }
+  /**
+   * Get the causal link for a new event
+   */
+  getCausalLink(e, t) {
+    return t || this.scopeLastEvent.get(e) || this.globalLastEvent;
+  }
+  /**
+   * Get all causes (direct and transitive) for an event
+   */
+  getCauses(e, t = 1 / 0) {
+    const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
+      if (r.has(o) || a > t) return;
+      r.add(o);
+      const f = this.nodes.get(o);
+      if (f)
+        for (const c of f.causes)
+          i.add(c), n(c, a + 1);
+    };
+    return n(e, 0), Array.from(i);
+  }
+  /**
+   * Get all effects (direct and transitive) for an event
+   */
+  getEffects(e, t = 1 / 0) {
+    const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
+      if (r.has(o) || a > t) return;
+      r.add(o);
+      const f = this.nodes.get(o);
+      if (f)
+        for (const c of f.effects)
+          i.add(c), n(c, a + 1);
+    };
+    return n(e, 0), Array.from(i);
+  }
+  /**
+   * Get the causal chain from root to an event
+   */
+  getCausalChain(e) {
+    const t = [];
+    let i = e;
+    const r = /* @__PURE__ */ new Set();
+    for (; i && !r.has(i); ) {
+      r.add(i), t.unshift(i);
+      const n = this.nodes.get(i);
+      if (!n || n.causes.length === 0) break;
+      i = n.causes[0];
+    }
+    return t;
+  }
+  /**
+   * Get node information
+   */
+  getNode(e) {
+    return this.nodes.get(e);
+  }
+  /**
+   * Check if two events are causally related
+   */
+  areCausallyRelated(e, t) {
+    const i = this.getCauses(e), r = this.getEffects(e);
+    return i.includes(t) || r.includes(t);
+  }
+  /**
+   * Get events in the same scope
+   */
+  getEventsByScope(e) {
+    const t = [];
+    for (const [i, r] of this.nodes)
+      r.scope === e && t.push(i);
+    return t;
+  }
+  /**
+   * Prune oldest nodes to stay within memory limits
+   */
+  pruneOldest(e) {
+    const t = Array.from(this.nodes.entries()).sort(([, i], [, r]) => i.timestamp - r.timestamp).slice(0, e);
+    for (const [i] of t) {
+      const r = this.nodes.get(i);
+      if (r) {
+        for (const n of r.causes) {
+          const o = this.nodes.get(n);
+          o && (o.effects = o.effects.filter((a) => a !== i));
+        }
+        for (const n of r.effects) {
+          const o = this.nodes.get(n);
+          o && (o.causes = o.causes.filter((a) => a !== i));
+        }
+      }
+      this.nodes.delete(i);
+    }
+  }
+  /**
+   * Clear all causal links
+   */
+  clear() {
+    this.nodes.clear(), this.scopeLastEvent.clear(), this.globalLastEvent = void 0;
+  }
+  /**
+   * Get statistics about the causal graph
+   */
+  getStats() {
+    let e = 0, t = 0;
+    for (const r of this.nodes.values())
+      e += r.causes.length, t += r.effects.length;
+    const i = this.nodes.size || 1;
+    return {
+      nodeCount: this.nodes.size,
+      avgCauses: e / i,
+      avgEffects: t / i
+    };
+  }
+};
+var m = new W();
+var x = /* @__PURE__ */ new Map();
+function K(s, e) {
+  return m.getCausalLink(s, e);
+}
+function H(s, e, t) {
+  m.addEvent(e, s, t), x.set(s, e);
+}
+function G(s, e, t) {
+  const i = O(), r = z(), n = [...s.inheritedTags || [], ...s.options?.tags || []], o = {
+    id: i,
+    timestamp: r,
+    level: s.level,
+    scope: s.scope,
+    message: s.message,
+    tags: n,
+    cause: s.inheritedCause || s.options?.cause,
+    causeEventId: s.inheritedCauseEventId || s.options?.causeEventId,
+    suggest: s.options?.suggest
+  };
+  if (s.options?.state && (o.state = { ...s.options.state }), e.enableCallsite && !o.__internal?.isReplay && (o.callsite = j(4)), e.enableEnvInfo && !o.__internal?.isReplay && (o.env = V(e)), e.enableStateSnapshot && !o.__internal?.isReplay) {
+    const a = _(e);
+    a && (o.state = { ...o.state, ...a });
+  }
+  if (e.enableCausalLinks && !o.__internal?.isReplay) {
+    const a = K(s.scope, t);
+    a && (o.previousEventId = a);
+  }
+  return o;
+}
+var U = class {
+  constructor(e, t) {
+    this.logger = e, this.config = t, this.circuitBreaker = new I(
+      {
+        ...E,
+        enabled: t.circuitBreaker?.enabled ?? false,
+        ...t.circuitBreaker
+      },
+      {
+        onOpen: () => {
+          this.logger.warn(
+            "WatcherEngine circuit breaker opened: too many errors",
+            {
+              tags: ["watcher", "circuit-breaker"]
+            }
+          );
+        },
+        onClose: () => {
+          this.logger.info("WatcherEngine circuit breaker closed: recovered", {
+            tags: ["watcher", "circuit-breaker"]
+          });
+        }
+      }
+    );
+  }
+  watchers = /* @__PURE__ */ new Map();
+  whenHandlers = /* @__PURE__ */ new Map();
+  circuitBreaker;
+  disposed = false;
+  watch(e, t) {
+    if (this.disposed)
+      throw new Error("WatcherEngine has been disposed");
+    const i = this.generateId(), r = typeof e == "function" ? e : () => e, n = {
+      id: i,
+      getValue: r,
+      label: t,
+      lastValue: void 0,
+      errorCount: 0,
+      disposed: false
+    }, o = () => {
+      if (!(n.disposed || this.disposed))
+        try {
+          this.circuitBreaker.executeSync(() => {
+            const f = r();
+            if (!g(f, n.lastValue)) {
+              const c = t || `watch_${i}`;
+              let l;
+              if (typeof f == "object" && f !== null)
+                l = `${c}: state changed`;
+              else {
+                const u = this.formatValue(n.lastValue), d = this.formatValue(f);
+                l = `${c}: ${u} -> ${d}`;
+              }
+              this.logger.info(l, {
+                tags: ["watch"],
+                state: {
+                  [`${c}_prev`]: p(n.lastValue),
+                  [`${c}_current`]: p(f)
+                }
+              }), n.lastValue = p(f);
+            }
+            n.errorCount = 0;
+          });
+        } catch (f) {
+          n.errorCount++, (n.errorCount <= 3 || n.errorCount % 10 === 0) && this.logger.error(
+            `Watch error for ${t || i} (count: ${n.errorCount})`,
+            {
+              tags: ["watch", "error"],
+              state: {
+                error: f instanceof Error ? f.message : String(f)
+              }
+            }
+          ), n.errorCount >= 50 && (this.logger.error(
+            `Watch ${t || i} disposed due to repeated errors`,
+            {
+              tags: ["watch", "error", "auto-disposed"]
+            }
+          ), this.disposeWatcher(i));
+        }
+    };
+    o();
+    const a = setInterval(o, this.config.pollingInterval || 250);
+    return n.intervalId = a, this.watchers.set(i, n), {
+      dispose: () => this.disposeWatcher(i)
+    };
+  }
+  when(e, t, i) {
+    if (this.disposed)
+      throw new Error("WatcherEngine has been disposed");
+    const r = this.generateId(), n = typeof e == "function" ? e : () => e, o = {
+      id: r,
+      getValue: n,
+      predicate: t,
+      onTrigger: i,
+      lastValue: void 0,
+      intervalId: null,
+      errorCount: 0,
+      disposed: false
+    }, f = setInterval(() => {
+      if (!(o.disposed || this.disposed))
+        try {
+          this.circuitBreaker.executeSync(() => {
+            const c = n(), l = o.lastValue !== void 0 ? p(o.lastValue) : void 0, u = p(c);
+            t(l, u) && i(u, l), o.lastValue = u, o.errorCount = 0;
+          });
+        } catch (c) {
+          o.errorCount++, (o.errorCount <= 3 || o.errorCount % 10 === 0) && this.logger.error(
+            `When condition error for ${r} (count: ${o.errorCount})`,
+            {
+              tags: ["when", "error"],
+              state: {
+                error: c instanceof Error ? c.message : String(c)
+              }
+            }
+          ), o.errorCount >= 50 && (this.logger.error(
+            `When handler ${r} disposed due to repeated errors`,
+            {
+              tags: ["when", "error", "auto-disposed"]
+            }
+          ), this.disposeWhenHandler(r));
+        }
+    }, this.config.pollingInterval || 250);
+    return o.intervalId = f, this.whenHandlers.set(r, o), {
+      dispose: () => this.disposeWhenHandler(r)
+    };
+  }
+  disposeWatcher(e) {
+    const t = this.watchers.get(e);
+    t && (t.disposed = true, t.intervalId && clearInterval(t.intervalId), this.watchers.delete(e));
+  }
+  disposeWhenHandler(e) {
+    const t = this.whenHandlers.get(e);
+    t && (t.disposed = true, t.intervalId && clearInterval(t.intervalId), this.whenHandlers.delete(e));
+  }
+  generateId() {
+    return Math.random().toString(36).substring(2, 11);
+  }
+  formatValue(e) {
+    return e === void 0 ? "undefined" : e === null ? "null" : typeof e == "string" ? `"${e}"` : typeof e == "number" || typeof e == "boolean" ? String(e) : Array.isArray(e) ? `Array(${e.length})` : typeof e == "object" ? `Object(${Object.keys(e).length} keys)` : String(e);
+  }
+  /**
+   * Get the number of active watchers
+   */
+  getWatcherCount() {
+    return this.watchers.size + this.whenHandlers.size;
+  }
+  /**
+   * Get circuit breaker state
+   */
+  getCircuitState() {
+    return this.circuitBreaker.getState();
+  }
+  /**
+   * Dispose all watchers and clean up
+   */
+  dispose() {
+    this.disposed || (this.disposed = true, this.watchers.forEach((e) => {
+      e.disposed = true, e.intervalId && clearInterval(e.intervalId);
+    }), this.whenHandlers.forEach((e) => {
+      e.disposed = true, e.intervalId && clearInterval(e.intervalId);
+    }), this.watchers.clear(), this.whenHandlers.clear());
+  }
+  /**
+   * Check if the engine has been disposed
+   */
+  isDisposed() {
+    return this.disposed;
+  }
+};
+var q = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3
+};
+var v = class _v {
+  constructor(e, t, i, r) {
+    if (this.scope = e, this.config = t, this.bus = i, this.lastEventId = r, this.watcherEngine = new U(this, t), this.levelSeverities = { ...q }, t.customLevels)
+      for (const n of t.customLevels)
+        this.levelSeverities[n.name] = n.severity;
+  }
+  inheritedTags = [];
+  inheritedCause;
+  inheritedCauseEventId;
+  watcherEngine;
+  disposed = false;
+  levelSeverities;
+  event(e, t) {
+    this.log("info", e, t);
+  }
+  info(e, t) {
+    this.log("info", e, t);
+  }
+  warn(e, t) {
+    this.log("warn", e, t);
+  }
+  error(e, t) {
+    this.log("error", e, t);
+  }
+  debug(e, t) {
+    this.log("debug", e, t);
+  }
+  /**
+   * Log with any level (built-in or custom)
+   */
+  log(e, t, i) {
+    if (this.disposed) {
+      console.warn(
+        `Attempted to log on disposed logger (scope: ${this.scope})`
+      );
+      return;
+    }
+    e in this.levelSeverities || (console.warn(`Unknown log level: ${e}, defaulting to info`), e = "info");
+    const r = this.config.logLevel || "info", n = this.levelSeverities[r] ?? 1;
+    if ((this.levelSeverities[e] ?? 1) < n)
+      return;
+    const a = G(
+      {
+        level: e,
+        scope: this.scope,
+        message: t,
+        options: i,
+        inheritedTags: this.inheritedTags,
+        inheritedCause: this.inheritedCause,
+        inheritedCauseEventId: this.inheritedCauseEventId
+      },
+      this.config,
+      this.lastEventId
+    ), f = this.inheritedCauseEventId ? [this.inheritedCauseEventId] : void 0;
+    H(this.scope, a.id, f), this.lastEventId = a.id, this.bus.publish(a);
+  }
+  tag(...e) {
+    const t = new _v(
+      this.scope,
+      this.config,
+      this.bus,
+      this.lastEventId
+    );
+    return t.inheritedTags = [...this.inheritedTags, ...e], t.inheritedCause = this.inheritedCause, t.inheritedCauseEventId = this.inheritedCauseEventId, t;
+  }
+  causedBy(e) {
+    const t = new _v(
+      this.scope,
+      this.config,
+      this.bus,
+      this.lastEventId
+    );
+    return t.inheritedTags = [...this.inheritedTags], typeof e == "string" ? t.inheritedCause = e : (t.inheritedCause = e.message, t.inheritedCauseEventId = e.id), t;
+  }
+  watch(e, t) {
+    if (this.disposed)
+      throw new Error(
+        `Cannot create watch on disposed logger (scope: ${this.scope})`
+      );
+    return this.watcherEngine.watch(e, t);
+  }
+  when(e, t, i) {
+    if (this.disposed)
+      throw new Error(
+        `Cannot create when handler on disposed logger (scope: ${this.scope})`
+      );
+    return this.watcherEngine.when(e, t, i);
+  }
+  /**
+   * Get the number of active watchers on this logger
+   */
+  getWatcherCount() {
+    return this.watcherEngine.getWatcherCount();
+  }
+  /**
+   * Dispose this logger and all its watchers
+   */
+  dispose() {
+    this.disposed || (this.disposed = true, this.watcherEngine.dispose());
+  }
+  /**
+   * Check if this logger has been disposed
+   */
+  isDisposed() {
+    return this.disposed;
+  }
+};
+var S = ["debug", "info", "warn", "error"];
+function D(s) {
+  const e = [], t = [];
+  if (s.enableCallsite !== void 0 && typeof s.enableCallsite != "boolean" && e.push("enableCallsite must be a boolean"), s.enableEnvInfo !== void 0 && typeof s.enableEnvInfo != "boolean" && e.push("enableEnvInfo must be a boolean"), s.enableStateSnapshot !== void 0 && typeof s.enableStateSnapshot != "boolean" && e.push("enableStateSnapshot must be a boolean"), s.enableCausalLinks !== void 0 && typeof s.enableCausalLinks != "boolean" && e.push("enableCausalLinks must be a boolean"), s.stateSelectors !== void 0 && (Array.isArray(s.stateSelectors) ? s.stateSelectors.forEach((i, r) => {
+    typeof i != "function" && e.push(`stateSelectors[${r}] must be a function`);
+  }) : e.push("stateSelectors must be an array")), s.maxBufferSize !== void 0 && (typeof s.maxBufferSize != "number" ? e.push("maxBufferSize must be a number") : s.maxBufferSize < 1 ? e.push("maxBufferSize must be at least 1") : s.maxBufferSize > 1e5 && t.push(
+    "maxBufferSize is very large (>100000), this may cause memory issues"
+  )), s.logLevel !== void 0 && (S.includes(s.logLevel) || e.push(`logLevel must be one of: ${S.join(", ")}`)), s.appVersion !== void 0 && typeof s.appVersion != "string" && e.push("appVersion must be a string"), s.pollingInterval !== void 0 && (typeof s.pollingInterval != "number" ? e.push("pollingInterval must be a number") : s.pollingInterval < 10 ? e.push("pollingInterval must be at least 10ms") : s.pollingInterval < 50 && t.push(
+    "pollingInterval is very low (<50ms), this may impact performance"
+  )), s.rateLimiting !== void 0)
+    if (typeof s.rateLimiting != "object" || s.rateLimiting === null)
+      e.push("rateLimiting must be an object");
+    else {
+      const i = s.rateLimiting;
+      i.enabled !== void 0 && typeof i.enabled != "boolean" && e.push("rateLimiting.enabled must be a boolean"), i.maxEventsPerSecond !== void 0 && (typeof i.maxEventsPerSecond != "number" ? e.push("rateLimiting.maxEventsPerSecond must be a number") : i.maxEventsPerSecond < 1 && e.push("rateLimiting.maxEventsPerSecond must be at least 1")), i.samplingRate !== void 0 && (typeof i.samplingRate != "number" ? e.push("rateLimiting.samplingRate must be a number") : (i.samplingRate < 0 || i.samplingRate > 1) && e.push("rateLimiting.samplingRate must be between 0 and 1"));
+    }
+  if (s.deduplication !== void 0)
+    if (typeof s.deduplication != "object" || s.deduplication === null)
+      e.push("deduplication must be an object");
+    else {
+      const i = s.deduplication;
+      if (i.enabled !== void 0 && typeof i.enabled != "boolean" && e.push("deduplication.enabled must be a boolean"), i.windowMs !== void 0 && (typeof i.windowMs != "number" ? e.push("deduplication.windowMs must be a number") : i.windowMs < 100 && e.push("deduplication.windowMs must be at least 100ms")), i.fields !== void 0)
+        if (!Array.isArray(i.fields))
+          e.push("deduplication.fields must be an array");
+        else {
+          const r = ["message", "scope", "level", "tags", "state"];
+          i.fields.forEach((n, o) => {
+            typeof n != "string" ? e.push(`deduplication.fields[${o}] must be a string`) : r.includes(n) || e.push(
+              `deduplication.fields[${o}] "${n}" is not a valid field. Valid fields: ${r.join(", ")}`
+            );
+          });
+        }
+    }
+  if (s.customLevels !== void 0)
+    if (!Array.isArray(s.customLevels))
+      e.push("customLevels must be an array");
+    else {
+      const i = /* @__PURE__ */ new Set(), r = ["log", "event"];
+      s.customLevels.forEach((n, o) => {
+        typeof n.name != "string" || n.name.trim() === "" ? e.push(`customLevels[${o}].name must be a non-empty string`) : (i.has(n.name) && e.push(
+          `customLevels[${o}].name "${n.name}" is a duplicate`
+        ), i.add(n.name), r.includes(n.name.toLowerCase()) && e.push(
+          `customLevels[${o}].name "${n.name}" is a reserved method name`
+        ), S.includes(n.name) && t.push(
+          `customLevels[${o}].name "${n.name}" shadows a built-in level`
+        )), typeof n.severity != "number" && e.push(`customLevels[${o}].severity must be a number`);
+      });
+    }
+  return {
+    valid: e.length === 0,
+    errors: e,
+    warnings: t
+  };
+}
+var J = class {
+  buffer = [];
+  flushTimer = null;
+  config;
+  constructor(e) {
+    this.config = e, e.enabled && e.flushInterval && this.startAutoFlush();
+  }
+  /**
+   * Add an entry to the persistence buffer
+   */
+  add(e) {
+    this.config.enabled && (this.buffer.push(e), this.config.batchSize && this.buffer.length >= this.config.batchSize && this.flush());
+  }
+  /**
+   * Flush the buffer to the adapter
+   */
+  async flush() {
+    if (this.buffer.length === 0) return;
+    const e = [...this.buffer];
+    this.buffer = [];
+    try {
+      await this.config.adapter.write(e);
+    } catch (t) {
+      throw this.buffer.length < 1e4 && (this.buffer = [...e, ...this.buffer]), t;
+    }
+  }
+  /**
+   * Start auto-flush timer
+   */
+  startAutoFlush() {
+    this.flushTimer || (this.flushTimer = setInterval(() => {
+      this.flush().catch(console.error);
+    }, this.config.flushInterval));
+  }
+  /**
+   * Stop auto-flush and close adapter
+   */
+  async close() {
+    this.flushTimer && (clearInterval(this.flushTimer), this.flushTimer = null), await this.flush(), await this.config.adapter.close?.();
+  }
+  /**
+   * Get buffer size
+   */
+  getBufferSize() {
+    return this.buffer.length;
+  }
+};
+function Ie(s = {}) {
+  const e = D(s);
+  if (!e.valid)
+    throw new Error(
+      `Invalid Satori configuration:
+${e.errors.join(`
+`)}`
+    );
+  e.warnings.length > 0 && console.warn("Satori configuration warnings:", e.warnings);
+  const t = {
+    ...y,
+    ...s,
+    // Merge nested configs properly
+    rateLimiting: { ...y.rateLimiting, ...s.rateLimiting },
+    deduplication: { ...y.deduplication, ...s.deduplication },
+    circuitBreaker: {
+      ...y.circuitBreaker,
+      ...s.circuitBreaker
+    }
+  }, i = new R({
+    maxBufferSize: t.maxBufferSize,
+    rateLimiting: t.rateLimiting,
+    deduplication: t.deduplication,
+    circuitBreaker: t.circuitBreaker,
+    enableMetrics: t.enableMetrics
+  });
+  !(typeof process < "u" && process.env?.NODE_ENV === "test") && t.enableConsole !== false && typeof console < "u" && i.subscribe((l) => {
+    const u = l.level;
+    (console[u === "debug" ? "log" : u] ?? console.log)(`[${l.scope}] ${l.message}`, l);
+  });
+  const n = new v("root", t, i), o = /* @__PURE__ */ new Map();
+  o.set("root", n);
+  let a = null;
+  t.persistence?.enabled && (a = new J(t.persistence), i.subscribe((l) => {
+    a?.add(l);
+  }));
+  const f = new C(), c = Date.now();
+  return {
+    config: t,
+    bus: i,
+    rootLogger: n,
+    createLogger(l) {
+      const u = new v(l, t, i);
+      return o.set(l, u), f.setLoggerCount(o.size), u;
+    },
+    getMetrics() {
+      let l = 0;
+      for (const u of o.values())
+        u.isDisposed() || (l += u.getWatcherCount());
+      return f.setWatcherCount(l), {
+        bus: i.getMetrics(),
+        loggerCount: o.size,
+        watcherCount: l,
+        circuitState: i.getCircuitBreaker().getState(),
+        uptime: Date.now() - c
+      };
+    },
+    async flush() {
+      a && await a.flush();
+    },
+    dispose() {
+      for (const u of o.values())
+        u.dispose();
+      o.clear();
+      const l = i.getReplayBuffer?.();
+      l && (l.length = 0), i.reset(), a && a.close().catch(console.error);
+    }
+  };
+}
+var currentConfig = {
+  lockViolation: "throw",
+  satori: Ie({ logLevel: "debug" })
+};
+function getSairinConfig() {
+  return currentConfig;
+}
+function getSairinLogger() {
+  return currentConfig.satori.createLogger("sairin");
+}
+var nodeRegistry = /* @__PURE__ */ new Map();
+function pathToString(p2) {
+  return p2.raw;
+}
+function getOrCreateNode(p2, kind) {
+  const key = pathToString(p2);
+  let node = nodeRegistry.get(key);
+  if (!node) {
+    node = createNode(p2, kind);
+    nodeRegistry.set(key, node);
+  }
+  if (node.kind !== kind) {
+    throw new TypeError(
+      `Node kind mismatch for path "${key}": existing=${node.kind} requested=${kind}`
+    );
+  }
+  return node;
+}
+function createNode(p2, kind) {
+  const node = {
+    path: p2,
+    kind,
+    version: 0,
+    subscribers: /* @__PURE__ */ new Set()
+  };
+  if (kind === "signal") {
+    return {
+      ...node,
+      kind: "signal",
+      value: void 0
+    };
+  }
+  if (kind === "derived") {
+    return {
+      ...node,
+      kind: "derived",
+      compute: void 0,
+      cached: void 0,
+      dirty: true
+    };
+  }
+  return {
+    ...node,
+    kind: "effect",
+    fn: void 0,
+    cleanup: void 0,
+    disposed: false
+  };
+}
+function getAllNodes() {
+  return nodeRegistry.values();
+}
+function subscribe(node, fn) {
+  node.subscribers.add(fn);
+  return () => {
+    node.subscribers.delete(fn);
+  };
+}
+function unsubscribe(node, fn) {
+  node.subscribers.delete(fn);
+}
+function notifySubscribers(node) {
+  node.version++;
+  const called = /* @__PURE__ */ new Set();
+  for (const fn of node.subscribers) {
+    if (called.has(fn)) continue;
+    called.add(fn);
+    fn();
+  }
+}
+function trackNode(node) {
+  const computation = getGlobalActiveComputation();
+  if (computation) {
+    const checked = computation.__circularCheck;
+    if (!checked) {
+      computation.__circularCheck = /* @__PURE__ */ new Set();
+    }
+    const nodes = computation.__circularCheck;
+    if (nodes.has(node)) {
+      const logger2 = getSairinLogger();
+      logger2.error(`Circular dependency detected: ${node.path.raw}`, {
+        tags: ["graph", "cycle"]
+      });
+      return;
+    }
+    nodes.add(node);
+    subscribe(node, computation);
+    nodes.delete(node);
+  }
+}
+var lockedPaths = /* @__PURE__ */ new Map();
+function isLocked(path3) {
+  const key = path3.raw;
+  for (const [lockedKey, lock2] of lockedPaths) {
+    if (lock2.shallow) {
+      if (key === lockedKey) return true;
+    } else {
+      if (key.startsWith(lockedKey + "/") || key === lockedKey) return true;
+    }
+  }
+  return false;
+}
+function checkLock(path3, owner) {
+  const key = path3.raw;
+  for (const [lockedKey, lock2] of lockedPaths) {
+    if (lock2.owner === owner) continue;
+    if (lock2.shallow) {
+      if (key === lockedKey) return false;
+    } else {
+      if (key.startsWith(lockedKey + "/") || key === lockedKey) return false;
+    }
+  }
+  return true;
+}
+function handleLockViolation(path3, owner, attemptedOwner) {
+  const logger2 = getSairinLogger();
+  const message = `Lock violation: cannot write to "${path3.raw}", owned by different scope${attemptedOwner ? ` (attempted by: ${attemptedOwner})` : ""}`;
+  {
+    logger2.error(message, { tags: ["lock", "write"] });
+  }
+  {
+    throw new Error(message);
+  }
+}
+function assertLock(path3, owner, attemptedOwner) {
+  if (!checkLock(path3, owner)) {
+    handleLockViolation(path3, owner, attemptedOwner);
+    const config = getSairinConfig();
+    return config.lockViolation === "warn";
+  }
+  return true;
+}
+var Signal = class {
+  id;
+  path;
+  _node;
+  constructor(path3, initial, forceSet = false) {
+    this.id = parseInt(generateUniqueId(), 36);
+    this.path = path3;
+    this._node = getOrCreateNode(path3, "signal");
+    if (forceSet || initial !== void 0) {
+      this._node.value = initial;
+    }
+  }
+  get() {
+    trackNode(this._node);
+    return this._node.value;
+  }
+  set(next, options) {
+    const pathIsLocked = isLocked(this.path);
+    if (pathIsLocked) {
+      const attempted = options?.owner ?? "";
+      if (!assertLock(this.path, attempted, attempted)) return;
+    }
+    if (Object.is(this._node.value, next)) return;
+    this._node.value = next;
+    notifySubscribers(this._node);
+  }
+  update(fn, options) {
+    this.set(fn(this._node.value), options);
+  }
+  subscribe(fn) {
+    return subscribe(this._node, fn);
+  }
+  unsubscribe(fn) {
+    unsubscribe(this._node, fn);
+  }
+  getSubscriberCount() {
+    return this._node.subscribers.size;
+  }
+  peek() {
+    return this._node.value;
+  }
+  get version() {
+    return this._node.version;
+  }
+};
+function isSignal(value) {
+  return value instanceof Signal;
+}
+var Derived = class {
+  id;
+  path;
+  _node;
+  _tracker = null;
+  _sources = /* @__PURE__ */ new Set();
+  _isComputing = false;
+  constructor(path3, fn, options = {}) {
+    this.id = parseInt(generateUniqueId(), 36);
+    this.path = path3;
+    this._node = getOrCreateNode(path3, "derived");
+    this._node.compute = fn;
+    if (options.eager) {
+      this.recompute();
+    }
+  }
+  recompute() {
+    if (this._tracker) {
+      for (const source of this._sources) {
+        source.subscribers.delete(this._tracker);
+      }
+    }
+    this._sources.clear();
+    this._isComputing = true;
+    let trackerInitialized = false;
+    const trackedVersions = /* @__PURE__ */ new Map();
+    const tracker = () => {
+      if (this._isComputing || !trackerInitialized) return;
+      for (const [source, prevVersion] of trackedVersions) {
+        if (source.version !== prevVersion) {
+          if (!this._node.dirty) {
+            this._node.dirty = true;
+            notifySubscribers(this._node);
+          }
+          return;
+        }
+      }
+    };
+    this._tracker = tracker;
+    const prevComputation = getGlobalActiveComputation();
+    setGlobalActiveComputation(tracker);
+    try {
+      this._node.cached = this._node.compute();
+      this._node.dirty = false;
+    } finally {
+      const nodes = getAllNodes();
+      const newSources = [];
+      for (const node of nodes) {
+        if (node.subscribers.has(tracker)) {
+          newSources.push(node);
+          trackedVersions.set(node, node.version);
+        }
+      }
+      trackerInitialized = true;
+      this._isComputing = false;
+      for (const node of newSources) {
+        this._sources.add(node);
+      }
+      setGlobalActiveComputation(prevComputation);
+    }
+  }
+  get() {
+    if (this._node.dirty) {
+      this.recompute();
+    }
+    trackNode(this._node);
+    return this._node.cached;
+  }
+  subscribe(fn) {
+    return subscribe(this._node, fn);
+  }
+  unsubscribe(fn) {
+    unsubscribe(this._node, fn);
+  }
+  getSubscriberCount() {
+    return this._node.subscribers.size;
+  }
+  isDirty() {
+    return this._node.dirty;
+  }
+  peek() {
+    if (this._node.dirty) {
+      this.recompute();
+    }
+    return this._node.cached;
+  }
+  get version() {
+    return this._node.version;
+  }
+};
+var pendingEffects = /* @__PURE__ */ new Set();
+var flushScheduled = false;
+function scheduleEffect(fn) {
+  pendingEffects.add(fn);
+  if (!flushScheduled) {
+    flushScheduled = true;
+    queueMicrotask(() => {
+      flushScheduled = false;
+      const effects = [...pendingEffects];
+      pendingEffects.clear();
+      effects.forEach((effect2) => effect2());
+    });
+  }
+}
+function runCleanup(cleanups) {
+  while (cleanups.length > 0) {
+    const fn = cleanups.pop();
+    if (fn) fn();
+  }
+}
+function createEffect(fn, schedule) {
+  let cleanupFn;
+  let disposed = false;
+  const logger2 = getSairinLogger();
+  const effectContext = { cleanups: [] };
+  const runner = () => {
+    if (disposed) return;
+    runCleanup(effectContext.cleanups);
+    if (typeof cleanupFn === "function") {
+      cleanupFn();
+    }
+    const prev = getGlobalActiveComputation();
+    effectContext.cleanups = [];
+    setGlobalActiveComputation(runner);
+    try {
+      cleanupFn = fn();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger2.error(`Effect threw: ${message}`, {
+        tags: ["effect", "runtime"]
+      });
+    } finally {
+      setGlobalActiveComputation(prev);
+    }
+  };
+  schedule(runner);
+  return () => {
+    disposed = true;
+    runCleanup(effectContext.cleanups);
+    if (typeof cleanupFn === "function") {
+      cleanupFn();
+    }
+  };
+}
+var effect = (fn) => createEffect(fn, scheduleEffect);
+function bindText(el, readable) {
+  const update = () => {
+    const value = readable.get();
+    if (el.textContent !== value) {
+      el.textContent = value;
+    }
+  };
+  return effect(() => {
+    update();
+  });
+}
+function bindHtml(el, readable) {
+  return effect(() => {
+    const value = readable.get();
+    if (el.innerHTML !== value) {
+      el.innerHTML = value;
+    }
+  });
+}
+function bindAttribute(el, attr, readable) {
+  return effect(() => {
+    const value = readable.get();
+    if (value == null) {
+      el.removeAttribute(attr);
+    } else {
+      el.setAttribute(attr, String(value));
+    }
+  });
+}
+function bindProperty(el, prop, readable) {
+  return effect(() => {
+    const value = readable.get();
+    if (el[prop] !== value) {
+      el[prop] = value;
+    }
+  });
+}
+function bindStyle(el, styleProp, readable) {
+  return effect(() => {
+    const value = readable.get();
+    el.style[styleProp] = value;
+  });
+}
+function bindInputValue(input, sig) {
+  const updateValue = () => {
+    const value = sig.get();
+    if (input.value !== value) {
+      input.value = value;
+    }
+  };
+  return effect(() => {
+    updateValue();
+  });
+}
+function bindInputChecked(input, sig) {
+  const updateChecked = () => {
+    input.checked = sig.get();
+  };
+  const handleChange = () => {
+    if ("set" in sig && typeof sig.set === "function") {
+      sig.set(input.checked);
+    }
+  };
+  input.addEventListener("change", handleChange);
+  return effect(() => {
+    updateChecked();
+    return () => {
+      input.removeEventListener("change", handleChange);
+    };
+  });
+}
+function bindSelectValue(select, sig) {
+  const updateValue = () => {
+    const value = sig.get();
+    if (select.value !== value) {
+      select.value = value;
+    }
+  };
+  const handleChange = () => {
+    if ("set" in sig && typeof sig.set === "function") {
+      sig.set(select.value);
+    }
+  };
+  select.addEventListener("change", handleChange);
+  return effect(() => {
+    updateValue();
+    return () => {
+      select.removeEventListener("change", handleChange);
+    };
+  });
+}
+function bindVisibility(el, readable) {
+  return effect(() => {
+    const visible = readable.get();
+    if (visible) {
+      el.removeAttribute("hidden");
+    } else {
+      el.setAttribute("hidden", "");
+    }
+  });
+}
+function bindDisabled(el, readable) {
+  return effect(() => {
+    const disabled = readable.get();
+    if (disabled) {
+      el.setAttribute("disabled", "");
+    } else {
+      el.removeAttribute("disabled");
+    }
+  });
+}
+function bindBooleanAttribute(el, attr, readable) {
+  return effect(() => {
+    const value = readable.get();
+    if (value) {
+      el.setAttribute(attr, "");
+    } else {
+      el.removeAttribute(attr);
+    }
   });
 }
 function component(config) {
@@ -177,12 +2016,20 @@ function component(config) {
     return Constructor;
   };
 }
+let _nextComponentId = 0;
 class SazamiComponent extends HTMLElement {
   constructor() {
     super();
+    this.componentId = `${this.tagName?.toLowerCase() ?? "element"}_${++_nextComponentId}`;
     this._cleanupFns = [];
     this._rendered = false;
     this._propStorage = /* @__PURE__ */ new Map();
+    this._dirty = false;
+    this._pendingStyles = null;
+    this._pendingTemplate = null;
+    this._lastTemplate = "";
+    this._lastStyles = "";
+    this._currentRootElement = null;
     this._handlerId = 0;
     this._handlers = /* @__PURE__ */ new Map();
     this.shadow = this.attachShadow({ mode: "open" });
@@ -196,9 +2043,24 @@ class SazamiComponent extends HTMLElement {
       return [...cfg.observedAttributes];
     }
     if (cfg.properties) {
-      return Object.entries(cfg.properties).filter(([_, prop]) => prop.reflect).map(([name]) => name);
+      return Object.entries(cfg.properties).filter(([_2, prop]) => prop.reflect).map(([name]) => name);
     }
     return [];
+  }
+  getStructuralRoot() {
+    const cfg = this.sazamiConfig;
+    if (cfg?.structuralRoots) {
+      const mode = this.getRenderMode();
+      return cfg.structuralRoots[mode] ?? null;
+    }
+    return this._currentRootElement;
+  }
+  getRenderMode() {
+    return "";
+  }
+  _extractRootElement(template) {
+    const match = template.match(/<([a-z][a-z0-9-]*)/i);
+    return match ? match[1].toLowerCase() : "";
   }
   // Lifecycle
   connectedCallback() {
@@ -226,18 +2088,257 @@ class SazamiComponent extends HTMLElement {
   }
   /**
    * Mounts the component's shadow DOM with the given styles and template.
+   * Auto-detects structural changes and renders synchronously when needed.
+   * For non-structural re-renders, defers to a microtask for batching.
    * @param styles - CSS styles to inject
    * @param template - HTML template string. Callers are responsible for escaping
    *   user-provided data using escapeHtml() before interpolating into the template.
    */
   mount(styles, template) {
+    const newRootElement = this._extractRootElement(template);
+    const isStructuralChange = newRootElement !== "" && newRootElement !== this._currentRootElement;
+    if (!this._rendered || isStructuralChange) {
+      try {
+        this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+        this._currentRootElement = newRootElement;
+      } catch (e) {
+        renderError(`Failed to render component: ${e.message}`, {
+          suggestion: "Check the template syntax and styles"
+        });
+      }
+    } else {
+      this.scheduleRender(styles, template);
+    }
+  }
+  /**
+   * Mounts the component's shadow DOM synchronously.
+   * Use this when you need to query/bind immediately after mounting.
+   * @param styles - CSS styles to inject
+   * @param template - HTML template string. Callers are responsible for escaping
+   *   user-provided data using escapeHtml() before interpolating into the template.
+   */
+  mountSync(styles, template) {
+    const newRootElement = this._extractRootElement(template);
+    this._pendingStyles = null;
+    this._pendingTemplate = null;
+    this._dirty = false;
+    this._lastTemplate = template;
+    this._lastStyles = styles;
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = newRootElement;
     } catch (e) {
       renderError(`Failed to render component: ${e.message}`, {
         suggestion: "Check the template syntax and styles"
       });
     }
+  }
+  /**
+   * Schedules a render to occur in the next microtask.
+   * Collapses multiple render() calls within the same tick into one DOM write.
+   * Uses backpressure, if a render is already queued, subsequent calls are dropped.
+   */
+  scheduleRender(styles, template) {
+    this._pendingStyles = styles;
+    this._pendingTemplate = template;
+    if (this._dirty) return;
+    this._dirty = true;
+    queueMicrotask(() => {
+      this._dirty = false;
+      if (this._pendingTemplate !== null) {
+        const currentTemplate = this._pendingTemplate;
+        const currentStyles = this._pendingStyles;
+        this._pendingStyles = null;
+        this._pendingTemplate = null;
+        this._flush(currentStyles, currentTemplate);
+      }
+    });
+  }
+  /**
+   * Flushes pending styles and template to the shadow DOM.
+   * Called by scheduleRender when the microtask runs.
+   * Skips stale renders if structural change made them obsolete.
+   */
+  _flush(styles, template) {
+    const pendingRoot = this._extractRootElement(template);
+    if (pendingRoot !== "" && pendingRoot !== this._currentRootElement) {
+      return;
+    }
+    if (template === this._lastTemplate && styles === this._lastStyles) return;
+    this._lastTemplate = template;
+    this._lastStyles = styles;
+    try {
+      this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = pendingRoot || this._currentRootElement;
+    } catch (e) {
+      renderError(`Failed to render component: ${e.message}`, {
+        suggestion: "Check the template syntax and styles"
+      });
+    }
+  }
+  // Unified binding API - delegates to Sairin's dom/bindings
+  bind(selector, target, readable) {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    let dispose;
+    switch (target) {
+      case "textContent":
+        dispose = bindText(element, readable);
+        break;
+      case "innerHTML":
+        dispose = bindHtml(element, readable);
+        break;
+      case "value":
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"value" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion: "Use Signal instead of Derived for two-way bindings"
+              }
+            );
+            break;
+          }
+          dispose = bindInputValue(element, readable);
+        } else if (element instanceof HTMLSelectElement) {
+          if ("set" in readable) {
+            dispose = bindSelectValue(element, readable);
+          } else {
+            dispose = bindProperty(element, "value", readable);
+          }
+        } else {
+          bindingError(
+            `Cannot bind "value" to element type: ${element.constructor.name}`,
+            {
+              suggestion: "Use bindAttribute or bindProperty for this element type"
+            }
+          );
+        }
+        break;
+      case "checked":
+        if (element instanceof HTMLInputElement) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"checked" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion: "Use Signal instead of Derived for two-way bindings"
+              }
+            );
+            break;
+          }
+          dispose = bindInputChecked(element, readable);
+        } else {
+          dispose = bindBooleanAttribute(
+            element,
+            "checked",
+            readable
+          );
+        }
+        break;
+      case "disabled":
+        dispose = bindDisabled(element, readable);
+        break;
+      case "visible":
+        dispose = bindVisibility(element, readable);
+        break;
+      default:
+        if (typeof target === "string") {
+          dispose = bindAttribute(element, target, readable);
+        }
+    }
+    if (dispose) {
+      this._cleanupFns.push(dispose);
+    }
+  }
+  bindText(selector, readable) {
+    this.bind(selector, "textContent", readable);
+  }
+  bindHtml(selector, readable) {
+    this.bind(selector, "innerHTML", readable);
+  }
+  bindValue(selector, readable) {
+    this.bind(selector, "value", readable);
+  }
+  bindChecked(selector, readable) {
+    this.bind(selector, "checked", readable);
+  }
+  bindDisabled(selector, readable) {
+    this.bind(selector, "disabled", readable);
+  }
+  bindVisible(selector, readable) {
+    this.bind(selector, "visible", readable);
+  }
+  bindAttribute(selector, attr, readable) {
+    return this.bind(selector, attr, readable);
+  }
+  bindProperty(selector, prop, readable) {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindProperty(element, prop, readable);
+    this._cleanupFns.push(dispose);
+  }
+  bindStyle(selector, styleProp, readable) {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindStyle(element, styleProp, readable);
+    this._cleanupFns.push(dispose);
+  }
+  bindToggleClass(selector, className, readable) {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    this._cleanupFns.push(
+      effect(() => {
+        const active = readable.get();
+        if (active) {
+          element.classList.add(className);
+        } else {
+          element.classList.remove(className);
+        }
+      })
+    );
+  }
+  bindWidthPercent(selector, readable, min = 0, max = 100) {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return () => {
+      };
+    }
+    const dispose = effect(() => {
+      const value = readable.get();
+      const range = max - min;
+      const percent = range > 0 ? Math.min(100, Math.max(0, (value - min) / range * 100)) : 0;
+      element.style.width = `${percent}%`;
+    });
+    this._cleanupFns.push(dispose);
+    return dispose;
+  }
+  bindWidthPercentAttribute(selector, attr, readable, min = 0, max = 100) {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    this._cleanupFns.push(
+      effect(() => {
+        const value = readable.get();
+        const range = max - min;
+        const percent = range > 0 ? Math.min(100, Math.max(0, (value - min) / range * 100)) : 0;
+        element.setAttribute(attr, String(percent));
+      })
+    );
   }
   $(selector) {
     return this.shadow.querySelector(selector);
@@ -344,6 +2445,13 @@ class SazamiComponent extends HTMLElement {
     const props = config.properties;
     if (!props) return;
     for (const [prop, cfg] of Object.entries(props)) {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(this),
+        prop
+      );
+      if (descriptor && "set" in descriptor) {
+        continue;
+      }
       this._createReflector(prop, cfg.type, cfg.default, cfg.reflect);
     }
   }
@@ -501,17 +2609,17 @@ var __runInitializers$w = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$w = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$w(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$w(target, name));
   __name$w(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$w(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$w(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$w(it) && (target = it);
   }
-  return __decoratorMetadata$w(array, target), desc && __defProp$w(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$w(array, target), desc && __defProp$w(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiRow_decorators, _init$w, _a$w;
 const STYLES$x = `
@@ -569,17 +2677,17 @@ var __runInitializers$v = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$v = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$v(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$v(target, name));
   __name$v(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$v(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$v(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$v(it) && (target = it);
   }
-  return __decoratorMetadata$v(array, target), desc && __defProp$v(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$v(array, target), desc && __defProp$v(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiColumn_decorators, _init$v, _a$v;
 const STYLES$w = `
@@ -629,17 +2737,17 @@ var __runInitializers$u = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$u = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$u(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$u(target, name));
   __name$u(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$u(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$u(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$u(it) && (target = it);
   }
-  return __decoratorMetadata$u(array, target), desc && __defProp$u(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$u(array, target), desc && __defProp$u(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiGrid_decorators, _init$u, _a$u;
 const STYLES$v = `
@@ -710,17 +2818,17 @@ var __runInitializers$t = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$t = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$t(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$t(target, name));
   __name$t(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$t(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$t(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$t(it) && (target = it);
   }
-  return __decoratorMetadata$t(array, target), desc && __defProp$t(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$t(array, target), desc && __defProp$t(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiStack_decorators, _init$t, _a$t;
 const STYLES$u = `
@@ -767,17 +2875,17 @@ var __runInitializers$s = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$s = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$s(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$s(target, name));
   __name$s(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$s(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$s(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$s(it) && (target = it);
   }
-  return __decoratorMetadata$s(array, target), desc && __defProp$s(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$s(array, target), desc && __defProp$s(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiCard_decorators, _init$s, _a$s;
 const STYLES$t = `
@@ -819,6 +2927,38 @@ const cardConfig = {
 };
 _SazamiCard_decorators = [component(cardConfig)];
 class SazamiCard extends (_a$s = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._loadingSignal = null;
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set loading(value) {
+    if (this._isReadableBool(value)) {
+      this._loadingSignal = value;
+      this.onCleanup(
+        effect(() => {
+          const loading = value.get();
+          if (loading) {
+            this.setAttribute("loading", "");
+          } else {
+            this.removeAttribute("loading");
+          }
+        })
+      );
+    } else {
+      this._loadingSignal = null;
+      if (value) {
+        this.setAttribute("loading", "");
+      } else {
+        this.removeAttribute("loading");
+      }
+    }
+  }
+  get loading() {
+    return this._loadingSignal || this.hasAttribute("loading");
+  }
   render() {
     this.mount(STYLES$t, `<slot></slot>`);
   }
@@ -845,17 +2985,17 @@ var __runInitializers$r = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$r = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$r(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$r(target, name));
   __name$r(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$r(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$r(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$r(it) && (target = it);
   }
-  return __decoratorMetadata$r(array, target), desc && __defProp$r(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$r(array, target), desc && __defProp$r(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiText_decorators, _init$r, _a$r;
 const STYLES$s = `
@@ -883,8 +3023,58 @@ const textConfig = {
 };
 _SazamiText_decorators = [component(textConfig)];
 class SazamiText extends (_a$r = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._content = "";
+    this._textNode = null;
+  }
+  _isReadable(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set content(value) {
+    this._content = value;
+    if (this._isReadable(value)) {
+      this._bindContentSignal(value);
+    } else {
+      this._setTextContent(value);
+    }
+  }
+  get content() {
+    return this._content;
+  }
+  _setTextContent(value) {
+    if (this._textNode) {
+      this._textNode.textContent = value ?? "";
+    }
+  }
+  _bindContentSignal(sig) {
+    const textNode = this._textNode;
+    if (!textNode) return;
+    const dispose = bindText(textNode, sig);
+    this.onCleanup(dispose);
+  }
   render() {
     this.mount(STYLES$s, `<slot></slot>`);
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      this._textNode = document.createTextNode("");
+      slot.replaceWith(this._textNode);
+    } else {
+      this._textNode = this.shadow.appendChild(document.createTextNode(""));
+    }
+    if (this._isReadable(this._content)) {
+      this._bindContentSignal(this._content);
+    } else {
+      const staticContent = this._content;
+      if (staticContent) {
+        this._setTextContent(staticContent);
+      } else {
+        const slottedText = this.textContent?.trim() || "";
+        if (slottedText) {
+          this._setTextContent(slottedText);
+        }
+      }
+    }
   }
 }
 _init$r = __decoratorStart$r(_a$r);
@@ -909,17 +3099,17 @@ var __runInitializers$q = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$q = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$q(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$q(target, name));
   __name$q(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$q(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$q(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$q(it) && (target = it);
   }
-  return __decoratorMetadata$q(array, target), desc && __defProp$q(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$q(array, target), desc && __defProp$q(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiHeading_decorators, _init$q, _a$q;
 const STYLES$r = `
@@ -944,8 +3134,53 @@ const headingConfig = {
 };
 _SazamiHeading_decorators = [component(headingConfig)];
 class SazamiHeading extends (_a$q = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._content = "";
+    this._contentSignal = null;
+    this._textNode = null;
+  }
+  _isReadable(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set content(value) {
+    this._content = value;
+    if (this._isReadable(value)) {
+      this._contentSignal = value;
+      this._setupSignalBinding();
+    } else {
+      this._contentSignal = null;
+      this._setTextContent(value);
+    }
+  }
+  get content() {
+    return this._content;
+  }
+  _setTextContent(value) {
+    if (this._textNode) {
+      this._textNode.textContent = value ?? "";
+    }
+  }
+  _setupSignalBinding() {
+    const textNode = this._textNode;
+    if (!textNode) return;
+    const dispose = bindText(textNode, this._contentSignal);
+    this.onCleanup(dispose);
+  }
   render() {
     this.mount(STYLES$r, `<slot></slot>`);
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      this._textNode = document.createTextNode("");
+      slot.replaceWith(this._textNode);
+    } else {
+      this._textNode = this.shadow.appendChild(document.createTextNode(""));
+    }
+    if (this._contentSignal) {
+      this._setupSignalBinding();
+    } else {
+      this._setTextContent(this._content);
+    }
   }
 }
 _init$q = __decoratorStart$q(_a$q);
@@ -970,17 +3205,17 @@ var __runInitializers$p = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$p = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$p(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$p(target, name));
   __name$p(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$p(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$p(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$p(it) && (target = it);
   }
-  return __decoratorMetadata$p(array, target), desc && __defProp$p(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$p(array, target), desc && __defProp$p(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiLabel_decorators, _init$p, _a$p;
 const STYLES$q = `
@@ -1002,11 +3237,62 @@ const labelConfig = {
 };
 _SazamiLabel_decorators = [component(labelConfig)];
 class SazamiLabel extends (_a$p = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._content = "";
+    this._contentSignal = null;
+    this._textNode = null;
+    this._contentDispose = null;
+  }
+  _isReadable(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set content(value) {
+    this._content = value;
+    if (this._isReadable(value)) {
+      this._contentSignal = value;
+      this._setupSignalBinding();
+    } else {
+      this._contentSignal = null;
+      if (this._contentDispose) {
+        this._contentDispose();
+        this._contentDispose = null;
+      }
+      this._setTextContent(value);
+    }
+  }
+  get content() {
+    return this._content;
+  }
+  _setTextContent(value) {
+    if (this._textNode) {
+      this._textNode.textContent = value ?? "";
+    }
+  }
+  _setupSignalBinding() {
+    const textNode = this._textNode;
+    if (!textNode) return;
+    if (this._contentDispose) {
+      this._contentDispose();
+    }
+    const dispose = bindText(textNode, this._contentSignal);
+    this._contentDispose = dispose;
+    this.onCleanup(dispose);
+  }
   render() {
     this.mount(STYLES$q, `<label><slot></slot></label>`);
-    if (this.hasAttribute("for")) {
-      const label = this.shadowRoot?.querySelector("label");
-      if (label) {
+    const label = this.shadow.querySelector("label");
+    if (label) {
+      if (!this._textNode) {
+        this._textNode = document.createTextNode("");
+        label.prepend(this._textNode);
+      }
+      if (this._contentSignal) {
+        this._setupSignalBinding();
+      } else {
+        this._setTextContent(this._content);
+      }
+      if (this.hasAttribute("for")) {
         label.setAttribute("for", this.getAttribute("for") || "");
       }
     }
@@ -1034,17 +3320,17 @@ var __runInitializers$o = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$o = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$o(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$o(target, name));
   __name$o(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$o(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$o(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$o(it) && (target = it);
   }
-  return __decoratorMetadata$o(array, target), desc && __defProp$o(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$o(array, target), desc && __defProp$o(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiButton_decorators, _init$o, _a$o;
 const STYLES$p = `
@@ -1095,22 +3381,64 @@ _SazamiButton_decorators = [component(buttonConfig)];
 class SazamiButton extends (_a$o = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this._disabledSignal = null;
+    this._disabledValue = false;
+    this._disabledDispose = null;
     this._handleClick = () => {
-      if (this.disabled || this.loading) return;
+      if (this._getIsDisabled()) return;
       this.dispatchEventTyped("click", {});
     };
     this._handleKeydown = (e) => {
-      if (this.disabled || this.loading) return;
+      if (this._getIsDisabled()) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         this.click();
       }
     };
   }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set disabled(value) {
+    if (this._disabledDispose) {
+      this._disabledDispose();
+      this._disabledDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = bindDisabled(this, value);
+      this._disabledDispose = dispose;
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabledValue;
+  }
+  _setDisabled(value) {
+    this._disabledValue = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  _getIsDisabled() {
+    let baseDisabled = false;
+    if (this._disabledSignal) {
+      baseDisabled = this._disabledSignal.get();
+    } else if (this._disabledValue) {
+      baseDisabled = true;
+    } else if (this.hasAttribute("disabled")) {
+      baseDisabled = true;
+    }
+    return baseDisabled || !!this.loading;
+  }
   render() {
     this.mount(STYLES$p, `<slot></slot>`);
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
-    const isInert = this.disabled || this.loading;
+    const isInert = this._getIsDisabled();
     if (isInert) {
       this.setAttribute("aria-disabled", "true");
       this.setAttribute("tabindex", "-1");
@@ -1246,17 +3574,17 @@ var __runInitializers$n = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$n = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$n(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$n(target, name));
   __name$n(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$n(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$n(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$n(it) && (target = it);
   }
-  return __decoratorMetadata$n(array, target), desc && __defProp$n(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$n(array, target), desc && __defProp$n(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiIconButton_decorators, _init$n, _a$n;
 const STYLES$o = `
@@ -1305,7 +3633,6 @@ ${INTERACTIVE_FOCUS}
 const iconButtonConfig = {
   properties: {
     icon: { type: "string", reflect: true },
-    disabled: { type: "boolean", reflect: true },
     size: { type: "string", reflect: true },
     variant: { type: "string", reflect: true }
   },
@@ -1319,8 +3646,9 @@ class SazamiIconButton extends (_a$n = SazamiComponent) {
     super(...arguments);
     this._handlersAdded = false;
     this._autoAriaLabel = false;
+    this._disabledSignal = null;
     this._handleClick = () => {
-      if (this.disabled) return;
+      if (this._getIsDisabled()) return;
       this.dispatchEventTyped("click", {});
     };
     this._handleKeydown = (e) => {
@@ -1329,6 +3657,34 @@ class SazamiIconButton extends (_a$n = SazamiComponent) {
         this._handleClick();
       }
     };
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set disabled(value) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
   }
   render() {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
@@ -1360,7 +3716,7 @@ class SazamiIconButton extends (_a$n = SazamiComponent) {
     }
   }
   _updateTabIndex() {
-    if (this.disabled) {
+    if (this._getIsDisabled()) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -1441,17 +3797,17 @@ var __runInitializers$m = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$m = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$m(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$m(target, name));
   __name$m(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$m(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$m(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$m(it) && (target = it);
   }
-  return __decoratorMetadata$m(array, target), desc && __defProp$m(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$m(array, target), desc && __defProp$m(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiInput_decorators, _init$m, _a$m;
 const STYLES$n = `
@@ -1483,12 +3839,11 @@ ${STATE_DISABLED}
 `;
 const inputConfig = {
   properties: {
-    value: { type: "string", reflect: true },
     placeholder: { type: "string", reflect: false },
     type: { type: "string", reflect: false },
-    disabled: { type: "boolean", reflect: true },
     size: { type: "string", reflect: false },
-    variant: { type: "string", reflect: false }
+    variant: { type: "string", reflect: false },
+    disabled: { type: "boolean", reflect: false }
   },
   events: {
     input: { name: "saz-input", detail: { value: "value" } }
@@ -1496,46 +3851,132 @@ const inputConfig = {
 };
 _SazamiInput_decorators = [component(inputConfig)];
 class SazamiInput extends (_a$m = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._valueSignal = null;
+    this._input = null;
+    this._valueEffectDisposer = null;
+    this._inputHandler = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set value(valueOrSignal) {
+    if (this._isReadableStr(valueOrSignal)) {
+      this._disposeValueBindings();
+      this._valueSignal = valueOrSignal;
+      if (this._input) {
+        this._input.value = valueOrSignal.get();
+        const dispose = effect(() => {
+          const val = valueOrSignal.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this._valueEffectDisposer = dispose;
+        this.onCleanup(dispose);
+        this._inputHandler = (e) => {
+          const target = e.target;
+          valueOrSignal.set(target.value);
+        };
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
+      }
+    } else {
+      this._disposeValueBindings();
+      this._valueSignal = null;
+      this._value = valueOrSignal;
+      if (this._input && this._input.value !== valueOrSignal) {
+        this._input.value = valueOrSignal || "";
+      }
+    }
+  }
+  _disposeValueBindings() {
+    if (this._valueEffectDisposer) {
+      this._valueEffectDisposer();
+      this._valueEffectDisposer = null;
+    }
+    if (this._inputHandler && this._input) {
+      this._input.removeEventListener("input", this._inputHandler);
+      this._inputHandler = null;
+    }
+  }
+  get value() {
+    if (this._valueSignal) return this._valueSignal.get();
+    if (this._value) return this._value;
+    if (this._input) return this._input.value;
+    return this.getAttribute("value") || "";
+  }
   render() {
+    this._disposeValueBindings();
     const placeholder = this.getAttribute("placeholder") || "";
     const type = this.getAttribute("type") || "text";
+    const initialValue = this._valueSignal ? this._valueSignal.get() : this.getAttribute("value") || this._value || "";
     this.mount(
       STYLES$n,
       `
-      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(this.value || "")}" ${this.disabled ? "disabled" : ""} />
+      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(initialValue)}" ${this.disabled ? "disabled" : ""} />
     `
     );
-    const input = this.$("input");
-    if (input) {
-      this.addHandler(
-        "input",
-        (e) => {
+    this._input = this.$("input");
+    if (this._input) {
+      this.removeAllHandlers({ type: "input", source: "internal" });
+      if (this._valueSignal) {
+        this._valueEffectDisposer = effect(() => {
+          const val = this._valueSignal.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this.onCleanup(this._valueEffectDisposer);
+        this._inputHandler = (e) => {
           const target = e.target;
-          this.value = target.value;
+          if (isSignal(this._valueSignal)) {
+            this._valueSignal.set(target.value);
+          }
           this.dispatchEventTyped("input", { value: target.value });
-        },
-        { internal: true, element: input }
-      );
+        };
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
+      } else {
+        this.addHandler(
+          "input",
+          (e) => {
+            const target = e.target;
+            this._value = target.value;
+            this.dispatchEventTyped("input", { value: target.value });
+          },
+          { internal: true, element: this._input }
+        );
+      }
     }
   }
   static get observedAttributes() {
     return ["value", "disabled", "placeholder", "type"];
   }
   attributeChangedCallback(name, oldVal, newVal) {
-    const input = this.$("input");
-    if (!input) return;
+    if (!this._input) return;
     if (name === "value") {
+      if (this._valueSignal) return;
       if (newVal === null) {
-        if (input.value !== "") input.value = "";
-      } else if (input.value !== newVal) {
-        input.value = newVal;
+        if (this._input.value !== "") this._input.value = "";
+      } else if (this._input.value !== newVal) {
+        this._input.value = newVal;
       }
     } else if (name === "disabled") {
-      input.disabled = newVal !== null;
+      this._input.disabled = newVal !== null;
     } else if (name === "placeholder") {
-      input.placeholder = newVal ?? "";
+      this._input.placeholder = newVal ?? "";
     } else if (name === "type") {
-      input.type = newVal ?? "text";
+      this._input.type = newVal ?? "text";
     }
   }
 }
@@ -1561,17 +4002,17 @@ var __runInitializers$l = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$l = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$l(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$l(target, name));
   __name$l(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$l(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$l(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$l(it) && (target = it);
   }
-  return __decoratorMetadata$l(array, target), desc && __defProp$l(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$l(array, target), desc && __defProp$l(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiCheckbox_decorators, _init$l, _a$l;
 const STYLES$m = `
@@ -1640,11 +4081,25 @@ _SazamiCheckbox_decorators = [component(checkboxConfig)];
 class SazamiCheckbox extends (_a$l = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this._checkedSignal = null;
+    this._disabledSignal = null;
     this._handleClick = () => {
-      if (this.disabled) return;
-      this.checked = !this.checked;
-      this._updateAria();
-      this.dispatchEventTyped("change", { checked: this.checked });
+      if (this._getIsDisabled()) return;
+      if (this._checkedSignal) {
+        if ("set" in this._checkedSignal) {
+          const newValue = !this._checkedSignal.get();
+          this._checkedSignal.set(newValue);
+          this._updateAria(newValue);
+          this.dispatchEventTyped("change", { checked: newValue });
+        } else {
+          this._updateAria();
+        }
+      } else {
+        const newValue = !(this._checked || false);
+        this._setChecked(newValue);
+        this._updateAria(newValue);
+        this.dispatchEventTyped("change", { checked: newValue });
+      }
     };
     this._handleKeydown = (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -1652,6 +4107,56 @@ class SazamiCheckbox extends (_a$l = SazamiComponent) {
         this._handleClick();
       }
     };
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set checked(value) {
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      this.bindAttribute(":host", "checked", value);
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+  get checked() {
+    return this._checkedSignal || this._checked || false;
+  }
+  _setChecked(value) {
+    this._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+    this._updateAria();
+  }
+  set disabled(value) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateAria();
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
   }
   render() {
     const label = this.textContent?.trim() || "";
@@ -1671,9 +4176,11 @@ class SazamiCheckbox extends (_a$l = SazamiComponent) {
     this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
-  _updateAria() {
-    this.setAttribute("aria-checked", this.checked ? "true" : "false");
-    if (this.disabled) {
+  _updateAria(checked) {
+    const isChecked = checked !== void 0 ? checked : this._checkedSignal ? this._checkedSignal.get() : !!this._checked;
+    const isDisabled = this._getIsDisabled();
+    this.setAttribute("aria-checked", isChecked ? "true" : "false");
+    if (isDisabled) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -1704,17 +4211,17 @@ var __runInitializers$k = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$k = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$k(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$k(target, name));
   __name$k(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$k(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$k(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$k(it) && (target = it);
   }
-  return __decoratorMetadata$k(array, target), desc && __defProp$k(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$k(array, target), desc && __defProp$k(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiToggle_decorators, _init$k, _a$k;
 const STYLES$l = `
@@ -1769,11 +4276,23 @@ _SazamiToggle_decorators = [component(toggleConfig)];
 class SazamiToggle extends (_a$k = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this._checkedSignal = null;
+    this._checkedBindingDispose = null;
+    this._disabledSignal = null;
+    this._disabledBindingDispose = null;
     this._handleClick = () => {
-      if (this.disabled) return;
-      this.checked = !this.checked;
-      this._updateAria();
-      this.dispatchEventTyped("change", { checked: this.checked });
+      if (this._getIsDisabled()) return;
+      const newValue = this._checkedSignal ? !this._checkedSignal.get() : !(this._checked || false);
+      if (this._checkedSignal) {
+        if ("set" in this._checkedSignal) {
+          this._checkedSignal.set(newValue);
+          this._updateAria();
+        }
+      } else {
+        this._setChecked(newValue);
+        this._updateAria();
+      }
+      this.dispatchEventTyped("change", { checked: newValue });
     };
     this._handleKeydown = (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -1781,6 +4300,70 @@ class SazamiToggle extends (_a$k = SazamiComponent) {
         this._handleClick();
       }
     };
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set checked(value) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+  get checked() {
+    return this._checkedSignal || this._checked || false;
+  }
+  _setChecked(value) {
+    this._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+    this._updateAria();
+  }
+  set disabled(value) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateAria();
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
   }
   render() {
     this.mount(
@@ -1796,8 +4379,10 @@ class SazamiToggle extends (_a$k = SazamiComponent) {
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
   _updateAria() {
-    this.setAttribute("aria-checked", this.checked ? "true" : "false");
-    if (this.disabled) {
+    const isChecked = this._checkedSignal ? this._checkedSignal.get() : !!this._checked;
+    const isDisabled = this._getIsDisabled();
+    this.setAttribute("aria-checked", isChecked ? "true" : "false");
+    if (isDisabled) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -1834,17 +4419,17 @@ var __runInitializers$j = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$j = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$j(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$j(target, name));
   __name$j(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$j(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$j(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$j(it) && (target = it);
   }
-  return __decoratorMetadata$j(array, target), desc && __defProp$j(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$j(array, target), desc && __defProp$j(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiImage_decorators, _init$j, _a$j;
 const STYLES$k = `
@@ -1868,7 +4453,6 @@ ${SHAPE_RULES}
 `;
 const imageConfig = {
   properties: {
-    src: { type: "string", reflect: true },
     alt: { type: "string", reflect: true },
     size: { type: "string", reflect: true },
     shape: { type: "string", reflect: true }
@@ -1876,17 +4460,95 @@ const imageConfig = {
 };
 _SazamiImage_decorators = [component(imageConfig)];
 class SazamiImage extends (_a$j = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._srcSignal = null;
+    this._imgElement = null;
+    this._pendingSrc = null;
+    this._srcDispose = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set src(value) {
+    if (this._isReadableStr(value)) {
+      this._srcSignal = value;
+      this._pendingSrc = null;
+      if (!this._imgElement) {
+        this._createImageElement();
+      }
+      this._setupSrcBinding();
+    } else {
+      this._srcSignal = null;
+      this._pendingSrc = value;
+      this._src = value;
+      this._updateSrc(value);
+    }
+  }
+  get src() {
+    return this._srcSignal || this._src || "";
+  }
+  _updateSrc(value) {
+    if (!value) {
+      if (this._srcDispose) {
+        this._srcDispose();
+        this._srcDispose = null;
+      }
+      this._imgElement = null;
+      return;
+    }
+    if (!this._imgElement) {
+      this._createImageElement();
+    }
+    if (this._imgElement) {
+      this._imgElement.src = value;
+    }
+  }
+  _createImageElement() {
+    const alt = this.alt || "";
+    const currentSrc = this._getCurrentSrc();
+    this.mountSync(
+      STYLES$k,
+      `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`
+    );
+    this._imgElement = this.$("img");
+  }
+  _setupSrcBinding() {
+    if (!this._imgElement) return;
+    if (this._srcDispose) {
+      this._srcDispose();
+    }
+    const dispose = bindProperty(this._imgElement, "src", this._srcSignal);
+    this._srcDispose = dispose;
+  }
+  _getCurrentSrc() {
+    if (this._srcSignal) return this._srcSignal.get();
+    if (this._pendingSrc !== void 0 && this._pendingSrc !== null)
+      return this._pendingSrc;
+    if (this._src !== void 0 && this._src !== null)
+      return this._src;
+    return this.getAttribute("src") || "";
+  }
   render() {
-    const src = this.src;
-    if (!src) {
-      this.mount(STYLES$k, "");
+    const currentSrc = this._getCurrentSrc();
+    if (!currentSrc) {
+      if (this._srcDispose) {
+        this._srcDispose();
+        this._srcDispose = null;
+      }
+      this._imgElement = null;
+      this.mountSync(STYLES$k, "");
       return;
     }
     const alt = this.alt || "";
-    this.mount(
+    this.mountSync(
       STYLES$k,
-      `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`
+      `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`
     );
+    this._imgElement = this.$("img");
+    if (this._srcSignal) {
+      this._setupSrcBinding();
+    }
   }
 }
 _init$j = __decoratorStart$j(_a$j);
@@ -1911,17 +4573,17 @@ var __runInitializers$i = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$i = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$i(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$i(target, name));
   __name$i(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$i(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$i(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$i(it) && (target = it);
   }
-  return __decoratorMetadata$i(array, target), desc && __defProp$i(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$i(array, target), desc && __defProp$i(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiCoverart_decorators, _init$i, _a$i;
 const STYLES$j = `
@@ -1948,7 +4610,6 @@ ${SHAPE_RULES}
 `;
 const coverartConfig = {
   properties: {
-    src: { type: "string", reflect: false },
     alt: { type: "string", reflect: false },
     size: { type: "string", reflect: false },
     shape: { type: "string", reflect: false }
@@ -1956,13 +4617,90 @@ const coverartConfig = {
 };
 _SazamiCoverart_decorators = [component(coverartConfig)];
 class SazamiCoverart extends (_a$i = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._srcSignal = null;
+    this._imgElement = null;
+    this._pendingSrc = null;
+    this._srcEffectDispose = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set src(value) {
+    if (this._isReadableStr(value)) {
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
+      this._srcSignal = value;
+      this._pendingSrc = null;
+      if (!this._imgElement) {
+        this.render();
+      } else {
+        this._setupSrcEffect();
+      }
+    } else {
+      this._srcSignal = null;
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
+      this._pendingSrc = value;
+      this._src = value;
+      if (!this._imgElement) {
+        this.render();
+      } else {
+        this._updateSrc(value);
+      }
+    }
+  }
+  get src() {
+    return this._srcSignal || this._src || "";
+  }
+  _updateSrc(value) {
+    if (this._imgElement) {
+      this._imgElement.src = value;
+    }
+  }
+  _setupSrcEffect() {
+    if (!this._srcSignal || !this._imgElement) return;
+    const dispose = effect(() => {
+      const src = this._srcSignal.get();
+      if (this._imgElement) {
+        this._imgElement.src = src;
+      }
+    });
+    this._srcEffectDispose = dispose;
+    this.onCleanup(dispose);
+  }
   render() {
-    const src = this.getAttribute("src") || this.textContent?.trim() || "";
+    const currentSrc = this._srcSignal ? this._srcSignal.get() : this._pendingSrc || this._src || this.getAttribute("src") || this.textContent?.trim() || "";
     const alt = this.getAttribute("alt") || "Cover art";
+    if (!currentSrc) {
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
+      this.mount(STYLES$j, "");
+      this._imgElement = null;
+      if (this._srcSignal) {
+        this._setupSrcEffect();
+      }
+      return;
+    }
     this.mount(
       STYLES$j,
-      src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />` : ""
+      `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`
     );
+    this._imgElement = this.$("img");
+    if (this._pendingSrc) {
+      this._updateSrc(this._pendingSrc);
+      this._pendingSrc = null;
+    }
+    if (this._srcSignal && this._imgElement) {
+      this._setupSrcEffect();
+    }
   }
 }
 _init$i = __decoratorStart$i(_a$i);
@@ -1987,17 +4725,17 @@ var __runInitializers$h = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$h = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$h(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$h(target, name));
   __name$h(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$h(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$h(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$h(it) && (target = it);
   }
-  return __decoratorMetadata$h(array, target), desc && __defProp$h(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$h(array, target), desc && __defProp$h(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiIcon_decorators, _init$h, _a$h;
 const STYLES$i = `
@@ -2034,16 +4772,112 @@ const iconConfig = {
 };
 _SazamiIcon_decorators = [component(iconConfig)];
 class SazamiIcon extends (_a$h = SazamiComponent) {
-  static get observedAttributes() {
-    return ["icon", "size", "variant"];
+  constructor() {
+    super(...arguments);
+    this._iconSignal = null;
+    this._iconElement = null;
+    this._iconEffectDispose = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set icon(value) {
+    if (this._isReadableStr(value)) {
+      this._iconSignal = value;
+      if (this._iconElement) {
+        this._setupIconBinding();
+      }
+    } else {
+      this._iconSignal = null;
+      if (this._iconEffectDispose) {
+        this._iconEffectDispose();
+        this._iconEffectDispose = null;
+      }
+      this._icon = value;
+      this._updateIcon(value);
+    }
+  }
+  get icon() {
+    return this._iconSignal || this._icon || "";
+  }
+  _updateIcon(iconName) {
+    if (!this._iconElement) return;
+    const svg = ICON_SVGS[iconName];
+    const isSvg = !!svg;
+    const currentIsSvg = this._iconElement.tagName.toLowerCase() === "svg";
+    if (isSvg !== currentIsSvg) {
+      const parent = this._iconElement.parentNode;
+      let newElement;
+      if (svg) {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        newElement = wrapper.firstElementChild;
+      } else {
+        newElement = document.createElement("span");
+        newElement.textContent = iconName;
+      }
+      parent?.replaceChild(newElement, this._iconElement);
+      this._iconElement = newElement;
+    } else if (svg) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = svg;
+      const newSvg = wrapper.firstElementChild;
+      this._iconElement.innerHTML = newSvg.innerHTML;
+    } else {
+      this._iconElement.textContent = iconName;
+    }
+  }
+  _setupIconBinding() {
+    if (!this._iconElement || !this._iconSignal) return;
+    if (this._iconEffectDispose) {
+      this._iconEffectDispose();
+    }
+    const sig = this._iconSignal;
+    const dispose = effect(() => {
+      const iconName = sig.get();
+      const svg = ICON_SVGS[iconName];
+      const isSvg = !!svg;
+      const currentEl = this._iconElement;
+      if (!currentEl) return;
+      const currentIsSvg = currentEl.tagName.toLowerCase() === "svg";
+      if (isSvg !== currentIsSvg) {
+        const parent = currentEl.parentNode;
+        let newElement;
+        if (svg) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = svg;
+          newElement = wrapper.firstElementChild;
+        } else {
+          newElement = document.createElement("span");
+          newElement.textContent = iconName;
+        }
+        parent?.replaceChild(newElement, currentEl);
+        this._iconElement = newElement;
+      } else if (svg) {
+        const parent = currentEl.parentNode;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        const newElement = wrapper.firstElementChild;
+        parent?.replaceChild(newElement, currentEl);
+        this._iconElement = newElement;
+      } else {
+        currentEl.textContent = iconName;
+      }
+    });
+    this._iconEffectDispose = dispose;
+    this.onCleanup(dispose);
   }
   render() {
-    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
-    const svg = ICON_SVGS[icon];
+    const iconName = this._iconSignal ? this._iconSignal.get() : this._icon || this.getAttribute("icon") || this.textContent?.trim() || "";
+    const svg = ICON_SVGS[iconName];
     if (svg) {
-      this.mount(STYLES$i, svg);
+      this.mountSync(STYLES$i, svg);
     } else {
-      this.mount(STYLES$i, `<span>${escapeHtml(icon)}</span>`);
+      this.mountSync(STYLES$i, `<span>${escapeHtml(iconName)}</span>`);
+    }
+    this._iconElement = this.shadowRoot?.querySelector("svg") || this.shadowRoot?.querySelector("span");
+    if (this._iconSignal) {
+      this._setupIconBinding();
     }
   }
 }
@@ -2069,17 +4903,17 @@ var __runInitializers$g = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$g = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$g(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$g(target, name));
   __name$g(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$g(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$g(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$g(it) && (target = it);
   }
-  return __decoratorMetadata$g(array, target), desc && __defProp$g(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$g(array, target), desc && __defProp$g(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiBadge_decorators, _init$g, _a$g;
 const STYLES$h = `
@@ -2109,8 +4943,52 @@ const badgeConfig = {
 };
 _SazamiBadge_decorators = [component(badgeConfig)];
 class SazamiBadge extends (_a$g = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._contentSignal = null;
+    this._textNode = null;
+    this._textContent = "";
+    this._contentDispose = null;
+  }
+  _isReadable(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set content(value) {
+    if (this._contentDispose) {
+      this._contentDispose();
+      this._contentDispose = null;
+    }
+    if (this._isReadable(value)) {
+      this._contentSignal = value;
+      if (this._textNode) {
+        const dispose = bindText(this._textNode, value);
+        this._contentDispose = dispose;
+        this.onCleanup(dispose);
+      }
+    } else {
+      this._contentSignal = null;
+      this._textContent = value;
+      if (this._textNode) {
+        this._textNode.textContent = value ?? "";
+      }
+    }
+  }
+  get content() {
+    return this._contentSignal || this._textContent;
+  }
   render() {
     this.mount(STYLES$h, `<slot></slot>`);
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      const initialText = this._contentSignal ? this._contentSignal.get() : this._textContent ?? "";
+      this._textNode = document.createTextNode(initialText);
+      slot.replaceWith(this._textNode);
+    }
+    if (this._contentSignal && !this._contentDispose) {
+      const dispose = bindText(this._textNode, this._contentSignal);
+      this._contentDispose = dispose;
+      this.onCleanup(dispose);
+    }
   }
 }
 _init$g = __decoratorStart$g(_a$g);
@@ -2135,17 +5013,17 @@ var __runInitializers$f = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$f = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$f(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$f(target, name));
   __name$f(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$f(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$f(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$f(it) && (target = it);
   }
-  return __decoratorMetadata$f(array, target), desc && __defProp$f(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$f(array, target), desc && __defProp$f(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiTag_decorators, _init$f, _a$f;
 const STYLES$g = `
@@ -2169,8 +5047,52 @@ const tagConfig = {
 };
 _SazamiTag_decorators = [component(tagConfig)];
 class SazamiTag extends (_a$f = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._content = "";
+    this._contentSignal = null;
+    this._textNode = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set content(value) {
+    if (this._isReadableStr(value)) {
+      this._contentSignal = value;
+      this._setupContentBinding();
+    } else {
+      this._contentSignal = null;
+      this._content = value;
+      this._updateContent(value);
+    }
+  }
+  get content() {
+    return this._contentSignal || this._content;
+  }
+  _updateContent(value) {
+    if (this._textNode) {
+      this._textNode.textContent = value ?? "";
+    }
+  }
+  _setupContentBinding() {
+    if (!this._textNode) return;
+    const dispose = bindText(this._textNode, this._contentSignal);
+    this.onCleanup(dispose);
+  }
   render() {
     this.mount(STYLES$g, `<slot></slot>`);
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      this._textNode = document.createTextNode("");
+      slot.replaceWith(this._textNode);
+    } else {
+      this._textNode = this.shadow.appendChild(document.createTextNode(""));
+    }
+    if (this._contentSignal) {
+      this._setupContentBinding();
+    } else {
+      this._updateContent(this._content);
+    }
   }
 }
 _init$f = __decoratorStart$f(_a$f);
@@ -2195,17 +5117,17 @@ var __runInitializers$e = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$e = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$e(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$e(target, name));
   __name$e(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$e(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$e(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$e(it) && (target = it);
   }
-  return __decoratorMetadata$e(array, target), desc && __defProp$e(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$e(array, target), desc && __defProp$e(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiDivider_decorators, _init$e, _a$e;
 const STYLES$f = `
@@ -2262,17 +5184,17 @@ var __runInitializers$d = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$d = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$d(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$d(target, name));
   __name$d(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$d(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$d(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$d(it) && (target = it);
   }
-  return __decoratorMetadata$d(array, target), desc && __defProp$d(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$d(array, target), desc && __defProp$d(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSpacer_decorators, _init$d, _a$d;
 const STYLES$e = `
@@ -2315,17 +5237,17 @@ var __runInitializers$c = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$c = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$c(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$c(target, name));
   __name$c(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$c(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$c(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$c(it) && (target = it);
   }
-  return __decoratorMetadata$c(array, target), desc && __defProp$c(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$c(array, target), desc && __defProp$c(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSection_decorators, _init$c, _a$c;
 const STYLES$d = `
@@ -2472,17 +5394,17 @@ var __runInitializers$b = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$b = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$b(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$b(target, name));
   __name$b(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$b(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$b(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$b(it) && (target = it);
   }
-  return __decoratorMetadata$b(array, target), desc && __defProp$b(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$b(array, target), desc && __defProp$b(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiModal_decorators, _init$b, _a$b;
 const STYLES$b = `
@@ -2568,6 +5490,10 @@ const modalConfig = {
 };
 _SazamiModal_decorators = [component(modalConfig)];
 class SazamiModal extends (_a$b = SazamiComponent) {
+  constructor() {
+    this.openSignal = void 0;
+    super(...arguments);
+  }
   render() {
     const title = escapeHtml(this.getAttribute("title") || "");
     this.mount(
@@ -2604,6 +5530,9 @@ class SazamiModal extends (_a$b = SazamiComponent) {
     this.onCleanup(
       () => document.removeEventListener("keydown", handleKeydown)
     );
+    if (this.openSignal) {
+      this.bindVisible(":host", this.openSignal);
+    }
   }
   _open() {
     this.setAttribute("open", "");
@@ -2644,17 +5573,17 @@ var __runInitializers$a = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$a = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$a(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$a(target, name));
   __name$a(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$a(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$a(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$a(it) && (target = it);
   }
-  return __decoratorMetadata$a(array, target), desc && __defProp$a(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$a(array, target), desc && __defProp$a(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSelect_decorators, _init$a, _a$a;
 const STYLES$a = `
@@ -2747,8 +5676,6 @@ ${INTERACTIVE_FOCUS}
 const selectConfig = {
   properties: {
     placeholder: { type: "string", reflect: true },
-    value: { type: "string", reflect: true },
-    disabled: { type: "boolean", reflect: true },
     open: { type: "boolean", reflect: true }
   },
   events: {
@@ -2764,11 +5691,100 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
   constructor() {
     super(...arguments);
     this._options = [];
+    this._valueSignal = null;
+    this._valueEffectDisposer = null;
+    this._valueBindingInitialized = false;
+    this._disabledSignal = null;
+    this._disabledEffectDisposer = null;
     this._handleDocumentClick = (e) => {
       if (!this.contains(e.target)) {
         this.open = false;
       }
     };
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set value(valueOrSignal) {
+    if (this._isReadableStr(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+      this._setupValueBinding();
+    } else {
+      this._valueSignal = null;
+      if (this._valueEffectDisposer) {
+        this._valueEffectDisposer();
+        this._valueEffectDisposer = null;
+      }
+      this._value = valueOrSignal;
+      this._updateDisplay();
+      this._updateSelectedState();
+    }
+  }
+  get value() {
+    return this._valueSignal || this._value || "";
+  }
+  _getValue() {
+    if (this._valueSignal) return this._valueSignal.get();
+    return this._value || this.getAttribute("value") || "";
+  }
+  _setupValueBinding() {
+    if (this._valueEffectDisposer) {
+      this._valueEffectDisposer();
+    }
+    const sig = this._valueSignal;
+    const self = this;
+    const dispose = effect(() => {
+      const val = sig.get();
+      self._value = val;
+      self._updateDisplay();
+      self._updateSelectedState();
+    });
+    this._valueEffectDisposer = dispose;
+    this._valueBindingInitialized = true;
+    this.onCleanup(dispose);
+  }
+  set disabled(value) {
+    if (this._disabledEffectDisposer) {
+      this._disabledEffectDisposer();
+      this._disabledEffectDisposer = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = effect(() => {
+        const disabled = value.get();
+        if (disabled) {
+          this.setAttribute("disabled", "");
+        } else {
+          this.removeAttribute("disabled");
+        }
+        this._updateTabIndex();
+      });
+      this._disabledEffectDisposer = dispose;
+      this.onCleanup(dispose);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateTabIndex();
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
   }
   connectedCallback() {
     super.connectedCallback();
@@ -2780,29 +5796,32 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
   }
   render() {
     const placeholder = this.getAttribute("placeholder") || "Select...";
-    const value = this.getAttribute("value") || "";
+    const currentValue = this._getValue();
     this._options = Array.from(this.querySelectorAll("option")).map((opt) => ({
       value: opt.getAttribute("value") || opt.textContent || "",
       label: opt.textContent || ""
     }));
-    const selectedOption = this._options.find((o) => o.value === value);
+    const selectedOption = this._options.find((o) => o.value === currentValue);
     this.mount(
       STYLES$a,
       `
-      <div class="trigger" role="combobox" tabindex="${this.disabled ? "-1" : "0"}" aria-haspopup="listbox" aria-expanded="${this.hasAttribute("open") ? "true" : "false"}">
+      <div class="trigger" role="combobox" tabindex="${this._getIsDisabled() ? "-1" : "0"}" aria-haspopup="listbox" aria-expanded="${this.hasAttribute("open") ? "true" : "false"}">
         <span class="value">${escapeHtml(selectedOption?.label || placeholder)}</span>
         ${ICON_SVGS["chevron-down"] || ""}
       </div>
       <div class="dropdown" role="listbox">
-        ${this._options.map((opt, i) => `<div class="option${opt.value === value ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === value}">${escapeHtml(opt.label)}</div>`).join("")}
+        ${this._options.map((opt, i) => `<div class="option${opt.value === currentValue ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === currentValue}">${escapeHtml(opt.label)}</div>`).join("")}
       </div>
     `
     );
     this._updateTabIndex();
     this._wireHandlers();
+    if (this._valueSignal && !this._valueBindingInitialized) {
+      this._setupValueBinding();
+    }
   }
   _wireHandlers() {
-    if (this.disabled) return;
+    if (this._getIsDisabled()) return;
     const trigger = this.$(".trigger");
     const dropdown = this.$(".dropdown");
     this.addHandler("click", () => this.toggleOpen(), {
@@ -2830,7 +5849,19 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
       const target = e.target;
       if (target.classList.contains("option")) {
         const newValue = target.getAttribute("data-value") || "";
-        this.value = newValue;
+        if (this._valueSignal) {
+          if ("set" in this._valueSignal) {
+            this._valueSignal.set(newValue);
+          } else {
+            this._value = newValue;
+            this._updateDisplay();
+            this._updateSelectedState();
+          }
+        } else {
+          this._value = newValue;
+          this._updateDisplay();
+          this._updateSelectedState();
+        }
         this.open = false;
         this.dispatchEventTyped("change", { value: newValue });
       }
@@ -2841,24 +5872,40 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
     });
   }
   toggleOpen() {
-    if (this.disabled) return;
+    if (this._getIsDisabled()) return;
     this.open = !this.open;
   }
   _navigateOption(delta) {
     if (!this._options || this._options.length === 0) return;
-    const currentIndex = this._options.findIndex((o) => o.value === this.value);
+    const currentValue = this._getValue();
+    const currentIndex = this._options.findIndex(
+      (o) => o.value === currentValue
+    );
     let newIndex = currentIndex + delta;
     if (newIndex < 0) newIndex = this._options.length - 1;
     if (newIndex >= this._options.length) newIndex = 0;
-    this.value = this._options[newIndex].value;
-    this._updateSelectedState();
-    this.dispatchEventTyped("change", { value: this.value });
+    const newValue = this._options[newIndex].value;
+    if (this._valueSignal) {
+      if ("set" in this._valueSignal) {
+        this._valueSignal.set(newValue);
+      } else {
+        this._value = newValue;
+        this._updateDisplay();
+        this._updateSelectedState();
+      }
+    } else {
+      this._value = newValue;
+      this._updateDisplay();
+      this._updateSelectedState();
+    }
+    this.dispatchEventTyped("change", { value: newValue });
   }
   _updateSelectedState() {
+    const currentValue = this._getValue();
     const options = this.shadow.querySelectorAll(".option");
     options.forEach((opt) => {
       const optValue = opt.getAttribute("data-value");
-      const isSelected = optValue === this.value;
+      const isSelected = optValue === currentValue;
       opt.classList.toggle("selected", isSelected);
       opt.setAttribute("aria-selected", String(isSelected));
     });
@@ -2866,7 +5913,8 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
   _updateDisplay() {
     const trigger = this.$(".trigger");
     const placeholder = this.getAttribute("placeholder") || "Select...";
-    const selectedOption = this._options.find((o) => o.value === this.value);
+    const currentValue = this._getValue();
+    const selectedOption = this._options.find((o) => o.value === currentValue);
     const valueEl = trigger?.querySelector(".value");
     if (valueEl) {
       valueEl.textContent = selectedOption?.label || placeholder;
@@ -2875,7 +5923,7 @@ class SazamiSelect extends (_a$a = SazamiComponent) {
   _updateTabIndex() {
     const trigger = this.$(".trigger");
     if (trigger) {
-      trigger.setAttribute("tabindex", this.disabled ? "-1" : "0");
+      trigger.setAttribute("tabindex", this._getIsDisabled() ? "-1" : "0");
     }
   }
   static get observedAttributes() {
@@ -2930,17 +5978,17 @@ var __runInitializers$9 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$9 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$9(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$9(target, name));
   __name$9(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$9(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$9(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$9(it) && (target = it);
   }
-  return __decoratorMetadata$9(array, target), desc && __defProp$9(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$9(array, target), desc && __defProp$9(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiTabs_decorators, _init$9, _a$9;
 const STYLES$9 = `
@@ -3012,6 +6060,7 @@ _SazamiTabs_decorators = [component(tabsConfig)];
 class SazamiTabs extends (_a$9 = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this.activeSignal = void 0;
     this._tabs = [];
     this._panelElements = [];
     this._handlersAdded = false;
@@ -3080,19 +6129,22 @@ class SazamiTabs extends (_a$9 = SazamiComponent) {
         });
       });
     }
+    if (this.activeSignal) {
+      this.bindAttribute(":host", "active", this.activeSignal);
+    }
   }
   _activateTab(index, emit = true) {
     const tabButtons = this.shadow.querySelectorAll(".tab");
-    tabButtons.forEach((b, j) => {
-      b.classList.toggle("active", j === index);
-      b.setAttribute(
+    tabButtons.forEach((b2, j2) => {
+      b2.classList.toggle("active", j2 === index);
+      b2.setAttribute(
         "aria-selected",
-        j === index ? "true" : "false"
+        j2 === index ? "true" : "false"
       );
     });
-    this._panelElements.forEach((p, j) => {
-      p.classList.toggle("active", j === index);
-      p.style.display = j === index ? "block" : "none";
+    this._panelElements.forEach((p2, j2) => {
+      p2.classList.toggle("active", j2 === index);
+      p2.style.display = j2 === index ? "block" : "none";
     });
     if (tabButtons[index]) {
       tabButtons[index].focus();
@@ -3138,17 +6190,17 @@ var __runInitializers$8 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$8 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$8(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$8(target, name));
   __name$8(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$8(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$8(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$8(it) && (target = it);
   }
-  return __decoratorMetadata$8(array, target), desc && __defProp$8(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$8(array, target), desc && __defProp$8(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSlider_decorators, _init$8, _a$8;
 const STYLES$8 = `
@@ -3232,11 +6284,9 @@ ${STATE_DISABLED}
 `;
 const sliderConfig = {
   properties: {
-    value: { type: "number", reflect: false, default: 50 },
     min: { type: "number", reflect: false, default: 0 },
     max: { type: "number", reflect: false, default: 100 },
     step: { type: "number", reflect: false, default: 1 },
-    disabled: { type: "boolean", reflect: true },
     size: { type: "string", reflect: false, default: "medium" }
   },
   events: {
@@ -3245,20 +6295,104 @@ const sliderConfig = {
 };
 _SazamiSlider_decorators = [component(sliderConfig)];
 class SazamiSlider extends (_a$8 = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._valueSignal = null;
+    this._disabledSignal = null;
+    this._sliderElement = null;
+    this._filledElement = null;
+    this._rangeMin = 0;
+    this._rangeMax = 100;
+  }
+  _isReadableNum(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set value(valueOrSignal) {
+    if (this._isReadableNum(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+      this._setupValueBinding();
+    } else {
+      this._valueSignal = null;
+      this._value = valueOrSignal;
+      this._updateSliderValue(valueOrSignal);
+    }
+  }
+  get value() {
+    return this._valueSignal || this._value || 50;
+  }
+  set disabled(value) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
+  }
+  _setupValueBinding() {
+    if (!this._sliderElement || !this._filledElement) return;
+    const slider = this._sliderElement;
+    const filled = this._filledElement;
+    const min = this._rangeMin;
+    const max = this._rangeMax;
+    const range = max - min;
+    this.onCleanup(
+      effect(() => {
+        const val = this._valueSignal.get();
+        if (slider.value !== String(val)) {
+          slider.value = String(val);
+        }
+        const percent = range !== 0 ? (val - min) / range * 100 : 0;
+        filled.style.width = `${percent}%`;
+      })
+    );
+  }
+  _updateSliderValue(value) {
+    if (this._sliderElement) {
+      this._sliderElement.value = String(value);
+    }
+    if (this._filledElement) {
+      const range = this._rangeMax - this._rangeMin;
+      const percent = range !== 0 ? (value - this._rangeMin) / range * 100 : 0;
+      this._filledElement.style.width = `${percent}%`;
+    }
+  }
   render() {
     let min = this.min;
     let max = this.max;
-    let value = this.value;
     let step = this.step;
     if (!Number.isFinite(min)) min = 0;
     if (!Number.isFinite(max)) max = 100;
-    if (!Number.isFinite(value)) value = 50;
     if (!Number.isFinite(step)) step = 1;
     if (step <= 0) step = 1;
     if (min > max) [min, max] = [max, min];
+    this._rangeMin = min;
+    this._rangeMax = max;
+    const currentValue = this._valueSignal ? this._valueSignal.get() : this._value || 50;
+    let value = Number(currentValue);
+    if (!Number.isFinite(value)) value = 50;
     if (value < min) value = min;
     if (value > max) value = max;
-    const disabled = this.disabled;
+    const disabled = this._getIsDisabled();
     const size = this.size || "medium";
     const sizes = {
       tiny: { track: "4px", thumb: "16px" },
@@ -3286,21 +6420,28 @@ class SazamiSlider extends (_a$8 = SazamiComponent) {
       </div>
     `
     );
-    const slider = this.$(".slider");
-    const filled = this.$(".filled");
-    if (slider) {
+    this._sliderElement = this.$(".slider");
+    this._filledElement = this.$(".filled");
+    if (this._sliderElement) {
       this.removeAllHandlers({ type: "input", source: "internal" });
       this.addHandler(
         "input",
         () => {
-          const val = parseFloat(slider.value);
+          const val = parseFloat(this._sliderElement.value);
           const pct = range !== 0 ? (val - min) / range * 100 : 0;
-          filled.style.width = `${pct}%`;
-          this.value = val;
+          this._filledElement.style.width = `${pct}%`;
+          if (this._valueSignal && "set" in this._valueSignal) {
+            this._valueSignal.set(val);
+          } else {
+            this._value = val;
+          }
           this.dispatchEventTyped("input", { value: val });
         },
-        { internal: true, element: slider }
+        { internal: true, element: this._sliderElement }
       );
+    }
+    if (this._valueSignal) {
+      this._setupValueBinding();
     }
   }
   static get observedAttributes() {
@@ -3319,8 +6460,9 @@ class SazamiSlider extends (_a$8 = SazamiComponent) {
       if (name === "value" || name === "min" || name === "max") {
         const min = this.min;
         const max = this.max;
-        if (this.value < min) this.value = min;
-        if (this.value > max) this.value = max;
+        const currentVal = this._value || 50;
+        if (currentVal < min) this.value = min;
+        if (currentVal > max) this.value = max;
       }
     } else if (name === "size") {
       this[name] = newVal ?? "";
@@ -3350,17 +6492,17 @@ var __runInitializers$7 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$7 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$7(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$7(target, name));
   __name$7(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$7(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$7(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$7(it) && (target = it);
   }
-  return __decoratorMetadata$7(array, target), desc && __defProp$7(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$7(array, target), desc && __defProp$7(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiRadio_decorators, _init$7, _a$7;
 const STYLES$7 = `
@@ -3410,8 +6552,6 @@ ${INTERACTIVE_FOCUS}
 `;
 const radioConfig = {
   properties: {
-    checked: { type: "boolean", reflect: true },
-    disabled: { type: "boolean", reflect: true },
     name: { type: "string", reflect: false },
     value: { type: "string", reflect: false }
   },
@@ -3424,9 +6564,15 @@ class SazamiRadio extends (_a$7 = SazamiComponent) {
   constructor() {
     super(...arguments);
     this._handlersInstalled = false;
+    this._checkedSignal = null;
+    this._checkedBindingDispose = null;
+    this._disabledSignal = null;
+    this._disabledBindingDispose = null;
     this._handleClick = () => {
-      if (this.disabled) return;
-      if (this.checked) return;
+      if (this._getIsDisabled()) return;
+      if (this._getIsChecked()) return;
+      const canWrite = !this._checkedSignal || "set" in this._checkedSignal;
+      if (!canWrite) return;
       const name = this.getAttribute("name") || "";
       const value = this.getAttribute("value") || "";
       const root = this.getRootNode();
@@ -3434,10 +6580,21 @@ class SazamiRadio extends (_a$7 = SazamiComponent) {
         const escapedName = CSS.escape(name);
         root.querySelectorAll(`saz-radio[name="${escapedName}"]`).forEach((el) => {
           if (el === this) return;
-          el.removeAttribute("checked");
+          const siblingSignal = el._checkedSignal;
+          if (siblingSignal && "set" in siblingSignal) {
+            siblingSignal.set(false);
+          } else {
+            el.checked = false;
+          }
         });
       }
-      this.checked = true;
+      if (this._checkedSignal) {
+        if ("set" in this._checkedSignal) {
+          this._checkedSignal.set(true);
+        }
+      } else {
+        this._setChecked(true);
+      }
       this._updateAria();
       this.dispatchEventTyped("change", { value });
     };
@@ -3447,6 +6604,73 @@ class SazamiRadio extends (_a$7 = SazamiComponent) {
         this._handleClick();
       }
     };
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set checked(value) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+  get checked() {
+    return this._checkedSignal || this._checked || false;
+  }
+  _setChecked(value) {
+    this._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+  }
+  set disabled(value) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
+  }
+  _getIsChecked() {
+    if (this._checkedSignal) return this._checkedSignal.get();
+    if (this.hasAttribute("checked")) return true;
+    return !!this._checked;
   }
   render() {
     const label = this.textContent?.trim() || "";
@@ -3466,8 +6690,8 @@ class SazamiRadio extends (_a$7 = SazamiComponent) {
     }
   }
   _updateAria() {
-    this.setAttribute("aria-checked", String(this.checked));
-    if (this.disabled) {
+    this.setAttribute("aria-checked", String(this._getIsChecked()));
+    if (this._getIsDisabled()) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -3512,17 +6736,17 @@ var __runInitializers$6 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$6 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$6(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$6(target, name));
   __name$6(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$6(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$6(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$6(it) && (target = it);
   }
-  return __decoratorMetadata$6(array, target), desc && __defProp$6(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$6(array, target), desc && __defProp$6(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSwitch_decorators, _init$6, _a$6;
 const STYLES$6 = `
@@ -3596,11 +6820,23 @@ _SazamiSwitch_decorators = [component(switchConfig)];
 class SazamiSwitch extends (_a$6 = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this._checkedSignal = null;
+    this._checkedBindingDispose = null;
+    this._disabledSignal = null;
+    this._disabledBindingDispose = null;
     this._handleClick = () => {
-      if (this.disabled) return;
-      this.checked = !this.checked;
-      this._updateAria();
-      this.dispatchEventTyped("change", { checked: this.checked });
+      if (this._getIsDisabled()) return;
+      const newValue = !this._getIsChecked();
+      if (this._checkedSignal) {
+        if ("set" in this._checkedSignal) {
+          this._checkedSignal.set(newValue);
+          this._updateAria();
+          this.dispatchEventTyped("change", { checked: newValue });
+        }
+      } else {
+        this._setChecked(newValue);
+        this.dispatchEventTyped("change", { checked: newValue });
+      }
     };
     this._handleKeydown = (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -3608,6 +6844,75 @@ class SazamiSwitch extends (_a$6 = SazamiComponent) {
         this._handleClick();
       }
     };
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set checked(value) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+  get checked() {
+    return this._checkedSignal || this._checked || false;
+  }
+  _setChecked(value) {
+    this._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+    this._updateAria();
+  }
+  set disabled(value) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+  get disabled() {
+    return this._disabledSignal || this._disabled || false;
+  }
+  _setDisabled(value) {
+    this._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateAria();
+  }
+  _getIsDisabled() {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if (this._disabled !== void 0) return !!this._disabled;
+    return this.hasAttribute("disabled");
+  }
+  _getIsChecked() {
+    if (this._checkedSignal) return this._checkedSignal.get();
+    if (this.hasAttribute("checked")) return true;
+    return !!this._checked;
   }
   render() {
     const label = this.textContent?.trim() || "";
@@ -3624,8 +6929,10 @@ class SazamiSwitch extends (_a$6 = SazamiComponent) {
     this.addHandler("keydown", this._handleKeydown, { internal: true });
   }
   _updateAria() {
-    this.setAttribute("aria-checked", String(this.checked));
-    if (this.disabled) {
+    const isChecked = this._getIsChecked();
+    const isDisabled = this._getIsDisabled();
+    this.setAttribute("aria-checked", String(isChecked));
+    if (isDisabled) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -3665,17 +6972,17 @@ var __runInitializers$5 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$5 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$5(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$5(target, name));
   __name$5(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$5(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$5(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$5(it) && (target = it);
   }
-  return __decoratorMetadata$5(array, target), desc && __defProp$5(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$5(array, target), desc && __defProp$5(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiToast_decorators, _init$5, _a$5;
 const STYLES$5 = `
@@ -3750,6 +7057,7 @@ _SazamiToast_decorators = [component(toastConfig)];
 class SazamiToast extends (_a$5 = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this.messageSignal = void 0;
     this._hideTimeout = void 0;
     this._removeTimeout = void 0;
     this._closeHandler = () => this.hide();
@@ -3799,6 +7107,9 @@ class SazamiToast extends (_a$5 = SazamiComponent) {
     const messageSpan = this.$(".message");
     if (messageSpan) {
       messageSpan.textContent = message;
+    }
+    if (this.messageSignal) {
+      this.bindText(".message", this.messageSignal);
     }
     if (showClose) {
       const closeBtn = this.$(".close-btn");
@@ -3866,17 +7177,17 @@ var __runInitializers$4 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$4 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$4(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$4(target, name));
   __name$4(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$4(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$4(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$4(it) && (target = it);
   }
-  return __decoratorMetadata$4(array, target), desc && __defProp$4(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$4(array, target), desc && __defProp$4(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiAvatar_decorators, _init$4, _a$4;
 const STYLES$4 = `
@@ -3912,28 +7223,207 @@ ${SHAPE_RULES}
 `;
 const avatarConfig = {
   properties: {
-    src: { type: "string", reflect: true },
     alt: { type: "string", reflect: true },
     initials: { type: "string", reflect: true },
     size: { type: "string", reflect: true },
-    shape: { type: "string", reflect: true }
+    shape: { type: "string", reflect: true },
+    src: { type: "string", reflect: true }
+  },
+  structuralRoots: {
+    image: "img",
+    initials: "span"
   }
 };
 _SazamiAvatar_decorators = [component(avatarConfig)];
 class SazamiAvatar extends (_a$4 = SazamiComponent) {
-  render() {
-    const src = this.getAttribute("src") || "";
+  constructor() {
+    super(...arguments);
+    this._srcSignal = null;
+    this._imgElement = null;
+    this._initialsElement = null;
+    this._srcDisposer = null;
+    this._modeEffectDisposer = null;
+    this._altObserver = null;
+    this._isImageMode = false;
+  }
+  getRenderMode() {
+    return this._isImageMode ? "image" : "initials";
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  _disposeSrcBinding() {
+    if (this._srcDisposer) {
+      this._srcDisposer();
+      this._srcDisposer = null;
+    }
+    if (this._modeEffectDisposer) {
+      this._modeEffectDisposer();
+      this._modeEffectDisposer = null;
+    }
+    if (this._altObserver) {
+      this._altObserver.disconnect();
+      this._altObserver = null;
+    }
+  }
+  _getCurrentSrc() {
+    if (this._srcSignal) return this._srcSignal.get();
+    if (this._src) return this._src;
+    return this.getAttribute("src") || "";
+  }
+  _isImageModeNow() {
+    return !!this._getCurrentSrc();
+  }
+  set src(value) {
+    this._isImageMode;
+    const hasReadable = this._isReadableStr(value);
+    if (hasReadable) {
+      this._srcSignal = value;
+      this._src = void 0;
+    } else {
+      this._srcSignal = null;
+      this._src = value;
+    }
+    const nowImageMode = this._isImageModeNow();
+    if (this._isImageMode !== nowImageMode) {
+      this._disposeSrcBinding();
+      this.render();
+      return;
+    }
+    if (nowImageMode && this._imgElement) {
+      this._disposeSrcBinding();
+      this._setupSrcBinding();
+      if (!this._srcSignal && this._imgElement) {
+        this._imgElement.src = this._src || "";
+        this._imgElement.alt = this.getAttribute("alt") || "";
+      }
+    } else if (!nowImageMode && this._initialsElement) {
+      this._disposeSrcBinding();
+      this._updateDisplay();
+      this._setupSignalWatcher();
+    } else if (!this._imgElement && !this._initialsElement) {
+      this.render();
+    }
+  }
+  get src() {
+    return this._srcSignal || this._src || "";
+  }
+  _setupSrcBinding() {
+    if (!this._imgElement || !this._srcSignal) return;
+    const img = this._imgElement;
+    const sig = this._srcSignal;
+    img.src = sig.get();
+    this._srcDisposer = bindProperty(img, "src", sig);
+    this.onCleanup(this._srcDisposer);
+    img.alt = this.getAttribute("alt") || "";
+    this._altObserver = new MutationObserver(() => {
+      img.alt = this.getAttribute("alt") || "";
+    });
+    this._altObserver.observe(this, {
+      attributes: true,
+      attributeFilter: ["alt"]
+    });
+    this.onCleanup(() => this._altObserver?.disconnect());
+    const checkModeChange = () => {
+      const currentSrc = sig.get();
+      const shouldBeImageMode = !!currentSrc;
+      if (this._isImageMode !== shouldBeImageMode) {
+        this._disposeSrcBinding();
+        this.render();
+      }
+    };
+    this._modeEffectDisposer = effect(() => {
+      sig.get();
+      checkModeChange();
+    });
+    this.onCleanup(this._modeEffectDisposer);
+  }
+  _updateDisplay() {
+    const currentSrc = this._getCurrentSrc();
     const alt = this.getAttribute("alt") || "";
-    const initialsAttr = this.getAttribute("initials") || "";
     const textContent = this.textContent?.trim() || "";
+    const initialsAttr = this.getAttribute("initials") || "";
     const initials = initialsAttr || this._getInitials(alt || textContent);
-    this.mount(
-      STYLES$4,
-      src ? `<img class="image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />` : `<span class="initials">${escapeHtml(initials)}</span>`
-    );
+    if (this._isImageMode) {
+      if (this._imgElement) {
+        this._imgElement.src = currentSrc;
+        this._imgElement.alt = alt;
+        this._imgElement.style.display = "block";
+      }
+      if (this._initialsElement) {
+        this._initialsElement.style.display = "none";
+      }
+    } else {
+      if (this._initialsElement) {
+        this._initialsElement.textContent = initials;
+        this._initialsElement.style.display = "";
+      }
+      if (this._imgElement) {
+        this._imgElement.style.display = "none";
+      }
+    }
+  }
+  render() {
+    const currentSrc = this._getCurrentSrc();
+    this._isImageMode = !!currentSrc;
+    if (this._isImageMode) {
+      this.mount(STYLES$4, `<img class="image" alt="" />`);
+      this._imgElement = this.$(".image");
+      this._initialsElement = null;
+      if (this._srcSignal) {
+        this._setupSrcBinding();
+      } else {
+        const currentSrc2 = this._getCurrentSrc();
+        if (currentSrc2 && this._imgElement) {
+          this._imgElement.src = currentSrc2;
+        }
+      }
+    } else {
+      this.mount(STYLES$4, `<span class="initials"></span>`);
+      this._imgElement = null;
+      this._initialsElement = this.$(".initials");
+      this._updateDisplay();
+      if (this._srcSignal) {
+        this._setupSignalWatcher();
+      }
+    }
+  }
+  _setupSignalWatcher() {
+    if (!this._srcSignal) return;
+    if (this._modeEffectDisposer) {
+      this._modeEffectDisposer();
+    }
+    const sig = this._srcSignal;
+    this._modeEffectDisposer = effect(() => {
+      const currentSrc = sig.get();
+      const shouldBeImageMode = !!currentSrc;
+      if (this._isImageMode !== shouldBeImageMode) {
+        this._disposeSrcBinding();
+        this.render();
+      }
+    });
+    this.onCleanup(this._modeEffectDisposer);
   }
   _getInitials(name) {
     return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
+  }
+  static get observedAttributes() {
+    return ["src", "alt", "size", "shape", "initials"];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === "src" && oldValue !== newValue) {
+      this._src = newValue || "";
+      if (!this._srcSignal) {
+        const wasImageMode = this._isImageMode;
+        const nowImageMode = !!this._getCurrentSrc();
+        if (wasImageMode !== nowImageMode) {
+          this.render();
+        } else {
+          this._updateDisplay();
+        }
+      }
+    }
   }
 }
 _init$4 = __decoratorStart$4(_a$4);
@@ -3958,17 +7448,17 @@ var __runInitializers$3 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$3 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$3(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$3(target, name));
   __name$3(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$3(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$3(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$3(it) && (target = it);
   }
-  return __decoratorMetadata$3(array, target), desc && __defProp$3(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$3(array, target), desc && __defProp$3(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiChip_decorators, _init$3, _a$3;
 const STYLES$3 = `
@@ -4067,6 +7557,8 @@ _SazamiChip_decorators = [component(chipConfig)];
 class SazamiChip extends (_a$3 = SazamiComponent) {
   constructor() {
     super(...arguments);
+    this.disabledSignal = void 0;
+    this.selectedSignal = void 0;
     this._handleClick = () => {
       if (this.disabled) return;
       this.selected = !this.selected;
@@ -4106,6 +7598,12 @@ class SazamiChip extends (_a$3 = SazamiComponent) {
     }
     this.addHandler("click", this._handleClick, { internal: true });
     this.addHandler("keydown", this._handleKeydown, { internal: true });
+    if (this.disabledSignal) {
+      this.bindDisabled(":host", this.disabledSignal);
+    }
+    if (this.selectedSignal) {
+      this.bindAttribute(":host", "selected", this.selectedSignal);
+    }
   }
   _updateTabIndex() {
     if (this.disabled) {
@@ -4139,17 +7637,17 @@ var __runInitializers$2 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$2 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$2(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$2(target, name));
   __name$2(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$2(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$2(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$2(it) && (target = it);
   }
-  return __decoratorMetadata$2(array, target), desc && __defProp$2(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$2(array, target), desc && __defProp$2(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiSpinner_decorators, _init$2, _a$2;
 const STYLES$2 = `
@@ -4201,14 +7699,64 @@ const STYLES$2 = `
 const spinnerConfig = {
   properties: {
     size: { type: "string", reflect: true },
-    variant: { type: "string", reflect: true },
-    label: { type: "string", reflect: true }
+    variant: { type: "string", reflect: true }
   }
 };
 _SazamiSpinner_decorators = [component(spinnerConfig)];
 class SazamiSpinner extends (_a$2 = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._labelSignal = null;
+    this._visibleSignal = null;
+    this._labelElement = null;
+  }
+  _isReadableStr(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  _isReadableBool(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set label(value) {
+    if (this._isReadableStr(value)) {
+      this._labelSignal = value;
+    } else {
+      this._labelSignal = null;
+      this._label = value;
+      this._updateLabel(value);
+    }
+  }
+  get label() {
+    if (this._labelSignal) return this._labelSignal;
+    return this._label || "";
+  }
+  set visible(value) {
+    if (this._isReadableBool(value)) {
+      this._visibleSignal = value;
+      this.bindVisible(":host", value);
+    } else {
+      this._visibleSignal = null;
+      if (value) {
+        this.setAttribute("visible", "");
+      } else {
+        this.removeAttribute("visible");
+      }
+    }
+  }
+  get visible() {
+    return this._visibleSignal || this.hasAttribute("visible");
+  }
+  _updateLabel(value) {
+    if (this._labelElement) {
+      this._labelElement.textContent = value;
+    }
+  }
+  _setupLabelBinding() {
+    if (!this._labelElement) return;
+    const dispose = bindText(this._labelElement, this._labelSignal);
+    this.onCleanup(dispose);
+  }
   render() {
-    const label = this.label || "Loading...";
+    const labelText = this._labelSignal ? this._labelSignal.get() : this._label ?? "Loading...";
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "status");
     }
@@ -4222,9 +7770,12 @@ class SazamiSpinner extends (_a$2 = SazamiComponent) {
       <span class="label"></span>
     `
     );
-    const labelSpan = this.$(".label");
-    if (labelSpan) {
-      labelSpan.textContent = label;
+    this._labelElement = this.$(".label");
+    if (this._labelElement) {
+      this._labelElement.textContent = labelText;
+      if (this._labelSignal) {
+        this._setupLabelBinding();
+      }
     }
   }
 }
@@ -4250,17 +7801,17 @@ var __runInitializers$1 = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement$1 = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc$1(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc$1(target, name));
   __name$1(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext$1(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext$1(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn$1(it) && (target = it);
   }
-  return __decoratorMetadata$1(array, target), desc && __defProp$1(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata$1(array, target), desc && __defProp$1(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiProgress_decorators, _init$1, _a$1;
 const STYLES$1 = `
@@ -4298,7 +7849,6 @@ const STYLES$1 = `
 `;
 const progressConfig = {
   properties: {
-    value: { type: "number", reflect: true, default: 0 },
     max: { type: "number", reflect: true, default: 100 },
     min: { type: "number", reflect: true, default: 0 },
     size: { type: "string", reflect: true },
@@ -4308,17 +7858,88 @@ const progressConfig = {
 };
 _SazamiProgress_decorators = [component(progressConfig)];
 class SazamiProgress extends (_a$1 = SazamiComponent) {
+  constructor() {
+    super(...arguments);
+    this._valueSignal = null;
+    this._barElement = null;
+    this._rangeMin = 0;
+    this._rangeMax = 100;
+    this._valueBindingCleanup = null;
+  }
+  _isReadableNum(value) {
+    return isSignal(value) || value instanceof Derived;
+  }
+  set value(valueOrSignal) {
+    if (this._isReadableNum(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+      if (this._barElement) {
+        this._setupValueBinding();
+      }
+    } else {
+      this._valueSignal = null;
+      if (this._valueBindingCleanup) {
+        this._valueBindingCleanup();
+        this._valueBindingCleanup = null;
+      }
+      this._value = valueOrSignal;
+      this._updateBarWidth(valueOrSignal);
+    }
+  }
+  get value() {
+    return this._valueSignal || this._value || 0;
+  }
+  _setupValueBinding() {
+    if (!this._barElement || !this._valueSignal) return;
+    if (this._valueBindingCleanup) {
+      this._valueBindingCleanup();
+    }
+    const cleanups = [];
+    const widthDisposer = this.bindWidthPercent(
+      ".bar",
+      this._valueSignal,
+      this._rangeMin,
+      this._rangeMax
+    );
+    cleanups.push(widthDisposer);
+    const ariaDisposer = effect(() => {
+      const val = this._valueSignal.get();
+      if (this.hasAttribute("indeterminate")) {
+        this.removeAttribute("aria-valuenow");
+        return;
+      }
+      const range = this._rangeMax - this._rangeMin;
+      const clamped = range > 0 ? Math.min(this._rangeMax, Math.max(this._rangeMin, val)) : void 0;
+      if (clamped !== void 0) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
+    });
+    cleanups.push(ariaDisposer);
+    this._valueBindingCleanup = () => {
+      cleanups.forEach((fn) => fn());
+    };
+    this.onCleanup(this._valueBindingCleanup);
+  }
+  _updateBarWidth(value) {
+    if (this._barElement) {
+      const range = this._rangeMax - this._rangeMin;
+      const percent = range > 0 ? Math.min(100, Math.max(0, (value - this._rangeMin) / range * 100)) : 0;
+      this._barElement.style.width = `${percent}%`;
+    }
+  }
   render() {
-    const rawValue = Number(this.getAttribute("value") || "50");
+    const rawValue = this._valueSignal ? this._valueSignal.get() : this._value ?? Number(this.getAttribute("value") || "50");
     const rawMax = Number(this.getAttribute("max") || "100");
     const rawMin = Number(this.getAttribute("min") || "0");
     const value = Number.isFinite(rawValue) ? rawValue : 50;
     const max = Number.isFinite(rawMax) ? rawMax : 100;
     const min = Number.isFinite(rawMin) ? rawMin : 0;
     const indeterminate = this.hasAttribute("indeterminate");
+    this._rangeMin = min;
+    this._rangeMax = max;
     const range = max - min;
     const percent = range > 0 ? Math.min(100, Math.max(0, (value - min) / range * 100)) : 0;
-    const clampedValue = min + percent / 100 * range;
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "progressbar");
     }
@@ -4327,9 +7948,14 @@ class SazamiProgress extends (_a$1 = SazamiComponent) {
     if (indeterminate) {
       this.removeAttribute("aria-valuenow");
     } else {
-      this.setAttribute("aria-valuenow", String(Math.round(clampedValue)));
+      const clamped = range > 0 ? Math.min(max, Math.max(min, value)) : void 0;
+      if (clamped !== void 0) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
     }
-    this.mount(
+    this.mountSync(
       STYLES$1,
       `
       <div class="track">
@@ -4337,11 +7963,16 @@ class SazamiProgress extends (_a$1 = SazamiComponent) {
       </div>
     `
     );
+    this._barElement = this.$(".bar");
+    if (this._valueSignal && this._barElement) {
+      this._setupValueBinding();
+    }
   }
   static get observedAttributes() {
     return ["value", "max", "min", "indeterminate"];
   }
-  attributeChangedCallback() {
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue) return;
     this.render();
   }
 }
@@ -4367,17 +7998,17 @@ var __runInitializers = (array, flags, self, value) => {
   return value;
 };
 var __decorateElement = (array, flags, name, decorators, target, extra) => {
-  var it, done, ctx, k = flags & 7, p = false;
-  var j = 0;
-  var extraInitializers = array[j] || (array[j] = []);
-  var desc = k && (target = target.prototype, k < 5 && (k > 3 || !p) && __getOwnPropDesc(target, name));
+  var it, done, ctx, k2 = flags & 7, p2 = false;
+  var j2 = 0;
+  var extraInitializers = array[j2] || (array[j2] = []);
+  var desc = k2 && (target = target.prototype, k2 < 5 && (k2 > 3 || !p2) && __getOwnPropDesc(target, name));
   __name(target, name);
   for (var i = decorators.length - 1; i >= 0; i--) {
-    ctx = __decoratorContext(k, name, done = {}, array[3], extraInitializers);
+    ctx = __decoratorContext(k2, name, done = {}, array[3], extraInitializers);
     it = (0, decorators[i])(target, ctx), done._ = 1;
     __expectFn(it) && (target = it);
   }
-  return __decoratorMetadata(array, target), desc && __defProp(target, name, desc), p ? k ^ 4 ? extra : desc : target;
+  return __decoratorMetadata(array, target), desc && __defProp(target, name, desc), p2 ? k2 ^ 4 ? extra : desc : target;
 };
 var _SazamiAccordion_decorators, _init, _a;
 const STYLES = `
@@ -4647,17 +8278,22 @@ function getTag(name) {
   return entry.tag;
 }
 const ICON_COMPONENTS = /* @__PURE__ */ new Set(["saz-icon", "saz-icon-button"]);
+function serializeValue(value) {
+  if (typeof value === "string") return value;
+  return value.parts.map((p2) => p2.value).join("");
+}
 function transformAST(node) {
   if (node.type === "inline") {
     const tag = getTag(node.name);
     const props = parseModifiers(node.modifiers);
+    const value = typeof node.value === "string" ? node.value : serializeValue(node.value);
     if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {
-      props.icon = node.value;
+      props.icon = typeof node.value === "string" ? node.value : serializeValue(node.value);
     }
     return {
       type: tag,
       props,
-      children: [node.value]
+      children: [value]
     };
   }
   if (node.type === "element") {
@@ -4762,8 +8398,8 @@ function enableCurvomorphism(element, options = {}) {
   const radiusType = options.radius || "medium";
   let radiusValue = "12px";
   if (typeof window !== "undefined" && window.getComputedStyle) {
-    const v = window.getComputedStyle(document.documentElement).getPropertyValue(`--saz-radius-${radiusType}`);
-    if (v && v.trim()) radiusValue = v.trim();
+    const v2 = window.getComputedStyle(document.documentElement).getPropertyValue(`--saz-radius-${radiusType}`);
+    if (v2 && v2.trim()) radiusValue = v2.trim();
   }
   const apply = () => {
     const cachedCenter = options.centerX === void 0 || options.centerY === void 0 ? findCenter(element) : { x: 0, y: 0 };
@@ -4789,6 +8425,66 @@ function enableCurvomorphism(element, options = {}) {
       window.removeEventListener("resize", apply);
     }
   };
+}
+let logger = null;
+function getLogger(scope) {
+  if (!logger) {
+    try {
+      const satori = require("@nisoku/satori");
+      const s = satori.createSatori({ logLevel: "error", enableConsole: true });
+      logger = s.createLogger(scope);
+    } catch {
+      logger = {
+        info: (msg, opts) => console.log(`[${scope}] ${msg}`, opts),
+        warn: (msg, opts) => console.warn(`[${scope}] ${msg}`, opts),
+        error: (msg, opts) => console.error(`[${scope}] ${msg}`, opts)
+      };
+    }
+  }
+  return logger;
+}
+function tokenizerError(message, options) {
+  const log = getLogger("sakko");
+  log.error(message, {
+    state: {
+      position: options.position,
+      line: options.line,
+      column: options.column
+    },
+    suggest: options.suggestion,
+    tags: ["tokenizer", "error"]
+  });
+}
+function parserError(message, options) {
+  const log = getLogger("sakko");
+  log.error(message, {
+    state: { line: options.line, column: options.column },
+    suggest: options.suggestion,
+    cause: options.cause,
+    tags: ["parser", "error"]
+  });
+}
+function handleEscapeSequence(esc) {
+  switch (esc) {
+    case "n":
+      return "\n";
+    case "t":
+      return "	";
+    case "r":
+      return "\r";
+    case '"':
+      return '"';
+    case "'":
+      return "'";
+    case "`":
+      return "`";
+    case "\\":
+      return "\\";
+    case "$":
+      return "$";
+    default:
+      return "\\" + esc;
+  }
 }
 function tokenize(input) {
   const tokens = [];
@@ -4838,7 +8534,13 @@ function tokenize(input) {
       "]": "RBRACKET",
       ":": "COLON",
       ";": "SEMI",
-      ",": "COMMA"
+      ",": "COMMA",
+      "@": "AT",
+      "=": "EQUALS",
+      ".": "DOT",
+      "+": "PLUS",
+      "-": "MINUS",
+      "*": "STAR"
     };
     if (SYMBOLS[ch]) {
       tokens.push({ type: SYMBOLS[ch], value: ch, line, col });
@@ -4850,8 +8552,40 @@ function tokenize(input) {
       const startCol = col;
       i++;
       col++;
+      let scanEnd = i;
+      while (scanEnd < input.length && input[scanEnd] !== '"') {
+        if (input[scanEnd] === "\\" && scanEnd + 1 < input.length) {
+          scanEnd += 2;
+        } else {
+          scanEnd++;
+        }
+      }
+      const literalContent = input.slice(i, scanEnd);
+      const hasInterpolation = /\{[\s\S]*?\}/.test(literalContent);
+      if (hasInterpolation) {
+        const result = tokenizeStringWithInterpolation(
+          input,
+          i,
+          line,
+          col,
+          startCol
+        );
+        tokens.push(...result.tokens);
+        i = result.endIndex + 1;
+        line = result.endLine;
+        col = result.endCol + 1;
+        continue;
+      }
       let str = "";
       while (i < input.length && input[i] !== '"') {
+        if (input[i] === "\\" && i + 1 < input.length) {
+          i++;
+          col++;
+          str += handleEscapeSequence(input[i]);
+          i++;
+          col++;
+          continue;
+        }
         if (input[i] === "\n") {
           line++;
           col = 1;
@@ -4862,6 +8596,12 @@ function tokenize(input) {
         i++;
       }
       if (i >= input.length) {
+        tokenizerError("Unterminated string", {
+          position: i,
+          line,
+          column: startCol,
+          suggestion: 'Add a closing quote "'
+        });
         throw new Error(`Unterminated string at line ${line}, col ${startCol}`);
       }
       i++;
@@ -4880,9 +8620,314 @@ function tokenize(input) {
       tokens.push({ type: "IDENT", value: ident, line, col: startCol });
       continue;
     }
+    tokenizerError(`Unexpected character: ${ch}`, {
+      position: i,
+      line,
+      column: col,
+      suggestion: `Remove or escape this character`
+    });
     throw new Error(`Unexpected character: ${ch} at line ${line}, col ${col}`);
   }
   return tokens;
+}
+function tokenizeStringWithInterpolation(input, startIndex, line, col, originalStartCol) {
+  const tokens = [];
+  let i = startIndex;
+  let currentLine = line;
+  let currentCol = col;
+  let textBuffer = "";
+  let textStartCol = currentCol;
+  while (i < input.length && input[i] !== '"') {
+    if (input[i] === "{") {
+      if (textBuffer) {
+        tokens.push({
+          type: "STRING",
+          value: textBuffer,
+          line: currentLine,
+          col: textStartCol
+        });
+        textBuffer = "";
+      }
+      tokens.push({
+        type: "INTERP_START",
+        value: "{",
+        line: currentLine,
+        col: currentCol
+      });
+      i++;
+      currentCol++;
+      let expr = "";
+      let braceDepth = 1;
+      const exprStartCol = currentCol;
+      while (i < input.length && braceDepth > 0) {
+        if (input[i] === "{") braceDepth++;
+        if (input[i] === "}") braceDepth--;
+        if (braceDepth > 0) {
+          expr += input[i];
+        }
+        if (input[i] === "\n") {
+          currentLine++;
+          currentCol = 1;
+        } else {
+          currentCol++;
+        }
+        i++;
+      }
+      if (braceDepth > 0) {
+        tokenizerError("Unterminated interpolation expression", {
+          position: i,
+          line: currentLine,
+          column: exprStartCol,
+          suggestion: "Add a closing brace '}'"
+        });
+        throw new Error(`Unterminated interpolation expression at line ${currentLine}, col ${exprStartCol}`);
+      }
+      tokens.push({
+        type: "EXPR",
+        value: expr.trim(),
+        line: currentLine,
+        col: exprStartCol
+      });
+      tokens.push({
+        type: "INTERP_END",
+        value: "}",
+        line: currentLine,
+        col: currentCol - 1
+      });
+      textStartCol = currentCol;
+      continue;
+    }
+    if (input[i] === "\\" && i + 1 < input.length) {
+      i++;
+      currentCol++;
+      textBuffer += handleEscapeSequence(input[i]);
+      currentCol++;
+      i++;
+      continue;
+    }
+    textBuffer += input[i];
+    if (input[i] === "\n") {
+      currentLine++;
+      currentCol = 1;
+    } else {
+      currentCol++;
+    }
+    i++;
+  }
+  if (i >= input.length) {
+    tokenizerError("Unterminated string", {
+      position: i,
+      line: currentLine,
+      column: originalStartCol,
+      suggestion: 'Add a closing quote "'
+    });
+    throw new Error(`Unterminated string at line ${currentLine}, col ${originalStartCol}`);
+  }
+  if (textBuffer.length > 0 || tokens.length === 0) {
+    tokens.push({
+      type: "STRING",
+      value: textBuffer,
+      line: currentLine,
+      col: textStartCol
+    });
+  }
+  return {
+    tokens,
+    endIndex: i,
+    endLine: currentLine,
+    endCol: currentCol
+  };
+}
+function parseStateDeclaration(parser, atToken) {
+  const hasBraces = parser.check("LBRACE");
+  if (hasBraces) parser.consume();
+  const declarations = [];
+  while (true) {
+    if (!parser.peek()) break;
+    if (hasBraces && parser.check("RBRACE")) {
+      parser.consume();
+      break;
+    }
+    if (parser.check("IDENT") && parser.peek()?.value === "const") {
+      parser.consume();
+      const nextToken = parser.peek();
+      if (!nextToken || nextToken.type !== "IDENT") {
+        throw parser.errorAt("Expected identifier after 'const'", nextToken);
+      }
+    }
+    const varToken = parser.peek();
+    const isVarDecl = varToken?.type === "IDENT" && parser.peekAheadIs("EQUALS");
+    if (!isVarDecl) {
+      if (declarations.length === 0) {
+        throw parser.errorAt("Expected variable declaration", varToken);
+      }
+      break;
+    }
+    parser.consume();
+    const varName = varToken.value;
+    parser.expect("EQUALS");
+    const valueExpr = parser.parseExpression();
+    declarations.push({ name: varName, value: valueExpr });
+    if (parser.check("SEMI") || parser.check("COMMA")) {
+      parser.consume();
+    }
+  }
+  return {
+    type: "state",
+    declarations,
+    line: atToken.line,
+    col: atToken.col
+  };
+}
+function parseEffectDeclaration(parser, atToken) {
+  const hasBraces = parser.check("LBRACE");
+  if (!hasBraces) {
+    throw parser.errorAt("@effect requires a braced block", atToken);
+  }
+  parser.consume();
+  const body = parser.parseBlockBody();
+  parser.expect("RBRACE");
+  return {
+    type: "effect",
+    body,
+    line: atToken.line,
+    col: atToken.col
+  };
+}
+function parseDerivedDeclaration(parser, atToken) {
+  const hasBraces = parser.check("LBRACE");
+  if (hasBraces) parser.consume();
+  const declarations = [];
+  while (true) {
+    if (!parser.peek()) break;
+    if (hasBraces && parser.check("RBRACE")) {
+      parser.consume();
+      break;
+    }
+    if (parser.check("IDENT") && parser.peek()?.value === "const") {
+      parser.consume();
+    }
+    const varToken = parser.peek();
+    if (!varToken || varToken.type !== "IDENT") {
+      break;
+    }
+    parser.consume();
+    const varName = varToken.value;
+    if (parser.check("EQUALS")) {
+      parser.consume();
+      const expr = parser.parseExpression();
+      declarations.push({ name: varName, expr });
+      if (parser.check("SEMI") || parser.check("COMMA")) {
+        parser.consume();
+      }
+    } else {
+      break;
+    }
+  }
+  return {
+    type: "derived",
+    declarations,
+    line: atToken.line,
+    col: atToken.col
+  };
+}
+function parseAtcodeDeclaration(parser, atToken) {
+  const nameToken = parser.peek();
+  if (!nameToken || nameToken.type !== "IDENT") {
+    throw parser.errorAt("Expected identifier after @", atToken);
+  }
+  const name = parser.consume().value;
+  if (name === "state") {
+    return parseStateDeclaration(parser, atToken);
+  }
+  if (name === "effect") {
+    return parseEffectDeclaration(parser, atToken);
+  }
+  if (name === "derived") {
+    return parseDerivedDeclaration(parser, atToken);
+  }
+  throw new Error(
+    `Unknown atcode '@${name}' at line ${atToken.line}, col ${atToken.col}`
+  );
+}
+function parseEventHandler(parser, eventName, eventToken) {
+  if (parser.check("LBRACE")) {
+    parser.consume();
+    const handler = parser.parseBlockBody();
+    parser.expect("RBRACE");
+    return handler;
+  }
+  throw parser.errorAt(
+    `Event handlers must use block syntax: @on:${eventName} { ... }`,
+    eventToken || parser.peek()
+  );
+}
+const EVENT_NAMES = /* @__PURE__ */ new Set([
+  "click",
+  "mouseenter",
+  "mouseleave",
+  "keydown",
+  "keyup",
+  "input",
+  "change",
+  "submit",
+  "focus",
+  "blur",
+  "dblclick",
+  "mousedown",
+  "mouseup",
+  "drag",
+  "drop",
+  "touchstart",
+  "touchend"
+]);
+function parseInlineModifier(parser) {
+  const nameToken = parser.expect("IDENT");
+  const name = nameToken.value;
+  if (name === "on") {
+    parser.expect("COLON");
+    const eventToken = parser.expect("IDENT");
+    const event = eventToken.value;
+    const handler = parseEventHandler(parser, event, eventToken);
+    return {
+      type: "event",
+      event,
+      handler
+    };
+  }
+  if (EVENT_NAMES.has(name)) {
+    const event = name;
+    let handler = "";
+    if (parser.check("IDENT")) {
+      handler = parser.consume().value;
+    } else {
+      handler = parseEventHandler(parser, event, nameToken);
+    }
+    return {
+      type: "event",
+      event,
+      handler
+    };
+  }
+  if (name === "class") {
+    parser.expect("COLON");
+    const classToken = parser.expect("IDENT");
+    return {
+      type: "atcode",
+      name: "class",
+      body: classToken.value
+    };
+  }
+  if (name === "bind") {
+    parser.expect("EQUALS");
+    const signal = parser.check("STRING") ? parser.consume().value : parser.expect("IDENT").value;
+    return {
+      type: "atcode",
+      name: "bind",
+      body: signal
+    };
+  }
+  throw parser.errorAt(`Unknown modifier: @${name}`, nameToken);
 }
 const KNOWN_KEYS = /* @__PURE__ */ new Set([
   "cols",
@@ -4919,6 +8964,11 @@ class Parser {
     this.source = source || "";
   }
   errorAt(msg, token) {
+    parserError(msg, {
+      line: token?.line,
+      column: token?.col,
+      suggestion: this._getSuggestion(msg)
+    });
     if (!token || !this.source) return new Error(msg);
     const lines = this.source.split("\n");
     const lineText = lines[token.line - 1] || "";
@@ -4929,8 +8979,21 @@ class Parser {
   ${pointer}`
     );
   }
+  _getSuggestion(msg) {
+    if (msg.includes("Unexpected end of input"))
+      return "Check for missing closing brackets";
+    if (msg.includes("Expected")) return "Add the expected token";
+    if (msg.includes("Unexpected token")) return "Remove or replace this token";
+    return void 0;
+  }
   peek() {
     return this.tokens[this.position];
+  }
+  peekAhead(offset) {
+    return this.tokens[this.position + offset];
+  }
+  peekAheadIs(type) {
+    return this.peekAhead(1)?.type === type;
   }
   consume() {
     const token = this.tokens[this.position];
@@ -4961,6 +9024,7 @@ class Parser {
     const name = this.consume().value;
     const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
     this.expect("LBRACE", "Expected '{'");
+    const declarations = [];
     const children = [];
     while (!this.check("RBRACE")) {
       if (!this.peek()) {
@@ -4969,13 +9033,82 @@ class Parser {
           this.tokens[this.tokens.length - 1]
         );
       }
-      children.push(this.parseNode());
-      if (this.check("SEMI")) this.consume();
-      if (this.check("COMMA")) this.consume();
+      if (this.check("AT")) {
+        const atToken = this.consume();
+        declarations.push(parseAtcodeDeclaration(this, atToken));
+      } else {
+        children.push(this.parseNode());
+      }
+      if (this.check("SEMI") || this.check("COMMA")) {
+        this.consume();
+      }
     }
     this.expect("RBRACE", "Expected '}'");
     this.expect("GT", "Expected '>'");
-    return { type: "root", name, modifiers, children };
+    return { type: "root", name, modifiers, declarations, children };
+  }
+  _shouldInsertSpace(current, next) {
+    if (!current) return false;
+    const lastChar = current.slice(-1);
+    const nextChar = next.value[0];
+    const isWordEnd = /[a-zA-Z0-9_$]/.test(lastChar);
+    const isWordStart = /[a-zA-Z0-9_$]/.test(nextChar);
+    return isWordEnd && isWordStart;
+  }
+  parseBlockBody() {
+    let body = "";
+    let braceDepth = 0;
+    while (this.peek()) {
+      const token = this.peek();
+      if (token.type === "RBRACE" && braceDepth === 0) break;
+      if (token.type === "LBRACE") braceDepth++;
+      if (token.type === "RBRACE") braceDepth--;
+      if (this._shouldInsertSpace(body, token)) {
+        body += " ";
+      }
+      if (token.type === "STRING") {
+        body += JSON.stringify(token.value);
+      } else {
+        body += token.value;
+      }
+      this.consume();
+    }
+    return body.trim();
+  }
+  parseExpression() {
+    let expr = "";
+    let parenDepth = 0;
+    let braceDepth = 0;
+    let bracketDepth = 0;
+    while (this.peek()) {
+      const token = this.peek();
+      if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0) {
+        if (token?.type === "SEMI" || token?.type === "RBRACE" || token?.type === "COMMA") {
+          break;
+        }
+        if (token?.type === "IDENT" && this.peekAheadIs("EQUALS")) {
+          break;
+        }
+      }
+      if (token?.type === "LPAREN") parenDepth++;
+      if (token?.type === "RPAREN") parenDepth--;
+      if (token?.type === "LBRACE") braceDepth++;
+      if (token?.type === "RBRACE") braceDepth--;
+      if (token?.type === "LBRACKET") bracketDepth++;
+      if (token?.type === "RBRACKET") bracketDepth--;
+      if (token) {
+        if (this._shouldInsertSpace(expr, token)) {
+          expr += " ";
+        }
+        if (token.type === "STRING") {
+          expr += JSON.stringify(token.value);
+        } else {
+          expr += token.value;
+        }
+        this.consume();
+      }
+    }
+    return expr.trim();
   }
   parseNode() {
     const token = this.peek();
@@ -4986,7 +9119,16 @@ class Parser {
       );
     }
     const name = this.consume().value;
-    const modifiers = this.check("LPAREN") ? this.parseModifiers() : [];
+    const modifiers = [];
+    while (this.check("LPAREN") || this.check("AT")) {
+      if (this.check("LPAREN")) {
+        modifiers.push(...this.parseModifiers());
+      }
+      if (this.check("AT")) {
+        this.consume();
+        modifiers.push(parseInlineModifier(this));
+      }
+    }
     if (this.check("COLON")) {
       this.consume();
       if (this.check("LBRACKET")) {
@@ -4994,14 +9136,24 @@ class Parser {
         return { type: "element", name, modifiers, children: [list] };
       }
       const valToken = this.peek();
-      if (!valToken || valToken.type !== "IDENT" && valToken.type !== "STRING") {
+      if (!valToken) {
         throw this.errorAt(
-          `Expected value after ':' but got ${valToken?.type || "end of input"}`,
-          valToken
+          `Expected value after ':' but got end of input`,
+          this.tokens[this.tokens.length - 1]
         );
       }
-      const value = this.consume().value;
-      return { type: "inline", name, modifiers, value };
+      if (valToken.type === "STRING" || valToken.type === "INTERP_START") {
+        const value = this.parseInterpolatedValue();
+        return { type: "inline", name, modifiers, value };
+      }
+      if (valToken.type === "IDENT") {
+        const value = this.consume().value;
+        return { type: "inline", name, modifiers, value };
+      }
+      throw this.errorAt(
+        `Expected value after ':' but got ${valToken.type || "end of input"}`,
+        valToken
+      );
     }
     if (this.check("LBRACKET")) {
       const list = this.parseList();
@@ -5034,6 +9186,46 @@ class Parser {
         throw this.errorAt(
           "Unexpected end of input, expected ')'",
           this.tokens[this.tokens.length - 1]
+        );
+      }
+      if (this.check("AT")) {
+        this.consume();
+        const nameToken = this.expect("IDENT");
+        if (nameToken.value === "on") {
+          this.expect("COLON");
+          const eventToken = this.expect("IDENT");
+          const event = eventToken.value;
+          let handler;
+          if (this.check("LBRACE")) {
+            this.consume();
+            handler = this.parseBlockBody();
+            this.expect("RBRACE");
+          } else {
+            throw this.errorAt(
+              "Event handlers must use block syntax: @on:click { ... }",
+              this.peek()
+            );
+          }
+          modifiers.push({
+            type: "event",
+            event,
+            handler
+          });
+          continue;
+        }
+        if (nameToken.value === "bind") {
+          this.expect("EQUALS");
+          const signal = this.check("STRING") ? this.consume().value : this.expect("IDENT").value;
+          modifiers.push({
+            type: "atcode",
+            name: "bind",
+            body: signal
+          });
+          continue;
+        }
+        throw this.errorAt(
+          `Atcode @${nameToken.value} not yet supported in modifiers`,
+          nameToken
         );
       }
       const token = this.peek();
@@ -5078,10 +9270,41 @@ class Parser {
     this.consume();
     return { type: "list", items };
   }
+  parseInterpolatedValue() {
+    const parts = [];
+    while (this.check("STRING") || this.check("INTERP_START")) {
+      if (this.check("STRING")) {
+        const text = this.consume().value;
+        if (text) {
+          parts.push({ type: "text", value: text });
+        }
+      }
+      if (this.check("INTERP_START")) {
+        this.consume();
+        const expr = this.expect("EXPR").value;
+        parts.push({ type: "expr", value: expr });
+        this.expect("INTERP_END");
+      }
+    }
+    if (parts.length === 0) {
+      return "";
+    }
+    if (parts.length === 1 && parts[0].type === "text") {
+      return parts[0].value;
+    }
+    return { type: "interpolated", parts };
+  }
 }
 function parseSakko(input) {
+  const trimmed = input.trim();
+  if (trimmed && !trimmed.startsWith("<")) {
+    input = `<__sakko_wrapper__ {
+${trimmed}
+}>`;
+  }
   const tokens = tokenize(input);
   if (tokens.length === 0) {
+    parserError("Empty input", { suggestion: "Add some content to parse" });
     throw new Error("Empty input");
   }
   const parser = new Parser(tokens, input);

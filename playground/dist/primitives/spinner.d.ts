@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const spinnerConfig: {
     readonly properties: {
         readonly size: {
@@ -9,16 +10,20 @@ declare const spinnerConfig: {
             readonly type: "string";
             readonly reflect: true;
         };
-        readonly label: {
-            readonly type: "string";
-            readonly reflect: true;
-        };
     };
 };
 export declare class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
-    size: string;
-    variant: string;
-    label: string;
+    private _labelSignal;
+    private _visibleSignal;
+    private _labelElement;
+    private _isReadableStr;
+    private _isReadableBool;
+    set label(value: string | Readable<string>);
+    get label(): string | Readable<string>;
+    set visible(value: boolean | Readable<boolean>);
+    get visible(): boolean | Readable<boolean>;
+    private _updateLabel;
+    private _setupLabelBinding;
     render(): void;
 }
 export {};

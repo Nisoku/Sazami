@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const cardConfig: {
     readonly properties: {
         readonly layout: {
@@ -34,6 +35,10 @@ export declare class SazamiCard extends SazamiComponent<typeof cardConfig> {
     size: string;
     variant: string;
     gap: string;
+    private _loadingSignal;
+    private _isReadableBool;
+    set loading(value: boolean | Readable<boolean>);
+    get loading(): boolean | Readable<boolean>;
     render(): void;
 }
 export {};

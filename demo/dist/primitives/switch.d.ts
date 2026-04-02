@@ -1,4 +1,5 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const switchConfig: {
     readonly properties: {
         readonly checked: {
@@ -28,9 +29,20 @@ declare const switchConfig: {
     };
 };
 export declare class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
-    checked: boolean;
-    disabled: boolean;
     variant: string;
+    private _checkedSignal;
+    private _checkedBindingDispose;
+    private _disabledSignal;
+    private _disabledBindingDispose;
+    private _isReadableBool;
+    set checked(value: boolean | Readable<boolean>);
+    get checked(): boolean | Readable<boolean>;
+    private _setChecked;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
+    private _getIsChecked;
     render(): void;
     private _updateAria;
     private _handleClick;

@@ -1,14 +1,7 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const radioConfig: {
     readonly properties: {
-        readonly checked: {
-            readonly type: "boolean";
-            readonly reflect: true;
-        };
-        readonly disabled: {
-            readonly type: "boolean";
-            readonly reflect: true;
-        };
         readonly name: {
             readonly type: "string";
             readonly reflect: false;
@@ -28,11 +21,22 @@ declare const radioConfig: {
     };
 };
 export declare class SazamiRadio extends SazamiComponent<typeof radioConfig> {
-    checked: boolean;
-    disabled: boolean;
     name: string;
     value: string;
     private _handlersInstalled;
+    private _checkedSignal;
+    private _checkedBindingDispose;
+    private _disabledSignal;
+    private _disabledBindingDispose;
+    private _isReadableBool;
+    set checked(value: boolean | Readable<boolean>);
+    get checked(): boolean | Readable<boolean>;
+    private _setChecked;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
+    private _getIsChecked;
     render(): void;
     private _updateAria;
     private _handleClick;

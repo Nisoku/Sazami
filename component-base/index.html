@@ -107,7 +107,7 @@
       
     </li>
     
-    <li class="collapsible" data-nav-id="undefined" aria-expanded="false">
+    <li class="active-parent collapsible" data-nav-id="undefined" aria-expanded="true">
       <a href="#" class="" >
          <svg class="lucide-icon icon-book" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
@@ -119,12 +119,22 @@
         
       </a>
       
-        <ul class="submenu" style="display: none;">
+        <ul class="submenu" style="display: block;">
           
     <li class="">
       <a href="../primitives/" class="" >
         
         <span class="nav-item-title">Primitives</span>
+        
+        
+      </a>
+      
+    </li>
+    
+    <li class="active">
+      <a href="../component-base/" class="active" >
+        
+        <span class="nav-item-title">Component Base</span>
         
         
       </a>
@@ -345,7 +355,7 @@
 <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">dispatchEventTyped</span>(<span class="hljs-string">&#x27;change&#x27;</span>, { <span class="hljs-attr">variant</span>: <span class="hljs-string">&#x27;primary&#x27;</span> });
 </code></pre>
 <h3 id="oncleanupfn"><code>onCleanup(fn)</code></h3>
-<p>Register cleanup functions for Sairin bindings. Called on disconnect.</p>
+<p>Register cleanup functions for Sairin bindings. Called on disconnect. This integrates with <a href="https://github.com/nisoku/sairin">Sairin’s <code>effect()</code></a> cleanup system.</p>
 <pre class="hljs"><code><span class="hljs-variable language_">this</span>.<span class="hljs-title function_">onCleanup</span>(<span class="hljs-function">() =&gt;</span> {
   <span class="hljs-comment">// Cleanup logic</span>
 });
@@ -411,6 +421,27 @@
 </table>
 </div>
 
+                    
+                    <div class="page-navigation">
+                        
+                        <a href="../primitives/" class="prev-page">
+                            <svg class="lucide-icon icon-arrow-left page-nav-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="m12 19-7-7 7-7" />
+  <path d="M19 12H5" />
+</svg>
+                            <span><small>Previous</small><strong>Primitives</strong></span>
+                        </a>
+                        
+                        
+                        <a href="../config-theming/" class="next-page">
+                            <span><small>Next</small><strong>Config &amp; Theming</strong></span>
+                            <svg class="lucide-icon icon-arrow-right page-nav-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg>
+                        </a>
+                        
+                    </div>
                     
                 </div>
 

@@ -1,16 +1,9 @@
-import { SazamiComponent } from './base';
+import { SazamiComponent } from "./base";
+import { type Readable } from "@nisoku/sairin";
 declare const selectConfig: {
     readonly properties: {
         readonly placeholder: {
             readonly type: "string";
-            readonly reflect: true;
-        };
-        readonly value: {
-            readonly type: "string";
-            readonly reflect: true;
-        };
-        readonly disabled: {
-            readonly type: "boolean";
             readonly reflect: true;
         };
         readonly open: {
@@ -32,12 +25,24 @@ declare const selectConfig: {
     };
 };
 export declare class SazamiSelect extends SazamiComponent<typeof selectConfig> {
-    placeholder: string;
-    value: string;
-    disabled: boolean;
     open: boolean;
     private _options;
+    private _valueSignal;
+    private _valueEffectDisposer;
+    private _valueBindingInitialized;
+    private _disabledSignal;
+    private _disabledEffectDisposer;
     private _handleDocumentClick;
+    private _isReadableStr;
+    private _isReadableBool;
+    set value(valueOrSignal: string | Readable<string>);
+    get value(): string | Readable<string>;
+    private _getValue;
+    private _setupValueBinding;
+    set disabled(value: boolean | Readable<boolean>);
+    get disabled(): boolean | Readable<boolean>;
+    private _setDisabled;
+    private _getIsDisabled;
     connectedCallback(): void;
     disconnectedCallback(): void;
     render(): void;
