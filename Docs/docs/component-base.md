@@ -84,6 +84,7 @@ class MyComponent extends SazamiComponent {
 
 - `connectedCallback()` - Called when element is added to DOM
 - `disconnectedCallback()` - Called when element is removed (runs cleanup)
+- `attributeChangedCallback(name, oldVal, newVal)` - Called when observed attributes change
 - `render()` - Override in subclass to render content
 
 ---
@@ -182,10 +183,19 @@ this.onCleanup(() => {
 
 ### `mount(styles, template)`
 
-Render template with styles into Shadow DOM.
+Render template with styles into Shadow DOM with batching. Use for components that don't need immediate DOM access after mounting.
 
 ```typescript
 this.mount('p { color: red }', '<p>Hello</p>');
+```
+
+### `mountSync(styles, template)`
+
+Synchronous version of `mount()`. Immediately renders without batching. Use when you need to query/bind DOM nodes right after mounting.
+
+```typescript
+this.mountSync('p { color: red }', '<p>Hello</p>');
+// DOM is immediately ready for querySelector, binding, etc.
 ```
 
 ### `$(selector)`

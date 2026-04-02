@@ -181,12 +181,15 @@ describe("Full Pipeline - Advanced", () => {
     expect(container.querySelector("saz-icon-button")).toBeTruthy();
   });
 
-  test("preserves text content through pipeline", () => {
+  test("preserves text content through pipeline", async () => {
     const source = '<page { text: "Hello World with spaces and 123" }>';
     const container = document.createElement("div");
+    document.body.appendChild(container);
     compileSakko(source, container);
+    await Promise.resolve();
     const text = container.querySelector("saz-text");
-    expect(text?.textContent).toBe("Hello World with spaces and 123");
+    const textContent = text?.shadowRoot?.textContent ?? "";
+    expect(textContent.trim()).toContain("Hello World with spaces and 123");
   });
 
   test("section with center-point attribute", () => {
@@ -245,7 +248,7 @@ describe("Parser - Complex Real-World Examples", () => {
     const ast = parseSakko('<page { button(accent large bold curved pill disabled): "Click" }>');
     const btn = ast.children[0];
     if (btn.type === "inline") {
-      expect(btn.modifiers.map(m => m.type === "flag" ? m.value : `${m.key}:${m.value}`)).toEqual([
+      expect(btn.modifiers.map((m: any) => (m as any).value)).toEqual([
         "accent", "large", "bold", "curved", "pill", "disabled",
       ]);
     }

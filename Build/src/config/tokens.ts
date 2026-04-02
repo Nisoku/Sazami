@@ -1,6 +1,8 @@
 export const defaultTokens: Record<string, string> = {
   "color.background": "#ffffff",
   "color.surface": "#f8f9fa",
+  "color.surface-hover": "#d6d6d6ff",
+  "color.surface-active": "#b0b0b09c",
   "color.border": "#e0e0e0",
 
   "color.primary": "#2563eb",

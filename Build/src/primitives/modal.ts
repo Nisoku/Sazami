@@ -92,7 +92,7 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
   declare title: string;
   declare open: boolean;
 
-  openSignal?: Signal<boolean>;
+  openSignal: Signal<boolean> | undefined = undefined;
 
   render() {
     const title = escapeHtml(this.getAttribute("title") || "");

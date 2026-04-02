@@ -152,25 +152,28 @@ Clickable button with variant styling and hover/active states.
 
 | Attribute | Values | Default | Description |
 | ----------- | -------- | --------- | ------------- |
-| `variant` | `primary`, `accent`, `secondary`, `danger`, `dim` | `primary` | Color variant |
+| `variant` | `primary`, `accent`, `secondary`, `danger`, `success`, `dim` | `primary` | Color variant |
 | `size` | `small`, `medium`, `large` | `medium` | Padding and font size |
 | `disabled` | (boolean) | - | Disable interaction |
+| `loading` | (boolean) | - | Show loading state |
+| `active` | (boolean) | - | Active/pressed state |
 
 ```sako
 button(accent large): "Save"
 button(secondary): "Cancel"
 button(danger disabled): "Delete"
+button(loading): "Saving..."
 ```
 
 ### `icon-btn`
 
-Icon-only button with built-in SVG icons.
+Icon-only button with built-in SVG icons. Includes hover (subtle background) and press (darker background + scale) animations.
 
 | Attribute | Values | Default | Description |
 | ----------- | -------- | --------- | ------------- |
-| `icon` | `play`, `pause`, `stop`, `previous`, `next`, `skip`, `close`, `menu`, `search` | - | Icon name |
+| `icon` | `play`, `pause`, `stop`, `previous`, `next`, `skip`, `close`, `menu`, `search`, and 40+ more | - | Icon name |
 | `variant` | `primary`, `accent`, `secondary`, `dim` | `secondary` | Color variant |
-| `size` | `small`, `medium`, `large` | `medium` | Icon and padding size |
+| `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Icon and padding size |
 | `disabled` | (boolean) | - | Disable interaction |
 
 ```sako
@@ -435,12 +438,12 @@ avatar(alt "John Doe" large): ""
 
 ### `chip`
 
-Selectable/removable tag.
+Selectable/removable tag with built-in remove button.
 
 | Attribute | Values | Default | Description |
 | ----------- | -------- | --------- | ------------- |
-| `label` | string | - | Chip text |
-| `variant` | `default`, `primary`, `accent`, `success`, `danger`, `warning` | `default` | Color variant |
+| `label` | string | - | Chip text content |
+| `variant` | `default`, `primary`, `accent`, `success`, `danger` | `default` | Color variant |
 | `selected` | (boolean) | - | Selected state |
 | `removable` | (boolean) | - | Show remove button |
 | `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Chip size |
@@ -505,11 +508,14 @@ Small pill-shaped label.
 
 | Attribute | Values | Default | Description |
 | ----------- | -------- | --------- | ------------- |
-| `variant` | `default`, `accent`, `primary`, `success`, `danger` | `default` | Color variant |
+| `variant` | `default`, `accent`, `primary`, `secondary`, `success`, `danger`, `warning`, `dim` | `default` | Color variant |
+| `size` | `xsmall`, `tiny`, `small`, `medium`, `large`, `xlarge` | `small` | Badge size |
+| `shape` | `round`, `pill`, `square`, `rounded`, `circle` | `round` | Border shape |
 
 ```sako
 badge(accent): "NEW"
 badge(success): "Active"
+badge(danger large): "Error"
 ```
 
 ### `tag`

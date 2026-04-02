@@ -323,7 +323,8 @@ describe('Transformer - Edge cases', () => {
       expect(row.type).toBe('saz-row');
       const col = row.children[0] as any;
       expect(col.type).toBe('saz-column');
-      expect(col.children[0].children[0]).toBe('deep');
+      expect(col.children[0].type).toBe('saz-text');
+      expect(col.children[0].props.content).toBe('deep');
     }
   });
 
@@ -557,7 +558,7 @@ describe('Full Pipeline - Error propagation', () => {
       const text = vnode.children[0] as any;
       expect(text.type).toBe('saz-text');
       expect(text.props.weight).toBe('bold');
-      expect(text.children[0]).toBe('Hello');
+      expect(text.props.content).toBe('Hello');
     }
   });
 

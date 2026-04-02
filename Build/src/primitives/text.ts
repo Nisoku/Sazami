@@ -20,6 +20,7 @@ ${TYPO_TONE}
 `;
 
 const textConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string" as const, reflect: false },
     weight: { type: "string" as const, reflect: false },
@@ -71,7 +72,7 @@ export class SazamiText extends SazamiComponent<typeof textConfig> {
   }
 
   render() {
-    this.mount(STYLES, `<slot></slot>`);
+    this.mountSync(STYLES, `<slot></slot>`);
 
     const slot = this.shadow.querySelector("slot");
     if (slot) {
@@ -93,6 +94,17 @@ export class SazamiText extends SazamiComponent<typeof textConfig> {
           this._setTextContent(slottedText);
         }
       }
+    }
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }

@@ -1,8 +1,8 @@
 import { SazamiComponent, component } from "./base";
 import {
   STATE_DISABLED,
+  STATE_ACTIVE,
   INTERACTIVE_FOCUS,
-  INTERACTIVE_HOVER,
   VARIANT_TEXT_RULES,
 } from "./shared";
 import { ICON_SVGS } from "../icons/index";
@@ -20,12 +20,19 @@ const STYLES = `
   background: transparent;
   color: var(--saz-color-text);
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   line-height: 1;
 }
-${INTERACTIVE_HOVER}
+:host(:hover) {
+  background: var(--saz-color-surface-hover);
+}
+:host(:active) {
+  background: var(--saz-color-surface-active);
+  transform: scale(0.75);
+}
 ${VARIANT_TEXT_RULES}
 ${STATE_DISABLED}
+${STATE_ACTIVE}
 ${INTERACTIVE_FOCUS}
 :host([size="small"]) { padding: var(--saz-space-tiny); }
 :host([size="large"]) { padding: var(--saz-space-medium); }

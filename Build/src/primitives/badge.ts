@@ -24,6 +24,7 @@ ${SHAPE_RULES}
 
 // Config
 const badgeConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string" as const, reflect: true },
     variant: { type: "string" as const, reflect: true },
@@ -72,7 +73,7 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
   }
 
   render() {
-    this.mount(STYLES, `<slot></slot>`);
+    this.mountSync(STYLES, `<slot></slot>`);
 
     const slot = this.shadow.querySelector("slot");
     if (slot) {
@@ -87,6 +88,17 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
       const dispose = bindText(this._textNode!, this._contentSignal);
       this._contentDispose = dispose;
       this.onCleanup(dispose);
+    }
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }

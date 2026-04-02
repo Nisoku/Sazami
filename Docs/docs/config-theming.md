@@ -28,11 +28,14 @@ Token Definition  ->  CSS Variable Generation  ->  :root injection  ->  Componen
 | ------- | --------- | -------------- |
 | `color.background` | `#ffffff` | `--saz-color-background` |
 | `color.surface` | `#f8f9fa` | `--saz-color-surface` |
+| `color.surface-hover` | `#d6d6d6ff` | `--saz-color-surface-hover` |
+| `color.surface-active` | `#b0b0b09c` | `--saz-color-surface-active` |
 | `color.border` | `#e0e0e0` | `--saz-color-border` |
 | `color.primary` | `#2563eb` | `--saz-color-primary` |
 | `color.accent` | `#ff4d8a` | `--saz-color-accent` |
 | `color.success` | `#10b981` | `--saz-color-success` |
 | `color.danger` | `#ef4444` | `--saz-color-danger` |
+| `color.secondary` | `#6b7280` | `--saz-color-secondary` |
 | `color.text` | `#1f2937` | `--saz-color-text` |
 | `color.text-dim` | `#6b7280` | `--saz-color-text-dim` |
 | `color.text-dimmer` | `#9ca3af` | `--saz-color-text-dimmer` |
@@ -40,11 +43,13 @@ Token Definition  ->  CSS Variable Generation  ->  :root injection  ->  Componen
 | `color.on-accent` | `#ffffff` | `--saz-color-on-accent` |
 | `color.on-success` | `#ffffff` | `--saz-color-on-success` |
 | `color.on-danger` | `#ffffff` | `--saz-color-on-danger` |
+| `color.on-secondary` | `#1f2937` | `--saz-color-on-secondary` |
 
 ### Spacing
 
 | Token | Default | CSS Variable |
 | ------- | --------- | ------------- |
+| `space.xsmall` | `2px` | `--saz-space-xsmall` |
 | `space.tiny` | `4px` | `--saz-space-tiny` |
 | `space.small` | `8px` | `--saz-space-small` |
 | `space.medium` | `12px` | `--saz-space-medium` |
@@ -57,6 +62,8 @@ Token Definition  ->  CSS Variable Generation  ->  :root injection  ->  Componen
 | Token | Default | CSS Variable |
 | ------- | --------- | ------------- |
 | `font.family` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` | `--saz-font-family` |
+| `text.size.xsmall` | `10px` | `--saz-text-size-xsmall` |
+| `text.size.tiny` | `11px` | `--saz-text-size-tiny` |
 | `text.size.small` | `12px` | `--saz-text-size-small` |
 | `text.size.medium` | `14px` | `--saz-text-size-medium` |
 | `text.size.large` | `16px` | `--saz-text-size-large` |
@@ -91,6 +98,7 @@ Token Definition  ->  CSS Variable Generation  ->  :root injection  ->  Componen
 
 | Token | Default | CSS Variable |
 | ------- | --------- | ------------- |
+| `icon.size.xsmall` | `12px` | `--saz-icon-size-xsmall` |
 | `icon.size.small` | `16px` | `--saz-icon-size-small` |
 | `icon.size.medium` | `20px` | `--saz-icon-size-medium` |
 | `icon.size.large` | `24px` | `--saz-icon-size-large` |
@@ -164,7 +172,7 @@ The complete default token map, useful for inspection or cloning:
 ```typescript
 import { defaultTokens } from '@nisoku/sazami';
 
-console.log(Object.keys(defaultTokens).length); // 40+
+console.log(Object.keys(defaultTokens).length); // 48
 ```
 
 ---

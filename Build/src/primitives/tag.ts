@@ -19,6 +19,7 @@ ${VARIANT_BG_RULES}
 `;
 
 const tagConfig = {
+  observedAttributes: ["content"],
   properties: {
     variant: { type: "string" as const, reflect: true },
   },
@@ -26,8 +27,10 @@ const tagConfig = {
 
 @component(tagConfig)
 export class SazamiTag extends SazamiComponent<typeof tagConfig> {
-  private _content: string | Readable<string> = "";
+  declare variant: string;
+
   private _contentSignal: Readable<string> | null = null;
+  private _contentValue: string = "";
   private _textNode: Text | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
@@ -40,13 +43,13 @@ export class SazamiTag extends SazamiComponent<typeof tagConfig> {
       this._setupContentBinding();
     } else {
       this._contentSignal = null;
-      this._content = value;
+      this._contentValue = value;
       this._updateContent(value);
     }
   }
 
   get content(): string | Readable<string> {
-    return this._contentSignal || this._content;
+    return this._contentSignal || this._contentValue;
   }
 
   private _updateContent(value: string) {
@@ -63,7 +66,7 @@ export class SazamiTag extends SazamiComponent<typeof tagConfig> {
   }
 
   render() {
-    this.mount(STYLES, `<slot></slot>`);
+    this.mountSync(STYLES, `<slot></slot>`);
 
     const slot = this.shadow.querySelector("slot");
     if (slot) {
@@ -76,7 +79,18 @@ export class SazamiTag extends SazamiComponent<typeof tagConfig> {
     if (this._contentSignal) {
       this._setupContentBinding();
     } else {
-      this._updateContent(this._content as string);
+      this._updateContent(this._contentValue);
+    }
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }

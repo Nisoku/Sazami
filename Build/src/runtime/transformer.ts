@@ -61,6 +61,13 @@ export function getTag(name: string): string {
 }
 
 const ICON_COMPONENTS = new Set(["saz-icon", "saz-icon-button"]);
+const CONTENT_SLOT_COMPONENTS = new Set([
+  "saz-heading",
+  "saz-badge",
+  "saz-tag",
+  "saz-text",
+  "saz-label",
+]);
 
 function serializeValue(
   value:
@@ -80,10 +87,14 @@ export function transformAST(node: ASTNode): VNode | VNode[] {
     const props = parseModifiers(node.modifiers);
     const value =
       typeof node.value === "string" ? node.value : serializeValue(node.value);
-    // For icon components, pass the value as an "icon" attribute
-    // so connectedCallback can read it reliably.
     if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {
       props.icon =
+        typeof node.value === "string"
+          ? node.value
+          : serializeValue(node.value);
+    }
+    if (CONTENT_SLOT_COMPONENTS.has(tag) && node.value && !props.content) {
+      props.content =
         typeof node.value === "string"
           ? node.value
           : serializeValue(node.value);
@@ -91,7 +102,7 @@ export function transformAST(node: ASTNode): VNode | VNode[] {
     return {
       type: tag,
       props,
-      children: [value],
+      children: CONTENT_SLOT_COMPONENTS.has(tag) ? [] : value ? [value] : [],
     };
   }
 

@@ -63,6 +63,11 @@ import { transformAST } from '@nisoku/sazami';
 const ast = parseSakko('<page { button(accent): Save }>');
 const vnodes = ast.children.map(transformAST).flat();
 // Returns: [{ type: "saz-button", props: { variant: "accent" }, children: ["Save"] }]
+
+// For content components (text, heading, badge, etc.), content is in props.content:
+const ast2 = parseSakko('<page { text(bold): "Hello" }>');
+const vnode2 = transformAST(ast2.children[0]);
+// Returns: { type: "saz-text", props: { weight: "bold", content: "Hello" }, children: [] }
 ```
 
 ### `render(vnode, parent)`
@@ -183,8 +188,8 @@ Convert an array of AST modifier nodes into a props object.
 import { parseModifiers } from '@nisoku/sazami';
 
 parseModifiers([
-  { type: 'flag', value: 'accent' },
-  { type: 'pair', key: 'gap', value: 'large' },
+  { type: 'pair', key: 'accent', value: '' },  // flag modifier
+  { type: 'pair', key: 'gap', value: 'large' }, // pair modifier
 ]);
 // Returns: { variant: 'accent', gap: 'large' }
 ```
@@ -213,16 +218,16 @@ MODIFIER_MAP['bold'];    // { weight: 'bold' }
 
 ### `ICON_SVGS`
 
-A record mapping icon names to SVG markup strings. All 43 built-in icons use `currentColor` and scale to their container.
+A record mapping icon names to SVG markup strings. All 50+ built-in icons use `currentColor` and scale to their container.
 
 ```typescript
 import { ICON_SVGS } from '@nisoku/sazami';
 
-// Available: play, pause, stop, previous, next, skip, close, menu,
-// search, settings, heart, star, check, plus, minus, edit, share,
-// download, upload, refresh, home, back, forward, up, down,
-// mail, phone, calendar, clock, user, users, folder, file, image,
-// camera, bell, lock, link, trash, copy, bookmark, pin, globe
+// Available: play, pause, stop, previous, next, skip, back, forward,
+// close, menu, search, settings, heart, star, check, plus, minus,
+// edit, share, download, upload, refresh, home, up, down,
+// mail, phone, calendar, clock, user, users, folder, file,
+// image, camera, bell, lock, link, trash, copy, bookmark, pin, globe
 ICON_SVGS['play'];  // '<svg ...>...</svg>'
 ```
 

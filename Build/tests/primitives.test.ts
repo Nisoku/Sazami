@@ -7,6 +7,7 @@ import { compileSakko } from "../src/index";
 describe("Sazami Primitives", () => {
   beforeEach(() => {
     document.head.innerHTML = "";
+    document.body.innerHTML = "";
   });
 
   test("should render basic card component", () => {
@@ -65,16 +66,18 @@ describe("Sazami Primitives", () => {
     expect(cards).toHaveLength(3);
   });
 
-  test("should render badge with variant", () => {
+  test("should render badge with variant", async () => {
     const source = '<page { badge(success): "Active" }>';
     const container = document.createElement("div");
-
+    document.body.appendChild(container);
     compileSakko(source, container);
+    await Promise.resolve();
 
     const badge = container.querySelector("saz-badge");
     expect(badge).toBeTruthy();
     expect(badge?.getAttribute("variant")).toBe("success");
-    expect(badge?.textContent).toBe("Active");
+    const textContent = badge?.shadowRoot?.textContent ?? "";
+    expect(textContent.trim()).toContain("Active");
   });
 
   test("should render nested structure", () => {

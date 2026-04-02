@@ -18,6 +18,7 @@ ${TYPO_TONE}
 `;
 
 const headingConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string" as const, reflect: false },
     weight: { type: "string" as const, reflect: false },
@@ -70,7 +71,7 @@ export class SazamiHeading extends SazamiComponent<typeof headingConfig> {
   }
 
   render() {
-    this.mount(STYLES, `<slot></slot>`);
+    this.mountSync(STYLES, `<slot></slot>`);
 
     const slot = this.shadow.querySelector("slot");
     if (slot) {
@@ -84,6 +85,17 @@ export class SazamiHeading extends SazamiComponent<typeof headingConfig> {
       this._setupSignalBinding();
     } else {
       this._setTextContent(this._content as string);
+    }
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }

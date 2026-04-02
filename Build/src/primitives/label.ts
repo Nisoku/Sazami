@@ -16,6 +16,7 @@ const STYLES = `
 `;
 
 const labelConfig = {
+  observedAttributes: ["content"],
   properties: {
     for: { type: "string" as const, reflect: true },
   },
@@ -73,7 +74,7 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
   }
 
   render() {
-    this.mount(STYLES, `<label><slot></slot></label>`);
+    this.mountSync(STYLES, `<label><slot></slot></label>`);
 
     const label = this.shadow.querySelector("label");
     if (label) {
@@ -91,6 +92,17 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
       if (this.hasAttribute("for")) {
         label.setAttribute("for", this.getAttribute("for") || "");
       }
+    }
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldVal: string | null,
+    newVal: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
