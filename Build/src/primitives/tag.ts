@@ -28,7 +28,7 @@ const tagConfig = {
 export class SazamiTag extends SazamiComponent<typeof tagConfig> {
   private _content: string | Readable<string> = "";
   private _contentSignal: Readable<string> | null = null;
-  private _slotElement: HTMLElement | null = null;
+  private _textNode: Text | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -50,21 +50,28 @@ export class SazamiTag extends SazamiComponent<typeof tagConfig> {
   }
 
   private _updateContent(value: string) {
-    if (this._slotElement) {
-      this._slotElement.textContent = value;
+    if (this._textNode) {
+      this._textNode.textContent = value ?? "";
     }
   }
 
   private _setupContentBinding() {
-    if (!this._slotElement) return;
+    if (!this._textNode) return;
 
-    const dispose = bindText(this._slotElement, this._contentSignal!);
+    const dispose = bindText(this._textNode, this._contentSignal!);
     this.onCleanup(dispose);
   }
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
-    this._slotElement = this.shadowRoot?.querySelector("slot") || null;
+    
+    const slot = this.shadow.querySelector("slot");
+    if (slot) {
+      this._textNode = document.createTextNode("");
+      slot.replaceWith(this._textNode);
+    } else {
+      this._textNode = this.shadow.appendChild(document.createTextNode(""));
+    }
 
     if (this._contentSignal) {
       this._setupContentBinding();

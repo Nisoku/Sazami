@@ -67,16 +67,16 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
-    
+
     const slot = this.shadow.querySelector("slot");
     if (slot) {
-      const initialText = this._contentSignal 
-        ? this._contentSignal.get() 
+      const initialText = this._contentSignal
+        ? this._contentSignal.get()
         : (this._textContent ?? "");
       this._textNode = document.createTextNode(initialText);
       slot.replaceWith(this._textNode);
     }
-    
+
     if (this._contentSignal) {
       const dispose = bindText(this._textNode!, this._contentSignal);
       this.onCleanup(dispose);

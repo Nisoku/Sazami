@@ -2,7 +2,13 @@ import { SazamiComponent, component } from "./base";
 import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -90,12 +96,17 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
         } else {
           el.innerHTML = `<span>${escapeHtml(iconName)}</span>`;
         }
-      })
+      }),
     );
   }
 
   render() {
-    const iconName = this._iconSignal ? this._iconSignal.get() : ((this as any)._icon || this.getAttribute("icon") || this.textContent?.trim() || "");
+    const iconName = this._iconSignal
+      ? this._iconSignal.get()
+      : (this as any)._icon ||
+        this.getAttribute("icon") ||
+        this.textContent?.trim() ||
+        "";
     const svg = ICON_SVGS[iconName];
 
     if (svg) {
@@ -104,7 +115,8 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
       this.mount(STYLES, `<span>${escapeHtml(iconName)}</span>`);
     }
 
-    this._iconElement = (this.shadowRoot?.querySelector("svg") || this.shadowRoot?.querySelector("span")) as HTMLElement | null;
+    this._iconElement = (this.shadowRoot?.querySelector("svg") ||
+      this.shadowRoot?.querySelector("span")) as HTMLElement | null;
 
     if (this._iconSignal) {
       this._setupIconBinding();

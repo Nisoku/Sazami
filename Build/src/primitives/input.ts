@@ -1,7 +1,13 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, STATE_DISABLED } from "./shared";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 import { bindInputValue } from "@nisoku/sairin";
 
 const STYLES = `
@@ -80,7 +86,9 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
   render() {
     const placeholder = this.getAttribute("placeholder") || "";
     const type = this.getAttribute("type") || "text";
-    const initialValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || "");
+    const initialValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || "";
 
     this.mount(
       STYLES,
@@ -92,7 +100,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     const input = this.$("input") as HTMLInputElement;
     if (input) {
       this.removeAllHandlers({ type: "input", source: "internal" });
-      
+
       if (this._valueSignal) {
         this.onCleanup(
           effect(() => {
@@ -100,12 +108,12 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
             if (input.value !== val) {
               input.value = val;
             }
-          })
+          }),
         );
 
         const handler = (e: Event) => {
           const target = e.target as HTMLInputElement;
-          if ('set' in this._valueSignal!) {
+          if ("set" in this._valueSignal!) {
             (this._valueSignal as Signal<string>).set(target.value);
           }
           (this.dispatchEventTyped as any)("input", { value: target.value });

@@ -53,7 +53,11 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     if (this._isReadableStr(value)) {
       this._srcSignal = value;
       this._pendingSrc = null;
-      this._setupSrcBinding();
+      if (this._rendered && !this._imgElement) {
+        this.render();
+      } else {
+        this._setupSrcBinding();
+      }
     } else {
       this._srcSignal = null;
       this._pendingSrc = value;
@@ -80,14 +84,24 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
   }
 
   render() {
-    const currentSrc = this._srcSignal 
-      ? this._srcSignal.get() 
-      : (this._pendingSrc || (this as any)._src || this.getAttribute("src") || this.textContent?.trim() || "");
+    const currentSrc = this._srcSignal
+      ? this._srcSignal.get()
+      : this._pendingSrc ||
+        (this as any)._src ||
+        this.getAttribute("src") ||
+        this.textContent?.trim() ||
+        "";
     const alt = this.getAttribute("alt") || "Cover art";
+
+    if (!currentSrc && !this._srcSignal) {
+      this.mount(STYLES, "");
+      this._imgElement = null;
+      return;
+    }
 
     this.mount(
       STYLES,
-      currentSrc ? `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />` : "",
+      `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`,
     );
 
     this._imgElement = this.$("img");

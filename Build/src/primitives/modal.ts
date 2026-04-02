@@ -136,7 +136,7 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
     );
 
     if (this.openSignal) {
-      this.bindDisabled(":host", this.openSignal);
+      this.bindVisibility(":host", this.openSignal);
     }
   }
 

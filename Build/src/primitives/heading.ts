@@ -71,15 +71,13 @@ export class SazamiHeading extends SazamiComponent<typeof headingConfig> {
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
-    
+
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       this._textNode = document.createTextNode("");
       slot.replaceWith(this._textNode);
     } else {
-      this._textNode = this.shadow.appendChild(
-        document.createTextNode("")
-      );
+      this._textNode = this.shadow.appendChild(document.createTextNode(""));
     }
 
     if (this._contentSignal) {

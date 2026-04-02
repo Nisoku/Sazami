@@ -136,8 +136,10 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
 
   private _handleClick = () => {
     if (this._getIsDisabled()) return;
-    const newValue = this._checkedSignal ? !this._checkedSignal.get() : !((this as any)._checked || false);
-    if (this._checkedSignal && 'set' in this._checkedSignal) {
+    const newValue = this._checkedSignal
+      ? !this._checkedSignal.get()
+      : !((this as any)._checked || false);
+    if (this._checkedSignal && "set" in this._checkedSignal) {
       (this._checkedSignal as Signal<boolean>).set(newValue);
     } else {
       this._setChecked(newValue);
@@ -153,7 +155,9 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
   };
 
   private _updateAria() {
-    const isChecked = this._checkedSignal ? this._checkedSignal.get() : !!(this as any)._checked;
+    const isChecked = this._checkedSignal
+      ? this._checkedSignal.get()
+      : !!(this as any)._checked;
     const isDisabled = this._getIsDisabled();
     this.setAttribute("aria-checked", isChecked ? "true" : "false");
     if (isDisabled) {

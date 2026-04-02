@@ -62,16 +62,24 @@ export function getTag(name: string): string {
 
 const ICON_COMPONENTS = new Set(["saz-icon", "saz-icon-button"]);
 
-function serializeValue(value: string | { type: "interpolated"; parts: Array<{ type: "text" | "expr"; value: string }> }): string {
+function serializeValue(
+  value:
+    | string
+    | {
+        type: "interpolated";
+        parts: Array<{ type: "text" | "expr"; value: string }>;
+      },
+): string {
   if (typeof value === "string") return value;
-  return value.parts.map(p => p.value).join("");
+  return value.parts.map((p) => p.value).join("");
 }
 
 export function transformAST(node: ASTNode): VNode | VNode[] {
   if (node.type === "inline") {
     const tag = getTag(node.name);
     const props = parseModifiers(node.modifiers);
-    const value = typeof node.value === "string" ? node.value : serializeValue(node.value);
+    const value =
+      typeof node.value === "string" ? node.value : serializeValue(node.value);
     // For icon components, pass the value as an "icon" attribute
     // so connectedCallback can read it reliably.
     if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {

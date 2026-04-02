@@ -42,7 +42,6 @@ That renders a styled card with a heading, paragraph, and themed button into the
 
 | Page | Description |
 | --- | --- |
-| [**Language Reference**](/Sakko/language-reference/) | Full [Sakko](https://github.com/nisoku/sakko) syntax: blocks, modifiers, lists, void elements |
 | [**Primitives**](/Sazami/primitives/) | All 48 web components with usage examples |
 | [**Config & Theming**](/Sazami/config-theming/) | Design tokens, custom themes, CSS variable generation |
 | [**Curvomorphism**](/Sazami/curvomorphism/) | How directional corner rounding works |
@@ -51,4 +50,4 @@ That renders a styled card with a heading, paragraph, and themed button into the
 ## Related Documentation
 
 - [**Sairin Docs**](https://github.com/nisoku/sairin) - Reactive state management with signals, derived values, effects, and resources
-- [**Sakko Docs**](/Sakko/language-reference/) - DSL syntax for writing component markup
+- [**Sakko Docs**](https://github.com/nisoku/sakko) - DSL syntax for writing component markup

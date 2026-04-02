@@ -96,9 +96,10 @@ export function enableCurvomorphism(
   }
 
   const apply = () => {
-    const cachedCenter = options.centerX === undefined || options.centerY === undefined
-      ? findCenter(element)
-      : { x: 0, y: 0 };
+    const cachedCenter =
+      options.centerX === undefined || options.centerY === undefined
+        ? findCenter(element)
+        : { x: 0, y: 0 };
     const cx = options.centerX ?? cachedCenter.x;
     const cy = options.centerY ?? cachedCenter.y;
     applyCurvomorphism(

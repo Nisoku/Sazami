@@ -156,13 +156,16 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
 
   private _handleClick = () => {
     if (this._getIsDisabled()) return;
-    const newValue = this._checkedSignal ? !this._checkedSignal.get() : !((this as any)._checked || false);
-    if (this._checkedSignal && 'set' in this._checkedSignal) {
+    const newValue = this._checkedSignal
+      ? !this._checkedSignal.get()
+      : !((this as any)._checked || false);
+    if (this._checkedSignal && "set" in this._checkedSignal) {
       (this._checkedSignal as Signal<boolean>).set(newValue);
+      this._updateAria(newValue);
     } else {
       this._setChecked(newValue);
+      this._updateAria(newValue);
     }
-    this._updateAria();
     this.dispatchEventTyped("change", { checked: newValue });
   };
 
@@ -173,8 +176,12 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
     }
   };
 
-  private _updateAria() {
-    const isChecked = this._checkedSignal ? this._checkedSignal.get() : !!(this as any)._checked;
+  private _updateAria(checked?: boolean) {
+    const isChecked = checked !== undefined
+      ? checked
+      : this._checkedSignal
+        ? this._checkedSignal.get()
+        : !!(this as any)._checked;
     const isDisabled = this._getIsDisabled();
     this.setAttribute("aria-checked", isChecked ? "true" : "false");
     if (isDisabled) {

@@ -1,6 +1,12 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED } from "./shared";
-import { Signal, Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -177,7 +183,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
         }
         const percent = range !== 0 ? ((val - min) / range) * 100 : 0;
         filled.style.width = `${percent}%`;
-      })
+      }),
     );
   }
 
@@ -187,7 +193,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     }
     if (this._filledElement) {
       const range = this._rangeMax - this._rangeMin;
-      const percent = range !== 0 ? ((value - this._rangeMin) / range) * 100 : 0;
+      const percent =
+        range !== 0 ? ((value - this._rangeMin) / range) * 100 : 0;
       this._filledElement.style.width = `${percent}%`;
     }
   }
@@ -207,7 +214,9 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     this._rangeMin = min;
     this._rangeMax = max;
 
-    const currentValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || 50);
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || 50;
     let value = Number(currentValue);
     if (!Number.isFinite(value)) value = 50;
     if (value < min) value = min;
@@ -256,8 +265,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
           const val = parseFloat(this._sliderElement!.value);
           const pct = range !== 0 ? ((val - min) / range) * 100 : 0;
           this._filledElement!.style.width = `${pct}%`;
-          
-          if (this._valueSignal && 'set' in this._valueSignal) {
+
+          if (this._valueSignal && "set" in this._valueSignal) {
             (this._valueSignal as Signal<number>).set(val);
           } else {
             (this as any)._value = val;
@@ -290,7 +299,14 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     ) {
       let parsed = newVal !== null ? parseFloat(newVal) : null;
       if (parsed === null || Number.isNaN(parsed)) {
-        parsed = name === "value" ? 50 : name === "step" ? 1 : name === "max" ? 100 : 0;
+        parsed =
+          name === "value"
+            ? 50
+            : name === "step"
+              ? 1
+              : name === "max"
+                ? 100
+                : 0;
       }
       if (name === "step" && parsed <= 0) {
         parsed = 1;
@@ -299,7 +315,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
       if (name === "value" || name === "min" || name === "max") {
         const min = this.min;
         const max = this.max;
-        const currentVal = (this as any)._value as number || 50;
+        const currentVal = ((this as any)._value as number) || 50;
         if (currentVal < min) (this as any).value = min;
         if (currentVal > max) (this as any).value = max;
       }

@@ -275,7 +275,11 @@ export class SazamiComponent<
   }
 
   // Unified binding API - delegates to Sairin's dom/bindings
-  protected bind(selector: string, target: BindTarget, readable: Readable<any>): void {
+  protected bind(
+    selector: string,
+    target: BindTarget,
+    readable: Readable<any>,
+  ): void {
     const element = selector === ":host" ? this : this.$(selector);
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
@@ -292,7 +296,10 @@ export class SazamiComponent<
         dispose = bindHtml(element, readable as Readable<string>);
         break;
       case "value":
-        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+        if (
+          element instanceof HTMLInputElement ||
+          element instanceof HTMLTextAreaElement
+        ) {
           dispose = bindInputValue(element, readable as Signal<string>);
         }
         break;
@@ -300,7 +307,11 @@ export class SazamiComponent<
         if (element instanceof HTMLInputElement) {
           dispose = bindInputChecked(element, readable as Signal<boolean>);
         } else {
-          dispose = bindBooleanAttribute(element, "checked", readable as Readable<boolean>);
+          dispose = bindBooleanAttribute(
+            element,
+            "checked",
+            readable as Readable<boolean>,
+          );
         }
         break;
       case "disabled":
@@ -344,11 +355,19 @@ export class SazamiComponent<
     this.bind(selector, "visible", readable);
   }
 
-  protected bindAttribute(selector: string, attr: string, readable: Readable<any>): void {
+  protected bindAttribute(
+    selector: string,
+    attr: string,
+    readable: Readable<any>,
+  ): void {
     this.bind(selector, attr, readable);
   }
 
-  protected bindProperty<T>(selector: string, prop: string, readable: Readable<T>): void {
+  protected bindProperty<T>(
+    selector: string,
+    prop: string,
+    readable: Readable<T>,
+  ): void {
     const element = this.$(selector);
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
@@ -358,7 +377,11 @@ export class SazamiComponent<
     this._cleanupFns.push(dispose);
   }
 
-  protected bindStyle(selector: string, styleProp: string, readable: Readable<string>): void {
+  protected bindStyle(
+    selector: string,
+    styleProp: string,
+    readable: Readable<string>,
+  ): void {
     const element = this.$(selector) as HTMLElement;
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
@@ -368,7 +391,11 @@ export class SazamiComponent<
     this._cleanupFns.push(dispose);
   }
 
-  protected bindToggleClass(selector: string, className: string, readable: Readable<boolean>): void {
+  protected bindToggleClass(
+    selector: string,
+    className: string,
+    readable: Readable<boolean>,
+  ): void {
     const element = this.$(selector);
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
@@ -381,9 +408,12 @@ export class SazamiComponent<
         if (active) {
           return current ? `${current} ${className}` : className;
         } else {
-          return current.split(" ").filter(c => c !== className).join(" ");
+          return current
+            .split(" ")
+            .filter((c) => c !== className)
+            .join(" ");
         }
-      }
+      },
     } as unknown as Readable<string>);
     this._cleanupFns.push(dispose);
   }
@@ -392,9 +422,10 @@ export class SazamiComponent<
     selector: string,
     readable: Readable<number>,
     min: number = 0,
-    max: number = 100
+    max: number = 100,
   ): void {
-    const element = selector === ":host" ? this : this.$(selector) as HTMLElement;
+    const element =
+      selector === ":host" ? this : (this.$(selector) as HTMLElement);
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
       return;
@@ -403,9 +434,12 @@ export class SazamiComponent<
       get: () => {
         const value = readable.get();
         const range = max - min;
-        const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+        const percent =
+          range > 0
+            ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
+            : 0;
         return `${percent}%`;
-      }
+      },
     } as unknown as Readable<string>);
     this._cleanupFns.push(dispose);
   }
@@ -415,7 +449,7 @@ export class SazamiComponent<
     attr: string,
     readable: Readable<number>,
     min: number = 0,
-    max: number = 100
+    max: number = 100,
   ): void {
     const element = selector === ":host" ? this : this.$(selector);
     if (!element) {
@@ -426,9 +460,12 @@ export class SazamiComponent<
       get: () => {
         const value = readable.get();
         const range = max - min;
-        const percent = range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
+        const percent =
+          range > 0
+            ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
+            : 0;
         return String(percent);
-      }
+      },
     } as unknown as Readable<string>);
     this._cleanupFns.push(dispose);
   }
@@ -592,9 +629,9 @@ export class SazamiComponent<
       // Skip if subclass has a custom setter for this property
       const descriptor = Object.getOwnPropertyDescriptor(
         Object.getPrototypeOf(this),
-        prop
+        prop,
       );
-      if (descriptor && 'set' in descriptor) {
+      if (descriptor && "set" in descriptor) {
         continue;
       }
       this._createReflector(prop, cfg.type, cfg.default, cfg.reflect);

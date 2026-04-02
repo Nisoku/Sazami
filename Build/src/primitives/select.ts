@@ -2,7 +2,14 @@ import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, effect, onCleanup, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  onCleanup,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -109,7 +116,7 @@ const selectConfig = {
 @component(selectConfig)
 export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   declare open: boolean;
-  
+
   private _options: Array<{ value: string; label: string }> = [];
   private _valueSignal: Readable<string> | null = null;
   private _disabledSignal: Readable<boolean> | null = null;
@@ -152,7 +159,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         (self as any)._value = val;
         self._updateDisplay();
         self._updateSelectedState();
-      })
+      }),
     );
   }
 
@@ -199,7 +206,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
 
   render() {
     const placeholder = this.getAttribute("placeholder") || "Select...";
-    const currentValue = this._valueSignal ? this._valueSignal.get() : (this.getAttribute("value") || "");
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : this.getAttribute("value") || "";
 
     this._options = Array.from(this.querySelectorAll("option")).map((opt) => ({
       value: opt.getAttribute("value") || opt.textContent || "",
@@ -265,7 +274,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       const target = e.target as HTMLElement;
       if (target.classList.contains("option")) {
         const newValue = target.getAttribute("data-value") || "";
-        if (this._valueSignal && 'set' in this._valueSignal) {
+        if (this._valueSignal && "set" in this._valueSignal) {
           (this._valueSignal as Signal<string>).set(newValue);
         } else {
           this.value = newValue;
@@ -287,13 +296,17 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
 
   private _navigateOption(delta: number) {
     if (!this._options || this._options.length === 0) return;
-    const currentValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || "");
-    const currentIndex = this._options.findIndex((o) => o.value === currentValue);
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || "";
+    const currentIndex = this._options.findIndex(
+      (o) => o.value === currentValue,
+    );
     let newIndex = currentIndex + delta;
     if (newIndex < 0) newIndex = this._options.length - 1;
     if (newIndex >= this._options.length) newIndex = 0;
     const newValue = this._options[newIndex].value;
-    if (this._valueSignal && 'set' in this._valueSignal) {
+    if (this._valueSignal && "set" in this._valueSignal) {
       (this._valueSignal as Signal<string>).set(newValue);
     } else {
       this.value = newValue;
@@ -303,7 +316,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   }
 
   private _updateSelectedState() {
-    const currentValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || "");
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || "";
     const options = this.shadow.querySelectorAll(".option");
     options.forEach((opt) => {
       const optValue = opt.getAttribute("data-value");
@@ -316,7 +331,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   private _updateDisplay() {
     const trigger = this.$(".trigger") as HTMLElement;
     const placeholder = this.getAttribute("placeholder") || "Select...";
-    const currentValue = this._valueSignal ? this._valueSignal.get() : ((this as any)._value || "");
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || "";
     const selectedOption = this._options.find((o) => o.value === currentValue);
     const valueEl = trigger?.querySelector(".value");
     if (valueEl) {

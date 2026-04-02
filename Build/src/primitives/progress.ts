@@ -80,19 +80,29 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   private _setupValueBinding() {
     if (!this._barElement || !this._valueSignal) return;
 
-    this.bindWidthPercent(".bar", this._valueSignal, this._rangeMin, this._rangeMax);
+    this.bindWidthPercent(
+      ".bar",
+      this._valueSignal,
+      this._rangeMin,
+      this._rangeMax,
+    );
   }
 
   private _updateBarWidth(value: number) {
     if (this._barElement) {
       const range = this._rangeMax - this._rangeMin;
-      const percent = range > 0 ? Math.min(100, Math.max(0, ((value - this._rangeMin) / range) * 100)) : 0;
+      const percent =
+        range > 0
+          ? Math.min(100, Math.max(0, ((value - this._rangeMin) / range) * 100))
+          : 0;
       this._barElement.style.width = `${percent}%`;
     }
   }
 
   render() {
-    const rawValue = this._valueSignal ? this._valueSignal.get() : Number(this.getAttribute("value") || "50");
+    const rawValue = this._valueSignal
+      ? this._valueSignal.get()
+      : ((this as any)._value ?? Number(this.getAttribute("value") || "50"));
     const rawMax = Number(this.getAttribute("max") || "100");
     const rawMin = Number(this.getAttribute("min") || "0");
     const value = Number.isFinite(rawValue) ? rawValue : 50;

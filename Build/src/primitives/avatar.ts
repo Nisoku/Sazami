@@ -76,15 +76,15 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     const img = this._imgElement;
     const initials = this._initialsElement;
     const sig = this._srcSignal!;
-    
+
     const dispose = bindProperty(img, "src", sig);
     this.onCleanup(dispose);
-    
+
     const altDispose = bindProperty(img, "alt", {
-      get: () => this.getAttribute("alt") || ""
+      get: () => this.getAttribute("alt") || "",
     } as unknown as Signal<string>);
     this.onCleanup(altDispose);
-    
+
     this.onCleanup(
       bindProperty(initials, "textContent", {
         get: () => {
@@ -101,13 +101,15 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
             const initialsAttr = this.getAttribute("initials") || "";
             return initialsAttr || this._getInitials(alt || textContent);
           }
-        }
-      } as unknown as Signal<string>)
+        },
+      } as unknown as Signal<string>),
     );
   }
 
   private _updateDisplay() {
-    const currentSrc = this._srcSignal ? this._srcSignal.get() : ((this as any)._src || "");
+    const currentSrc = this._srcSignal
+      ? this._srcSignal.get()
+      : (this as any)._src || "";
     const alt = this.getAttribute("alt") || "";
     const textContent = this.textContent?.trim() || "";
     const initialsAttr = this.getAttribute("initials") || "";

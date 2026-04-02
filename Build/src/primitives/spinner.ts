@@ -118,7 +118,9 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   }
 
   render() {
-    const labelText = this._labelSignal ? this._labelSignal.get() : ((this as any)._label || this.label || "Loading...");
+    const labelText = this._labelSignal
+      ? this._labelSignal.get()
+      : (this as any)._label || this.label || "Loading...";
 
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "status");

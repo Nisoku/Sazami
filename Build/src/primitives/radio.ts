@@ -126,7 +126,9 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   private _getIsChecked(): boolean {
-    return this._checkedSignal ? this._checkedSignal.get() : !!(this as any)._checked;
+    return this._checkedSignal
+      ? this._checkedSignal.get()
+      : !!(this as any)._checked;
   }
 
   render() {
@@ -179,7 +181,7 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
         });
     }
 
-    if (this._checkedSignal && 'set' in this._checkedSignal) {
+    if (this._checkedSignal && "set" in this._checkedSignal) {
       (this._checkedSignal as Signal<boolean>).set(true);
     } else {
       this._setChecked(true);
