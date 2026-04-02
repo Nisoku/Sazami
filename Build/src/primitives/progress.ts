@@ -109,6 +109,10 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
 
     const ariaDisposer = effect(() => {
       const val = this._valueSignal!.get();
+      if (this.hasAttribute("indeterminate")) {
+        this.removeAttribute("aria-valuenow");
+        return;
+      }
       const range = this._rangeMax - this._rangeMin;
       const clamped =
         range > 0
@@ -165,7 +169,13 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     if (indeterminate) {
       this.removeAttribute("aria-valuenow");
     } else {
-      this.setAttribute("aria-valuenow", String(Math.round(value)));
+      const clamped =
+        range > 0 ? Math.min(max, Math.max(min, value)) : undefined;
+      if (clamped !== undefined) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
     }
 
     this.mountSync(

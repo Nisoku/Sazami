@@ -115,6 +115,11 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   render() {
     const currentSrc = this._getCurrentSrc();
     if (!currentSrc) {
+      if (this._srcDispose) {
+        this._srcDispose();
+        this._srcDispose = null;
+      }
+      this._imgElement = null;
       this.mountSync(STYLES, "");
       return;
     }
