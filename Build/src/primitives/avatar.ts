@@ -83,7 +83,8 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
 
   private _getCurrentSrc(): string {
     if (this._srcSignal) return this._srcSignal.get();
-    return (this as any)._src || "";
+    if ((this as any)._src) return (this as any)._src;
+    return this.getAttribute("src") || "";
   }
 
   private _isImageModeNow(): boolean {
@@ -113,9 +114,14 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     if (nowImageMode && this._imgElement) {
       this._disposeSrcBinding();
       this._setupSrcBinding();
+      if (!this._srcSignal && this._imgElement) {
+        this._imgElement.src = (this as any)._src || "";
+        this._imgElement.alt = this.getAttribute("alt") || "";
+      }
     } else if (!nowImageMode && this._initialsElement) {
       this._disposeSrcBinding();
       this._updateDisplay();
+      this._setupSignalWatcher();
     } else if (!this._imgElement && !this._initialsElement) {
       this.render();
     }

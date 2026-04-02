@@ -79,13 +79,31 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
   }
 
   private _updateIcon(iconName: string) {
-    if (this._iconElement) {
-      const svg = ICON_SVGS[iconName];
+    if (!this._iconElement) return;
+    const svg = ICON_SVGS[iconName];
+    const isSvg = !!svg;
+    const currentIsSvg = this._iconElement.tagName.toLowerCase() === "svg";
+
+    if (isSvg !== currentIsSvg) {
+      const parent = this._iconElement.parentNode;
+      let newElement: HTMLElement;
       if (svg) {
-        this._iconElement.innerHTML = svg;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        newElement = wrapper.firstElementChild as HTMLElement;
       } else {
-        this._iconElement.innerHTML = `<span>${escapeHtml(iconName)}</span>`;
+        newElement = document.createElement("span");
+        newElement.textContent = iconName;
       }
+      parent?.replaceChild(newElement, this._iconElement);
+      this._iconElement = newElement;
+    } else if (svg) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = svg;
+      const newSvg = wrapper.firstElementChild as HTMLElement;
+      this._iconElement.innerHTML = newSvg.innerHTML;
+    } else {
+      this._iconElement.textContent = iconName;
     }
   }
 
@@ -101,10 +119,29 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
     const dispose = effect(() => {
       const iconName = sig.get();
       const svg = ICON_SVGS[iconName];
-      if (svg) {
-        el.innerHTML = svg;
+      const isSvg = !!svg;
+      const currentIsSvg = el.tagName.toLowerCase() === "svg";
+
+      if (isSvg !== currentIsSvg) {
+        const parent = el.parentNode;
+        let newElement: HTMLElement;
+        if (svg) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = svg;
+          newElement = wrapper.firstElementChild as HTMLElement;
+        } else {
+          newElement = document.createElement("span");
+          newElement.textContent = iconName;
+        }
+        parent?.replaceChild(newElement, el);
+        this._iconElement = newElement;
+      } else if (svg) {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        const newSvg = wrapper.firstElementChild as HTMLElement;
+        el.innerHTML = newSvg.innerHTML;
       } else {
-        el.innerHTML = `<span>${escapeHtml(iconName)}</span>`;
+        el.textContent = iconName;
       }
     });
     this._iconEffectDispose = dispose;

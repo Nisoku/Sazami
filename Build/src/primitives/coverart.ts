@@ -51,12 +51,15 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
 
   set src(value: string | Readable<string>) {
     if (this._isReadableStr(value)) {
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
       this._srcSignal = value;
       this._pendingSrc = null;
       if (!this._imgElement) {
         this.render();
-      } else if (this._srcEffectDispose) {
-        this._srcEffectDispose();
+      } else {
         this._setupSrcEffect();
       }
     } else {
@@ -109,8 +112,15 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     const alt = this.getAttribute("alt") || "Cover art";
 
     if (!currentSrc) {
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
       this.mount(STYLES, "");
       this._imgElement = null;
+      if (this._srcSignal) {
+        this._setupSrcEffect();
+      }
       return;
     }
 

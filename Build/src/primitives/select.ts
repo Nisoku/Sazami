@@ -213,7 +213,6 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       this.removeAttribute("disabled");
     }
     this._updateTabIndex();
-    this._wireHandlers();
   }
 
   private _getIsDisabled(): boolean {
