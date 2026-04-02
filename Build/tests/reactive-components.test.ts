@@ -562,9 +562,17 @@ describe('Sazami Components - Signal Support', () => {
       
       el.content = userName;
       document.body.appendChild(el);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      await Promise.resolve();
       
+      let found = false;
+      for (let i = 0; i < 20; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        await Promise.resolve();
+        if (el.shadowRoot?.textContent?.includes('John')) {
+          found = true;
+          break;
+        }
+      }
+      expect(found).toBe(true);
       expect(el.shadowRoot?.textContent).toContain('John');
       
       el.remove();

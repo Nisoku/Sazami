@@ -8,7 +8,7 @@ order: 5
 
 Complete public API for Sazami.
 
-> **Note:** The Sakko parser is now in the separate [`@nisoku/sakko`](https://github.com/nisoku/sakko) package. For the full Sakko syntax, see the [Sakko Language Reference](/Sakko/language-reference/).
+> **Note:** The Sakko parser is now in the separate [`@nisoku/sakko`](https://github.com/nisoku/sakko) package. For the full Sakko syntax, see the [Sakko Language Reference](https://github.com/nisoku/sakko).
 
 ---
 

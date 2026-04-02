@@ -74,7 +74,6 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   set label(value: string | Readable<string>) {
     if (this._isReadableStr(value)) {
       this._labelSignal = value;
-      this._setupLabelBinding();
     } else {
       this._labelSignal = null;
       (this as any)._label = value;
@@ -83,7 +82,8 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   }
 
   get label(): string | Readable<string> {
-    return this._labelSignal || (this as any)._label || "";
+    if (this._labelSignal) return this._labelSignal;
+    return (this as any)._label || "";
   }
 
   set visible(value: boolean | Readable<boolean>) {
@@ -120,7 +120,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   render() {
     const labelText = this._labelSignal
       ? this._labelSignal.get()
-      : (this as any)._label || this.label || "Loading...";
+      : ((this as any)._label ?? "Loading...");
 
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "status");
@@ -140,10 +140,9 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
     this._labelElement = this.$(".label");
     if (this._labelElement) {
       this._labelElement.textContent = labelText;
-    }
-
-    if (this._labelSignal) {
-      this._setupLabelBinding();
+      if (this._labelSignal) {
+        this._setupLabelBinding();
+      }
     }
   }
 }

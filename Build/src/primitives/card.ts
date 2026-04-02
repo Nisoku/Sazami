@@ -68,7 +68,7 @@ export class SazamiCard extends SazamiComponent<typeof cardConfig> {
           } else {
             this.removeAttribute("loading");
           }
-        })
+        }),
       );
     } else {
       this._loadingSignal = null;

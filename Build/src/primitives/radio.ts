@@ -177,7 +177,12 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
         .querySelectorAll(`saz-radio[name="${escapedName}"]`)
         .forEach((el) => {
           if (el === this) return;
-          (el as any).checked = false;
+          const siblingSignal = (el as any)._checkedSignal;
+          if (siblingSignal && "set" in siblingSignal) {
+            (siblingSignal as Signal<boolean>).set(false);
+          } else {
+            (el as any).checked = false;
+          }
         });
     }
 

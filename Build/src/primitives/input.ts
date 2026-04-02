@@ -88,7 +88,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     const type = this.getAttribute("type") || "text";
     const initialValue = this._valueSignal
       ? this._valueSignal.get()
-      : (this as any)._value || "";
+      : this.getAttribute("value") || (this as any)._value || "";
 
     this.mount(
       STYLES,
@@ -113,7 +113,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
 
         const handler = (e: Event) => {
           const target = e.target as HTMLInputElement;
-          if ("set" in this._valueSignal!) {
+          if (isSignal(this._valueSignal)) {
             (this._valueSignal as Signal<string>).set(target.value);
           }
           (this.dispatchEventTyped as any)("input", { value: target.value });

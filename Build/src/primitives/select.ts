@@ -119,7 +119,9 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
 
   private _options: Array<{ value: string; label: string }> = [];
   private _valueSignal: Readable<string> | null = null;
+  private _valueEffectDisposer: (() => void) | null = null;
   private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledEffectDisposer: (() => void) | null = null;
   private _handleDocumentClick = (e: Event) => {
     if (!this.contains(e.target as Node)) {
       this.open = false;
@@ -140,6 +142,10 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       this._setupValueBinding();
     } else {
       this._valueSignal = null;
+      if (this._valueEffectDisposer) {
+        this._valueEffectDisposer();
+        this._valueEffectDisposer = null;
+      }
       (this as any)._value = valueOrSignal;
       this._updateDisplay();
       this._updateSelectedState();
@@ -151,22 +157,40 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   }
 
   private _setupValueBinding() {
+    if (this._valueEffectDisposer) {
+      this._valueEffectDisposer();
+    }
     const sig = this._valueSignal as Readable<string>;
     const self = this;
-    this.onCleanup(
-      effect(() => {
-        const val = sig.get();
-        (self as any)._value = val;
-        self._updateDisplay();
-        self._updateSelectedState();
-      }),
-    );
+    const dispose = effect(() => {
+      const val = sig.get();
+      (self as any)._value = val;
+      self._updateDisplay();
+      self._updateSelectedState();
+    });
+    this._valueEffectDisposer = dispose;
+    this.onCleanup(dispose);
   }
 
   set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledEffectDisposer) {
+      this._disabledEffectDisposer();
+      this._disabledEffectDisposer = null;
+    }
     if (this._isReadableBool(value)) {
       this._disabledSignal = value;
-      this.bindDisabled(":host", value);
+      const dispose = effect(() => {
+        const disabled = value.get();
+        if (disabled) {
+          this.setAttribute("disabled", "");
+        } else {
+          this.removeAttribute("disabled");
+        }
+        this._updateTabIndex();
+        this._wireHandlers();
+      });
+      this._disabledEffectDisposer = dispose;
+      this.onCleanup(dispose);
     } else {
       this._disabledSignal = null;
       this._setDisabled(value);

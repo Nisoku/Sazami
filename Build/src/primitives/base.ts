@@ -4,7 +4,7 @@ import {
   bindingError,
   renderError,
 } from "../errors";
-import { type Signal, type Readable } from "@nisoku/sairin";
+import { type Signal, type Readable, effect } from "@nisoku/sairin";
 import {
   bindText,
   bindHtml,
@@ -136,8 +136,9 @@ export class SazamiComponent<
   private _pendingStyles: string | null = null;
   private _pendingTemplate: string | null = null;
 
-  // Template identity, skip no-op renders
+  // Template and styles identity, skip no-op renders
   private _lastTemplate = "";
+  private _lastStyles = "";
 
   // Handler registry: { type: [{ id, fn, source, target }] }
   private _handlerId = 0;
@@ -258,12 +259,13 @@ export class SazamiComponent<
   /**
    * Flushes pending styles and template to the shadow DOM.
    * Called by scheduleRender when the microtask runs.
-   * Phase 2: skips no-op renders if template is identical.
+   * Phase 2: skips no-op renders if both styles and template are identical.
    */
   private _flush(styles: string, template: string): void {
-    // Template identity check, skip if template hasn't changed
-    if (template === this._lastTemplate) return;
+    // Identity check, skip if both styles and template haven't changed
+    if (template === this._lastTemplate && styles === this._lastStyles) return;
     this._lastTemplate = template;
+    this._lastStyles = styles;
 
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
@@ -300,11 +302,41 @@ export class SazamiComponent<
           element instanceof HTMLInputElement ||
           element instanceof HTMLTextAreaElement
         ) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"value" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion:
+                  "Use Signal instead of Derived for two-way bindings",
+              },
+            );
+            break;
+          }
           dispose = bindInputValue(element, readable as Signal<string>);
+        } else if (element instanceof HTMLSelectElement) {
+          dispose = bindAttribute(element, "value", readable);
+        } else {
+          bindingError(
+            `Cannot bind "value" to element type: ${element.constructor.name}`,
+            {
+              suggestion:
+                "Use bindAttribute or bindProperty for this element type",
+            },
+          );
         }
         break;
       case "checked":
         if (element instanceof HTMLInputElement) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"checked" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion:
+                  "Use Signal instead of Derived for two-way bindings",
+              },
+            );
+            break;
+          }
           dispose = bindInputChecked(element, readable as Signal<boolean>);
         } else {
           dispose = bindBooleanAttribute(
@@ -401,21 +433,22 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindProperty(element, "className", {
-      get: () => {
-        const current = element.className;
+    this._cleanupFns.push(
+      effect(() => {
         const active = readable.get();
+        const current = element.className;
         if (active) {
-          return current ? `${current} ${className}` : className;
+          if (!current.includes(className)) {
+            element.className = current ? `${current} ${className}` : className;
+          }
         } else {
-          return current
+          element.className = current
             .split(" ")
             .filter((c) => c !== className)
             .join(" ");
         }
-      },
-    } as unknown as Readable<string>);
-    this._cleanupFns.push(dispose);
+      }),
+    );
   }
 
   protected bindWidthPercent(
@@ -430,18 +463,17 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindStyle(element, "width", {
-      get: () => {
+    this._cleanupFns.push(
+      effect(() => {
         const value = readable.get();
         const range = max - min;
         const percent =
           range > 0
             ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
             : 0;
-        return `${percent}%`;
-      },
-    } as unknown as Readable<string>);
-    this._cleanupFns.push(dispose);
+        element.style.width = `${percent}%`;
+      }),
+    );
   }
 
   protected bindWidthPercentAttribute(
@@ -456,18 +488,17 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindAttribute(element, attr, {
-      get: () => {
+    this._cleanupFns.push(
+      effect(() => {
         const value = readable.get();
         const range = max - min;
         const percent =
           range > 0
             ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
             : 0;
-        return String(percent);
-      },
-    } as unknown as Readable<string>);
-    this._cleanupFns.push(dispose);
+        element.setAttribute(attr, String(percent));
+      }),
+    );
   }
 
   // query stable internal nodes

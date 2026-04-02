@@ -41,6 +41,7 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   private _srcSignal: Readable<string> | null = null;
   private _imgElement: HTMLImageElement | null = null;
   private _pendingSrc: string | null = null;
+  private _srcDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -53,6 +54,10 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
       this._setupSrcBinding();
     } else {
       this._srcSignal = null;
+      if (this._srcDispose) {
+        this._srcDispose();
+        this._srcDispose = null;
+      }
       this._pendingSrc = value;
       (this as any)._src = value;
       this._updateSrc(value);
@@ -72,7 +77,11 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   private _setupSrcBinding() {
     if (!this._imgElement) return;
 
+    if (this._srcDispose) {
+      this._srcDispose();
+    }
     const dispose = bindProperty(this._imgElement, "src", this._srcSignal!);
+    this._srcDispose = dispose;
     this.onCleanup(dispose);
   }
 

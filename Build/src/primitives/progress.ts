@@ -1,5 +1,11 @@
 import { SazamiComponent, component } from "./base";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; width: 100%; }
@@ -85,6 +91,18 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
       this._valueSignal,
       this._rangeMin,
       this._rangeMax,
+    );
+
+    this.onCleanup(
+      effect(() => {
+        const val = this._valueSignal!.get();
+        const range = this._rangeMax - this._rangeMin;
+        const clamped =
+          range > 0
+            ? Math.min(this._rangeMax, Math.max(this._rangeMin, val))
+            : this._rangeMin;
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      }),
     );
   }
 

@@ -156,17 +156,21 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
 
   private _handleClick = () => {
     if (this._getIsDisabled()) return;
-    const newValue = this._checkedSignal
-      ? !this._checkedSignal.get()
-      : !((this as any)._checked || false);
-    if (this._checkedSignal && "set" in this._checkedSignal) {
-      (this._checkedSignal as Signal<boolean>).set(newValue);
-      this._updateAria(newValue);
+    if (this._checkedSignal) {
+      if ("set" in this._checkedSignal) {
+        const newValue = !this._checkedSignal.get();
+        (this._checkedSignal as Signal<boolean>).set(newValue);
+        this._updateAria(newValue);
+        this.dispatchEventTyped("change", { checked: newValue });
+      } else {
+        this._updateAria();
+      }
     } else {
+      const newValue = !((this as any)._checked || false);
       this._setChecked(newValue);
       this._updateAria(newValue);
+      this.dispatchEventTyped("change", { checked: newValue });
     }
-    this.dispatchEventTyped("change", { checked: newValue });
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
@@ -177,11 +181,12 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
   };
 
   private _updateAria(checked?: boolean) {
-    const isChecked = checked !== undefined
-      ? checked
-      : this._checkedSignal
-        ? this._checkedSignal.get()
-        : !!(this as any)._checked;
+    const isChecked =
+      checked !== undefined
+        ? checked
+        : this._checkedSignal
+          ? this._checkedSignal.get()
+          : !!(this as any)._checked;
     const isDisabled = this._getIsDisabled();
     this.setAttribute("aria-checked", isChecked ? "true" : "false");
     if (isDisabled) {

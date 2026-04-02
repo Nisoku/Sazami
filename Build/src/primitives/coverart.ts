@@ -1,8 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
-import { bindProperty } from "@nisoku/sairin";
+import { Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -53,16 +52,18 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     if (this._isReadableStr(value)) {
       this._srcSignal = value;
       this._pendingSrc = null;
-      if (this._rendered && !this._imgElement) {
+      if (!this._imgElement) {
         this.render();
-      } else {
-        this._setupSrcBinding();
       }
     } else {
       this._srcSignal = null;
       this._pendingSrc = value;
       (this as any)._src = value;
-      this._updateSrc(value);
+      if (!this._imgElement) {
+        this.render();
+      } else {
+        this._updateSrc(value);
+      }
     }
   }
 
@@ -76,13 +77,6 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     }
   }
 
-  private _setupSrcBinding() {
-    if (!this._imgElement) return;
-
-    const dispose = bindProperty(this._imgElement, "src", this._srcSignal!);
-    this.onCleanup(dispose);
-  }
-
   render() {
     const currentSrc = this._srcSignal
       ? this._srcSignal.get()
@@ -93,7 +87,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
         "";
     const alt = this.getAttribute("alt") || "Cover art";
 
-    if (!currentSrc && !this._srcSignal) {
+    if (!currentSrc) {
       this.mount(STYLES, "");
       this._imgElement = null;
       return;
@@ -111,8 +105,15 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
       this._pendingSrc = null;
     }
 
-    if (this._srcSignal) {
-      this._setupSrcBinding();
+    if (this._srcSignal && this._imgElement) {
+      this.onCleanup(
+        effect(() => {
+          const src = this._srcSignal!.get();
+          if (this._imgElement) {
+            this._imgElement.src = src;
+          }
+        }),
+      );
     }
   }
 }

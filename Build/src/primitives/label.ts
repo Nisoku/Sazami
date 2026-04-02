@@ -28,6 +28,7 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
   private _content: string | Readable<string> = "";
   private _contentSignal: Readable<string> | null = null;
   private _textNode: Text | null = null;
+  private _contentDispose: (() => void) | null = null;
 
   private _isReadable(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -41,6 +42,10 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
       this._setupSignalBinding();
     } else {
       this._contentSignal = null;
+      if (this._contentDispose) {
+        this._contentDispose();
+        this._contentDispose = null;
+      }
       this._setTextContent(value);
     }
   }
@@ -59,7 +64,11 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
     const textNode = this._textNode;
     if (!textNode) return;
 
+    if (this._contentDispose) {
+      this._contentDispose();
+    }
     const dispose = bindText(textNode, this._contentSignal!);
+    this._contentDispose = dispose;
     this.onCleanup(dispose);
   }
 
@@ -68,8 +77,10 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
 
     const label = this.shadow.querySelector("label");
     if (label) {
-      this._textNode = document.createTextNode("");
-      label.prepend(this._textNode);
+      if (!this._textNode) {
+        this._textNode = document.createTextNode("");
+        label.prepend(this._textNode);
+      }
 
       if (this._contentSignal) {
         this._setupSignalBinding();

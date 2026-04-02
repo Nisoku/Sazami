@@ -64,7 +64,7 @@ export class SazamiTag extends SazamiComponent<typeof tagConfig> {
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
-    
+
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       this._textNode = document.createTextNode("");

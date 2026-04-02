@@ -62,17 +62,25 @@ const buttonConfig = {
 
 @component(buttonConfig)
 export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
+  declare loading: boolean;
+
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledValue: boolean = false;
+  private _disabledDispose: (() => void) | null = null;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
   }
 
   set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledDispose) {
+      this._disabledDispose();
+      this._disabledDispose = null;
+    }
     if (this._isReadableBool(value)) {
       this._disabledSignal = value;
       const dispose = bindDisabled(this, value);
+      this._disabledDispose = dispose;
       this.onCleanup(dispose);
     } else {
       this._disabledSignal = null;
@@ -97,7 +105,7 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
     if (this._disabledSignal) return this._disabledSignal.get();
     if (this._disabledValue) return true;
     if (this.hasAttribute("disabled")) return true;
-    return !!(this as any).loading;
+    return !!this.loading;
   }
 
   render() {

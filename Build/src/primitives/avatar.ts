@@ -1,7 +1,13 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 import { bindProperty } from "@nisoku/sairin";
 
 const STYLES = `
@@ -58,11 +64,19 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   set src(value: string | Readable<string>) {
     if (this._isReadableStr(value)) {
       this._srcSignal = value;
-      this._setupSrcBinding();
+      if (!this._imgElement && !this._initialsElement) {
+        this.render();
+      } else if (this._imgElement) {
+        this._setupSrcBinding();
+      }
     } else {
       this._srcSignal = null;
       (this as any)._src = value;
-      this._updateDisplay();
+      if (!this._imgElement) {
+        this.render();
+      } else {
+        this._updateDisplay();
+      }
     }
   }
 
@@ -71,38 +85,23 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   private _setupSrcBinding() {
-    if (!this._imgElement || !this._initialsElement) return;
+    if (!this._imgElement) return;
 
     const img = this._imgElement;
-    const initials = this._initialsElement;
     const sig = this._srcSignal!;
 
-    const dispose = bindProperty(img, "src", sig);
-    this.onCleanup(dispose);
-
-    const altDispose = bindProperty(img, "alt", {
-      get: () => this.getAttribute("alt") || "",
-    } as unknown as Signal<string>);
-    this.onCleanup(altDispose);
+    this.onCleanup(bindProperty(img, "src", sig));
 
     this.onCleanup(
-      bindProperty(initials, "textContent", {
-        get: () => {
-          const src = sig.get();
-          if (src) {
-            img.style.display = "block";
-            initials.style.display = "none";
-            return "";
-          } else {
-            img.style.display = "none";
-            initials.style.display = "";
-            const alt = this.getAttribute("alt") || "";
-            const textContent = this.textContent?.trim() || "";
-            const initialsAttr = this.getAttribute("initials") || "";
-            return initialsAttr || this._getInitials(alt || textContent);
-          }
-        },
-      } as unknown as Signal<string>),
+      effect(() => {
+        img.alt = this.getAttribute("alt") || "";
+      }),
+    );
+
+    this.onCleanup(
+      effect(() => {
+        sig.get();
+      }),
     );
   }
 
@@ -118,6 +117,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     if (currentSrc) {
       if (this._imgElement) {
         this._imgElement.src = currentSrc;
+        this._imgElement.alt = alt;
         this._imgElement.style.display = "block";
       }
       if (this._initialsElement) {
@@ -135,21 +135,23 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   render() {
-    this.mount(
-      STYLES,
-      `
-      <img class="image" alt="" style="display: none;" />
-      <span class="initials"></span>
-    `,
-    );
+    const currentSrc = this._srcSignal
+      ? this._srcSignal.get()
+      : (this as any)._src || "";
 
-    this._imgElement = this.$(".image");
-    this._initialsElement = this.$(".initials");
+    if (currentSrc) {
+      this.mount(STYLES, `<img class="image" alt="" />`);
+      this._imgElement = this.$(".image");
+      this._initialsElement = null;
 
-    this._updateDisplay();
-
-    if (this._srcSignal) {
-      this._setupSrcBinding();
+      if (this._srcSignal) {
+        this._setupSrcBinding();
+      }
+    } else {
+      this.mount(STYLES, `<span class="initials"></span>`);
+      this._imgElement = null;
+      this._initialsElement = this.$(".initials");
+      this._updateDisplay();
     }
   }
 

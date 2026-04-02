@@ -40,16 +40,22 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
   private _contentSignal: Readable<string> | null = null;
   private _textNode: Text | null = null;
   private _textContent: string = "";
+  private _contentDispose: (() => void) | null = null;
 
   private _isReadable(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
   }
 
   set content(value: string | Readable<string>) {
+    if (this._contentDispose) {
+      this._contentDispose();
+      this._contentDispose = null;
+    }
     if (this._isReadable(value)) {
       this._contentSignal = value;
       if (this._textNode) {
         const dispose = bindText(this._textNode, value);
+        this._contentDispose = dispose;
         this.onCleanup(dispose);
       }
     } else {
@@ -77,8 +83,9 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
       slot.replaceWith(this._textNode);
     }
 
-    if (this._contentSignal) {
+    if (this._contentSignal && !this._contentDispose) {
       const dispose = bindText(this._textNode!, this._contentSignal);
+      this._contentDispose = dispose;
       this.onCleanup(dispose);
     }
   }
