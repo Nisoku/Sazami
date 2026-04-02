@@ -102,10 +102,15 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
   }
 
   private _getIsDisabled(): boolean {
-    if (this._disabledSignal) return this._disabledSignal.get();
-    if (this._disabledValue) return true;
-    if (this.hasAttribute("disabled")) return true;
-    return !!this.loading;
+    let baseDisabled = false;
+    if (this._disabledSignal) {
+      baseDisabled = this._disabledSignal.get();
+    } else if (this._disabledValue) {
+      baseDisabled = true;
+    } else if (this.hasAttribute("disabled")) {
+      baseDisabled = true;
+    }
+    return baseDisabled || !!this.loading;
   }
 
   render() {

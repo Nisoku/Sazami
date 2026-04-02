@@ -51,7 +51,6 @@ export class SazamiCard extends SazamiComponent<typeof cardConfig> {
   declare gap: string;
 
   private _loadingSignal: Readable<boolean> | null = null;
-  private _contentSlot: HTMLElement | null = null;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
@@ -86,6 +85,5 @@ export class SazamiCard extends SazamiComponent<typeof cardConfig> {
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
-    this._contentSlot = this.shadowRoot?.querySelector("slot") || null;
   }
 }

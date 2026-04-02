@@ -1,6 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES } from "./shared";
-import { Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
 import { bindProperty } from "@nisoku/sairin";
 
 const STYLES = `
@@ -49,27 +49,67 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   private _srcSignal: Readable<string> | null = null;
   private _imgElement: HTMLImageElement | null = null;
   private _initialsElement: HTMLElement | null = null;
+  private _srcDisposer: (() => void) | null = null;
+  private _modeEffectDisposer: (() => void) | null = null;
+  private _altObserver: MutationObserver | null = null;
+  private _isImageMode: boolean = false;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
   }
 
+  private _disposeSrcBinding() {
+    if (this._srcDisposer) {
+      this._srcDisposer();
+      this._srcDisposer = null;
+    }
+    if (this._modeEffectDisposer) {
+      this._modeEffectDisposer();
+      this._modeEffectDisposer = null;
+    }
+    if (this._altObserver) {
+      this._altObserver.disconnect();
+      this._altObserver = null;
+    }
+  }
+
+  private _getCurrentSrc(): string {
+    if (this._srcSignal) return this._srcSignal.get();
+    return (this as any)._src || "";
+  }
+
+  private _isImageModeNow(): boolean {
+    return !!this._getCurrentSrc();
+  }
+
   set src(value: string | Readable<string>) {
-    if (this._isReadableStr(value)) {
+    const wasImageMode = this._isImageMode;
+    const hasReadable = this._isReadableStr(value);
+
+    if (hasReadable) {
       this._srcSignal = value;
-      if (!this._imgElement && !this._initialsElement) {
-        this.render();
-      } else if (this._imgElement) {
-        this._setupSrcBinding();
-      }
+      (this as any)._src = undefined;
     } else {
       this._srcSignal = null;
       (this as any)._src = value;
-      if (!this._imgElement) {
-        this.render();
-      } else {
-        this._updateDisplay();
-      }
+    }
+
+    const nowImageMode = this._isImageModeNow();
+
+    if (this._isImageMode !== nowImageMode) {
+      this._disposeSrcBinding();
+      this.render();
+      return;
+    }
+
+    if (nowImageMode && this._imgElement) {
+      this._disposeSrcBinding();
+      this._setupSrcBinding();
+    } else if (!nowImageMode && this._initialsElement) {
+      this._disposeSrcBinding();
+      this._updateDisplay();
+    } else if (!this._imgElement && !this._initialsElement) {
+      this.render();
     }
   }
 
@@ -78,32 +118,52 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   private _setupSrcBinding() {
-    if (!this._imgElement) return;
+    if (!this._imgElement || !this._srcSignal) return;
 
     const img = this._imgElement;
-    const sig = this._srcSignal!;
+    const sig = this._srcSignal;
 
-    this.onCleanup(bindProperty(img, "src", sig));
+    img.src = sig.get();
+    this._srcDisposer = bindProperty(img, "src", sig);
+    this.onCleanup(this._srcDisposer);
 
     img.alt = this.getAttribute("alt") || "";
 
-    const observer = new MutationObserver(() => {
+    this._altObserver = new MutationObserver(() => {
       img.alt = this.getAttribute("alt") || "";
     });
-    observer.observe(this, { attributes: true, attributeFilter: ["alt"] });
-    this.onCleanup(() => observer.disconnect());
+    this._altObserver.observe(this, {
+      attributes: true,
+      attributeFilter: ["alt"],
+    });
+    this.onCleanup(() => this._altObserver?.disconnect());
+
+    let previousSrc = sig.get();
+    const checkModeChange = () => {
+      const currentSrc = sig.get();
+      const shouldBeImageMode = !!currentSrc;
+      if (this._isImageMode !== shouldBeImageMode) {
+        this._disposeSrcBinding();
+        this.render();
+      }
+      previousSrc = currentSrc;
+    };
+
+    this._modeEffectDisposer = effect(() => {
+      sig.get();
+      checkModeChange();
+    });
+    this.onCleanup(this._modeEffectDisposer);
   }
 
   private _updateDisplay() {
-    const currentSrc = this._srcSignal
-      ? this._srcSignal.get()
-      : (this as any)._src || "";
+    const currentSrc = this._getCurrentSrc();
     const alt = this.getAttribute("alt") || "";
     const textContent = this.textContent?.trim() || "";
     const initialsAttr = this.getAttribute("initials") || "";
     const initials = initialsAttr || this._getInitials(alt || textContent);
 
-    if (currentSrc) {
+    if (this._isImageMode) {
       if (this._imgElement) {
         this._imgElement.src = currentSrc;
         this._imgElement.alt = alt;
@@ -124,12 +184,11 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   render() {
-    const currentSrc = this._srcSignal
-      ? this._srcSignal.get()
-      : (this as any)._src || "";
+    const currentSrc = this._getCurrentSrc();
+    this._isImageMode = !!currentSrc;
 
-    if (currentSrc) {
-      this.mount(STYLES, `<img class="image" alt="" />`);
+    if (this._isImageMode) {
+      this.mountSync(STYLES, `<img class="image" alt="" />`);
       this._imgElement = this.$(".image");
       this._initialsElement = null;
 
@@ -137,11 +196,34 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
         this._setupSrcBinding();
       }
     } else {
-      this.mount(STYLES, `<span class="initials"></span>`);
+      this.mountSync(STYLES, `<span class="initials"></span>`);
       this._imgElement = null;
       this._initialsElement = this.$(".initials");
       this._updateDisplay();
+
+      if (this._srcSignal) {
+        this._setupSignalWatcher();
+      }
     }
+  }
+
+  private _setupSignalWatcher() {
+    if (!this._srcSignal) return;
+
+    if (this._modeEffectDisposer) {
+      this._modeEffectDisposer();
+    }
+
+    const sig = this._srcSignal;
+    this._modeEffectDisposer = effect(() => {
+      const currentSrc = sig.get();
+      const shouldBeImageMode = !!currentSrc;
+      if (this._isImageMode !== shouldBeImageMode) {
+        this._disposeSrcBinding();
+        this.render();
+      }
+    });
+    this.onCleanup(this._modeEffectDisposer);
   }
 
   private _getInitials(name: string): string {

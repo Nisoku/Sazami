@@ -193,6 +193,46 @@ describe('Sazami Components - Signal Support', () => {
       el.remove();
     });
 
+    test('saz-avatar switches from empty to image when src signal updates', async () => {
+      const el = document.createElement('saz-avatar') as any;
+      const src = signal(path("test", "avatarEmpty"), '');
+      
+      el.src = src;
+      document.body.appendChild(el);
+      await Promise.resolve();
+      
+      const initials = el.shadowRoot?.querySelector('.initials');
+      expect(initials).not.toBeNull();
+      
+      src.set('user.jpg');
+      await Promise.resolve();
+      
+      const img = el.shadowRoot?.querySelector('img');
+      expect(img?.src).toContain('user.jpg');
+      
+      el.remove();
+    });
+
+    test('saz-avatar switches from image to empty when src signal updates', async () => {
+      const el = document.createElement('saz-avatar') as any;
+      const src = signal(path("test", "avatarFull"), 'user.jpg');
+      
+      el.src = src;
+      document.body.appendChild(el);
+      await Promise.resolve();
+      
+      const img = el.shadowRoot?.querySelector('img');
+      expect(img?.src).toContain('user.jpg');
+      
+      src.set('');
+      await Promise.resolve();
+      
+      const initials = el.shadowRoot?.querySelector('.initials');
+      expect(initials).not.toBeNull();
+      
+      el.remove();
+    });
+
     test('saz-coverart binds Signal<string> to src', async () => {
       const el = document.createElement('saz-coverart') as any;
       const src = signal(path("test", "coverSrc"), 'album.jpg');

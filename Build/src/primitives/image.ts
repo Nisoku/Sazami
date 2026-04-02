@@ -51,6 +51,9 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     if (this._isReadableStr(value)) {
       this._srcSignal = value;
       this._pendingSrc = null;
+      if (!this._imgElement) {
+        this._createImageElement();
+      }
       this._setupSrcBinding();
     } else {
       this._srcSignal = null;
@@ -60,6 +63,9 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
       }
       this._pendingSrc = value;
       (this as any)._src = value;
+      if (!this._imgElement) {
+        this._createImageElement();
+      }
       this._updateSrc(value);
     }
   }
@@ -72,6 +78,16 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     if (this._imgElement) {
       this._imgElement.src = value;
     }
+  }
+
+  private _createImageElement() {
+    const alt = this.alt || "";
+    const currentSrc = this._getCurrentSrc();
+    this.mount(
+      STYLES,
+      `<img src="${escapeHtml(currentSrc)}" alt="${escapeHtml(alt)}" />`,
+    );
+    this._imgElement = this.$("img");
   }
 
   private _setupSrcBinding() {

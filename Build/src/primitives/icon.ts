@@ -51,6 +51,7 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
 
   private _iconSignal: Readable<string> | null = null;
   private _iconElement: HTMLElement | null = null;
+  private _iconEffectDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -59,9 +60,15 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
   set icon(value: string | Readable<string>) {
     if (this._isReadableStr(value)) {
       this._iconSignal = value;
-      this._setupIconBinding();
+      if (this._iconElement) {
+        this._setupIconBinding();
+      }
     } else {
       this._iconSignal = null;
+      if (this._iconEffectDispose) {
+        this._iconEffectDispose();
+        this._iconEffectDispose = null;
+      }
       (this as any)._icon = value;
       this._updateIcon(value);
     }
@@ -83,21 +90,25 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
   }
 
   private _setupIconBinding() {
-    if (!this._iconElement) return;
+    if (!this._iconElement || !this._iconSignal) return;
 
-    const sig = this._iconSignal!;
+    if (this._iconEffectDispose) {
+      this._iconEffectDispose();
+    }
+
+    const sig = this._iconSignal;
     const el = this._iconElement;
-    this.onCleanup(
-      effect(() => {
-        const iconName = sig.get();
-        const svg = ICON_SVGS[iconName];
-        if (svg) {
-          el.innerHTML = svg;
-        } else {
-          el.innerHTML = `<span>${escapeHtml(iconName)}</span>`;
-        }
-      }),
-    );
+    const dispose = effect(() => {
+      const iconName = sig.get();
+      const svg = ICON_SVGS[iconName];
+      if (svg) {
+        el.innerHTML = svg;
+      } else {
+        el.innerHTML = `<span>${escapeHtml(iconName)}</span>`;
+      }
+    });
+    this._iconEffectDispose = dispose;
+    this.onCleanup(dispose);
   }
 
   render() {

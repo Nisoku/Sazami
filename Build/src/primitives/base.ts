@@ -237,6 +237,22 @@ export class SazamiComponent<
   }
 
   /**
+   * Synchronously mounts the component's shadow DOM, bypassing batched rendering.
+   * Use when bindings depend on DOM being ready immediately.
+   * @param styles - CSS styles to inject
+   * @param template - HTML template string
+   */
+  protected mountSync(styles: string, template: string) {
+    try {
+      this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+    } catch (e) {
+      renderError(`Failed to render component: ${(e as Error).message}`, {
+        suggestion: "Check the template syntax and styles",
+      });
+    }
+  }
+
+  /**
    * Schedules a render to occur in the next microtask.
    * Collapses multiple render() calls within the same tick into one DOM write.
    * Uses backpressure, if a render is already queued, subsequent calls are dropped.
@@ -436,16 +452,10 @@ export class SazamiComponent<
     this._cleanupFns.push(
       effect(() => {
         const active = readable.get();
-        const current = element.className;
         if (active) {
-          if (!current.includes(className)) {
-            element.className = current ? `${current} ${className}` : className;
-          }
+          element.classList.add(className);
         } else {
-          element.className = current
-            .split(" ")
-            .filter((c) => c !== className)
-            .join(" ");
+          element.classList.remove(className);
         }
       }),
     );
@@ -456,24 +466,24 @@ export class SazamiComponent<
     readable: Readable<number>,
     min: number = 0,
     max: number = 100,
-  ): void {
+  ): () => void {
     const element =
       selector === ":host" ? this : (this.$(selector) as HTMLElement);
     if (!element) {
       bindingError(`Element not found: ${selector}`, {});
-      return;
+      return () => {};
     }
-    this._cleanupFns.push(
-      effect(() => {
-        const value = readable.get();
-        const range = max - min;
-        const percent =
-          range > 0
-            ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
-            : 0;
-        element.style.width = `${percent}%`;
-      }),
-    );
+    const dispose = effect(() => {
+      const value = readable.get();
+      const range = max - min;
+      const percent =
+        range > 0
+          ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
+          : 0;
+      element.style.width = `${percent}%`;
+    });
+    this._cleanupFns.push(dispose);
+    return dispose;
   }
 
   protected bindWidthPercentAttribute(

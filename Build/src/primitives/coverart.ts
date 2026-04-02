@@ -43,6 +43,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
   private _srcSignal: Readable<string> | null = null;
   private _imgElement: HTMLImageElement | null = null;
   private _pendingSrc: string | null = null;
+  private _srcEffectDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -54,9 +55,16 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
       this._pendingSrc = null;
       if (!this._imgElement) {
         this.render();
+      } else if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._setupSrcEffect();
       }
     } else {
       this._srcSignal = null;
+      if (this._srcEffectDispose) {
+        this._srcEffectDispose();
+        this._srcEffectDispose = null;
+      }
       this._pendingSrc = value;
       (this as any)._src = value;
       if (!this._imgElement) {
@@ -75,6 +83,19 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     if (this._imgElement) {
       this._imgElement.src = value;
     }
+  }
+
+  private _setupSrcEffect() {
+    if (!this._srcSignal || !this._imgElement) return;
+
+    const dispose = effect(() => {
+      const src = this._srcSignal!.get();
+      if (this._imgElement) {
+        this._imgElement.src = src;
+      }
+    });
+    this._srcEffectDispose = dispose;
+    this.onCleanup(dispose);
   }
 
   render() {
@@ -106,14 +127,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     }
 
     if (this._srcSignal && this._imgElement) {
-      this.onCleanup(
-        effect(() => {
-          const src = this._srcSignal!.get();
-          if (this._imgElement) {
-            this._imgElement.src = src;
-          }
-        }),
-      );
+      this._setupSrcEffect();
     }
   }
 }

@@ -61,6 +61,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
   declare variant: string;
 
   private _valueSignal: Readable<string> | null = null;
+  private _input: HTMLInputElement | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -72,15 +73,17 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     } else {
       this._valueSignal = null;
       (this as any)._value = valueOrSignal;
-      const input = this.$("input") as HTMLInputElement | null;
-      if (input && input.value !== valueOrSignal) {
-        input.value = valueOrSignal || "";
+      if (this._input && this._input.value !== valueOrSignal) {
+        this._input.value = valueOrSignal || "";
       }
     }
   }
 
   get value(): string | Readable<string> {
-    return this._valueSignal || (this as any)._value || "";
+    if (this._valueSignal) return this._valueSignal.get();
+    if ((this as any)._value) return (this as any)._value;
+    if (this._input) return this._input.value;
+    return this.getAttribute("value") || "";
   }
 
   render() {
@@ -97,16 +100,16 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     `,
     );
 
-    const input = this.$("input") as HTMLInputElement;
-    if (input) {
+    this._input = this.$("input") as HTMLInputElement;
+    if (this._input) {
       this.removeAllHandlers({ type: "input", source: "internal" });
 
       if (this._valueSignal) {
         this.onCleanup(
           effect(() => {
             const val = this._valueSignal!.get();
-            if (input.value !== val) {
-              input.value = val;
+            if (this._input && this._input.value !== val) {
+              this._input.value = val;
             }
           }),
         );
@@ -118,8 +121,10 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
           }
           (this.dispatchEventTyped as any)("input", { value: target.value });
         };
-        input.addEventListener("input", handler);
-        this.onCleanup(() => input.removeEventListener("input", handler));
+        this._input.addEventListener("input", handler);
+        this.onCleanup(() =>
+          this._input?.removeEventListener("input", handler),
+        );
       } else {
         this.addHandler(
           "input",
@@ -128,7 +133,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
             (this as any)._value = target.value;
             (this.dispatchEventTyped as any)("input", { value: target.value });
           },
-          { internal: true, element: input },
+          { internal: true, element: this._input },
         );
       }
     }
@@ -143,22 +148,21 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
-    const input = this.$("input") as HTMLInputElement;
-    if (!input) return;
+    if (!this._input) return;
 
     if (name === "value") {
       if (this._valueSignal) return;
       if (newVal === null) {
-        if (input.value !== "") input.value = "";
-      } else if (input.value !== newVal) {
-        input.value = newVal;
+        if (this._input.value !== "") this._input.value = "";
+      } else if (this._input.value !== newVal) {
+        this._input.value = newVal;
       }
     } else if (name === "disabled") {
-      input.disabled = newVal !== null;
+      this._input.disabled = newVal !== null;
     } else if (name === "placeholder") {
-      input.placeholder = newVal ?? "";
+      this._input.placeholder = newVal ?? "";
     } else if (name === "type") {
-      input.type = newVal ?? "text";
+      this._input.type = newVal ?? "text";
     }
   }
 }

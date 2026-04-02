@@ -83,7 +83,10 @@ export function transformAST(node: ASTNode): VNode | VNode[] {
     // For icon components, pass the value as an "icon" attribute
     // so connectedCallback can read it reliably.
     if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {
-      props.icon = node.value;
+      props.icon =
+        typeof node.value === "string"
+          ? node.value
+          : serializeValue(node.value);
     }
     return {
       type: tag,

@@ -63,6 +63,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   private _barElement: HTMLElement | null = null;
   private _rangeMin: number = 0;
   private _rangeMax: number = 100;
+  private _valueBindingCleanup: (() => void) | null = null;
 
   private _isReadableNum(value: unknown): value is Readable<number> {
     return isSignal(value) || value instanceof Derived;
@@ -71,9 +72,15 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   set value(valueOrSignal: number | Readable<number>) {
     if (this._isReadableNum(valueOrSignal)) {
       this._valueSignal = valueOrSignal;
-      this._setupValueBinding();
+      if (this._barElement) {
+        this._setupValueBinding();
+      }
     } else {
       this._valueSignal = null;
+      if (this._valueBindingCleanup) {
+        this._valueBindingCleanup();
+        this._valueBindingCleanup = null;
+      }
       (this as any)._value = valueOrSignal;
       this._updateBarWidth(valueOrSignal);
     }
@@ -86,24 +93,35 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   private _setupValueBinding() {
     if (!this._barElement || !this._valueSignal) return;
 
-    this.bindWidthPercent(
+    if (this._valueBindingCleanup) {
+      this._valueBindingCleanup();
+    }
+
+    const cleanups: (() => void)[] = [];
+
+    const widthDisposer = this.bindWidthPercent(
       ".bar",
       this._valueSignal,
       this._rangeMin,
       this._rangeMax,
     );
+    cleanups.push(widthDisposer);
 
-    this.onCleanup(
-      effect(() => {
-        const val = this._valueSignal!.get();
-        const range = this._rangeMax - this._rangeMin;
-        const clamped =
-          range > 0
-            ? Math.min(this._rangeMax, Math.max(this._rangeMin, val))
-            : this._rangeMin;
-        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
-      }),
-    );
+    const ariaDisposer = effect(() => {
+      const val = this._valueSignal!.get();
+      const range = this._rangeMax - this._rangeMin;
+      const clamped =
+        range > 0
+          ? Math.min(this._rangeMax, Math.max(this._rangeMin, val))
+          : this._rangeMin;
+      this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+    });
+    cleanups.push(ariaDisposer);
+
+    this._valueBindingCleanup = () => {
+      cleanups.forEach((fn) => fn());
+    };
+    this.onCleanup(this._valueBindingCleanup);
   }
 
   private _updateBarWidth(value: number) {
@@ -157,7 +175,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
 
     this._barElement = this.$(".bar");
 
-    if (this._valueSignal) {
+    if (this._valueSignal && this._barElement) {
       this._setupValueBinding();
     }
   }

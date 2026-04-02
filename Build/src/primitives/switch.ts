@@ -176,8 +176,10 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
     const newValue = this._checkedSignal
       ? !this._checkedSignal.get()
       : !((this as any)._checked || false);
-    if (this._checkedSignal && "set" in this._checkedSignal) {
-      (this._checkedSignal as Signal<boolean>).set(newValue);
+    if (this._checkedSignal) {
+      if ("set" in this._checkedSignal) {
+        (this._checkedSignal as Signal<boolean>).set(newValue);
+      }
     } else {
       this._setChecked(newValue);
     }
