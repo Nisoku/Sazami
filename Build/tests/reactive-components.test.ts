@@ -534,7 +534,7 @@ describe('Sazami Components - Signal Support', () => {
       document.body.appendChild(el);
       await Promise.resolve();
       
-      const textNode = el.shadowRoot?.childNodes[1]; // Skip style element
+      const textNode = el.shadowRoot?.querySelector('slot')?.nextSibling;
       expect(textNode?.textContent || '').toBe('');
       
       text.set('has value');
@@ -603,16 +603,9 @@ describe('Sazami Components - Signal Support', () => {
       el.content = userName;
       document.body.appendChild(el);
       
-      let found = false;
-      for (let i = 0; i < 20; i++) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        await Promise.resolve();
-        if (el.shadowRoot?.textContent?.includes('John')) {
-          found = true;
-          break;
-        }
-      }
-      expect(found).toBe(true);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await Promise.resolve();
+      
       expect(el.shadowRoot?.textContent).toContain('John');
       
       el.remove();

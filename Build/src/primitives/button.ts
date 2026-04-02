@@ -81,7 +81,6 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
       this._disabledSignal = value;
       const dispose = bindDisabled(this, value);
       this._disabledDispose = dispose;
-      this.onCleanup(dispose);
     } else {
       this._disabledSignal = null;
       this._setDisabled(value);

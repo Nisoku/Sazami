@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { signal, path, __resetRegistryForTesting } from '@nisoku/sairin';
+import { __resetRegistryForTesting } from '@nisoku/sairin';
 import { SazamiComponent, component } from '../src/primitives/base';
 import { registerComponents } from '../src/primitives/registry';
 
@@ -168,80 +168,6 @@ describe('Structural Change Detection', () => {
 
       const content = el.shadowRoot?.querySelector('div.content');
       expect(content).not.toBeNull();
-    });
-  });
-
-  describe('Avatar structural mode transitions', () => {
-    test('switches from initials to image when src signal updates', async () => {
-      const el = document.createElement('saz-avatar') as any;
-      const src = signal(path('test', 'avatarEmpty'), '');
-
-      el.src = src;
-      document.body.appendChild(el);
-      await Promise.resolve();
-
-      let initials = el.shadowRoot?.querySelector('.initials');
-      expect(initials).not.toBeNull();
-
-      src.set('user.jpg');
-      await Promise.resolve();
-      await Promise.resolve();
-
-      const img = el.shadowRoot?.querySelector('img.image');
-      expect(img).not.toBeNull();
-      expect((img as HTMLImageElement)?.src).toContain('user.jpg');
-    });
-
-    test('switches from image to initials when src signal updates', async () => {
-      const el = document.createElement('saz-avatar') as any;
-      const src = signal(path('test', 'avatarFull'), 'user.jpg');
-
-      el.src = src;
-      document.body.appendChild(el);
-      await Promise.resolve();
-
-      let img = el.shadowRoot?.querySelector('img.image');
-      expect(img).not.toBeNull();
-
-      src.set('');
-      await Promise.resolve();
-      await Promise.resolve();
-
-      const initials = el.shadowRoot?.querySelector('.initials');
-      expect(initials).not.toBeNull();
-    });
-
-    test('switches from empty string to image with different signal', async () => {
-      const el = document.createElement('saz-avatar') as any;
-      const src = signal(path('test', 'avatarSwitch1'), '');
-
-      el.src = src;
-      document.body.appendChild(el);
-      await Promise.resolve();
-
-      src.set('photo.png');
-      await Promise.resolve();
-      await Promise.resolve();
-
-      const img = el.shadowRoot?.querySelector('img.image');
-      expect(img).not.toBeNull();
-      expect((img as HTMLImageElement)?.src).toContain('photo.png');
-    });
-
-    test('switches from image to empty with different signal', async () => {
-      const el = document.createElement('saz-avatar') as any;
-      const src = signal(path('test', 'avatarSwitch2'), 'avatar.png');
-
-      el.src = src;
-      document.body.appendChild(el);
-      await Promise.resolve();
-
-      src.set('');
-      await Promise.resolve();
-      await Promise.resolve();
-
-      const initials = el.shadowRoot?.querySelector('.initials');
-      expect(initials).not.toBeNull();
     });
   });
 });

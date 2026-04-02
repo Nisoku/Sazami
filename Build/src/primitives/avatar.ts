@@ -41,6 +41,7 @@ const avatarConfig = {
     initials: { type: "string" as const, reflect: true },
     size: { type: "string" as const, reflect: true },
     shape: { type: "string" as const, reflect: true },
+    src: { type: "string" as const, reflect: true },
   },
   structuralRoots: {
     image: "img",
@@ -246,5 +247,29 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
       .map((n) => n[0])
       .slice(0, 2)
       .join("");
+  }
+
+  static get observedAttributes() {
+    return ["src", "alt", "size", "shape", "initials"];
+  }
+
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === "src" && oldValue !== newValue) {
+      (this as any)._src = newValue || "";
+      if (!this._srcSignal) {
+        const wasImageMode = this._isImageMode;
+        const nowImageMode = !!this._getCurrentSrc();
+        if (wasImageMode !== nowImageMode) {
+          this.render();
+        } else {
+          this._updateDisplay();
+        }
+      }
+    }
   }
 }
