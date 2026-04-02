@@ -42,6 +42,10 @@ const avatarConfig = {
     size: { type: "string" as const, reflect: true },
     shape: { type: "string" as const, reflect: true },
   },
+  structuralRoots: {
+    image: "img",
+    initials: "span",
+  },
 } as const;
 
 @component(avatarConfig)
@@ -53,6 +57,10 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   private _modeEffectDisposer: (() => void) | null = null;
   private _altObserver: MutationObserver | null = null;
   private _isImageMode: boolean = false;
+
+  protected getRenderMode(): string {
+    return this._isImageMode ? "image" : "initials";
+  }
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -188,7 +196,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
     this._isImageMode = !!currentSrc;
 
     if (this._isImageMode) {
-      this.mountSync(STYLES, `<img class="image" alt="" />`);
+      this.mount(STYLES, `<img class="image" alt="" />`);
       this._imgElement = this.$(".image");
       this._initialsElement = null;
 
@@ -196,7 +204,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
         this._setupSrcBinding();
       }
     } else {
-      this.mountSync(STYLES, `<span class="initials"></span>`);
+      this.mount(STYLES, `<span class="initials"></span>`);
       this._imgElement = null;
       this._initialsElement = this.$(".initials");
       this._updateDisplay();

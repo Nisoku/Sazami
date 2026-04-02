@@ -32,6 +32,7 @@ export interface SazamiComponentConfig {
   properties?: Record<string, AnyPropertyConfig>;
   events?: Record<string, EventConfig>;
   binds?: Record<string, BindingType>;
+  structuralRoots?: Record<string, string>;
 }
 
 export interface PropertyConfig {
@@ -140,6 +141,9 @@ export class SazamiComponent<
   private _lastTemplate = "";
   private _lastStyles = "";
 
+  // Structural change detection
+  private _currentRootElement: string | null = null;
+
   // Handler registry: { type: [{ id, fn, source, target }] }
   private _handlerId = 0;
   private _handlers: Map<
@@ -180,6 +184,24 @@ export class SazamiComponent<
     return [];
   }
 
+  protected getStructuralRoot(): string | null {
+    const cfg = (this as any).sazamiConfig as SazamiComponentConfig | undefined;
+    if (cfg?.structuralRoots) {
+      const mode = this.getRenderMode();
+      return cfg.structuralRoots[mode] ?? null;
+    }
+    return this._currentRootElement;
+  }
+
+  protected getRenderMode(): string {
+    return "";
+  }
+
+  private _extractRootElement(template: string): string {
+    const match = template.match(/<([a-z][a-z0-9-]*)/i);
+    return match ? match[1].toLowerCase() : "";
+  }
+
   // Lifecycle
   connectedCallback() {
     if (!this._rendered) {
@@ -215,40 +237,27 @@ export class SazamiComponent<
 
   /**
    * Mounts the component's shadow DOM with the given styles and template.
+   * Auto-detects structural changes and renders synchronously when needed.
    * @param styles - CSS styles to inject
    * @param template - HTML template string. Callers are responsible for escaping
    *   user-provided data using escapeHtml() before interpolating into the template.
    */
   protected mount(styles: string, template: string) {
-    if (!this._rendered) {
-      // First render: synchronous, establishes DOM structure for Sairin to bind to
+    const newRootElement = this._extractRootElement(template);
+    const isStructuralChange =
+      newRootElement !== "" && newRootElement !== this._currentRootElement;
+
+    if (!this._rendered || isStructuralChange) {
       try {
         this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+        this._currentRootElement = newRootElement;
       } catch (e) {
         renderError(`Failed to render component: ${(e as Error).message}`, {
           suggestion: "Check the template syntax and styles",
         });
       }
     } else {
-      // Subsequent renders: batched, backpressured
-      // Once Sairin is wired this path should rarely fire
       this.scheduleRender(styles, template);
-    }
-  }
-
-  /**
-   * Synchronously mounts the component's shadow DOM, bypassing batched rendering.
-   * Use when bindings depend on DOM being ready immediately.
-   * @param styles - CSS styles to inject
-   * @param template - HTML template string
-   */
-  protected mountSync(styles: string, template: string) {
-    try {
-      this.shadow.innerHTML = `<style>${styles}</style>${template}`;
-    } catch (e) {
-      renderError(`Failed to render component: ${(e as Error).message}`, {
-        suggestion: "Check the template syntax and styles",
-      });
     }
   }
 
@@ -262,12 +271,15 @@ export class SazamiComponent<
     this._pendingTemplate = template;
     if (this._dirty) return;
     this._dirty = true;
+    const pendingRoot = this._extractRootElement(template);
     queueMicrotask(() => {
       this._dirty = false;
       if (this._pendingTemplate !== null) {
-        this._flush(this._pendingStyles!, this._pendingTemplate);
+        const currentTemplate = this._pendingTemplate;
+        const currentStyles = this._pendingStyles!;
         this._pendingStyles = null;
         this._pendingTemplate = null;
+        this._flush(currentStyles, currentTemplate, pendingRoot);
       }
     });
   }
@@ -275,16 +287,19 @@ export class SazamiComponent<
   /**
    * Flushes pending styles and template to the shadow DOM.
    * Called by scheduleRender when the microtask runs.
-   * Phase 2: skips no-op renders if both styles and template are identical.
+   * Skips stale renders if structural change made them obsolete.
    */
-  private _flush(styles: string, template: string): void {
-    // Identity check, skip if both styles and template haven't changed
+  private _flush(styles: string, template: string, pendingRoot: string): void {
+    if (pendingRoot !== "" && pendingRoot !== this._currentRootElement) {
+      return;
+    }
     if (template === this._lastTemplate && styles === this._lastStyles) return;
     this._lastTemplate = template;
     this._lastStyles = styles;
 
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = pendingRoot || this._currentRootElement;
     } catch (e) {
       renderError(`Failed to render component: ${(e as Error).message}`, {
         suggestion: "Check the template syntax and styles",

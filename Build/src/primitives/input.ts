@@ -62,6 +62,8 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
 
   private _valueSignal: Readable<string> | null = null;
   private _input: HTMLInputElement | null = null;
+  private _valueEffectDisposer: (() => void) | null = null;
+  private _inputHandler: ((e: Event) => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -71,11 +73,23 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     if (this._isReadableStr(valueOrSignal)) {
       this._valueSignal = valueOrSignal;
     } else {
+      this._disposeValueBindings();
       this._valueSignal = null;
       (this as any)._value = valueOrSignal;
       if (this._input && this._input.value !== valueOrSignal) {
         this._input.value = valueOrSignal || "";
       }
+    }
+  }
+
+  private _disposeValueBindings() {
+    if (this._valueEffectDisposer) {
+      this._valueEffectDisposer();
+      this._valueEffectDisposer = null;
+    }
+    if (this._inputHandler && this._input) {
+      this._input.removeEventListener("input", this._inputHandler);
+      this._inputHandler = null;
     }
   }
 
@@ -87,6 +101,8 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
   }
 
   render() {
+    this._disposeValueBindings();
+
     const placeholder = this.getAttribute("placeholder") || "";
     const type = this.getAttribute("type") || "text";
     const initialValue = this._valueSignal
@@ -105,26 +121,27 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
       this.removeAllHandlers({ type: "input", source: "internal" });
 
       if (this._valueSignal) {
-        this.onCleanup(
-          effect(() => {
-            const val = this._valueSignal!.get();
-            if (this._input && this._input.value !== val) {
-              this._input.value = val;
-            }
-          }),
-        );
+        this._valueEffectDisposer = effect(() => {
+          const val = this._valueSignal!.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this.onCleanup(this._valueEffectDisposer);
 
-        const handler = (e: Event) => {
+        this._inputHandler = (e: Event) => {
           const target = e.target as HTMLInputElement;
           if (isSignal(this._valueSignal)) {
             (this._valueSignal as Signal<string>).set(target.value);
           }
           (this.dispatchEventTyped as any)("input", { value: target.value });
         };
-        this._input.addEventListener("input", handler);
-        this.onCleanup(() =>
-          this._input?.removeEventListener("input", handler),
-        );
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
       } else {
         this.addHandler(
           "input",
