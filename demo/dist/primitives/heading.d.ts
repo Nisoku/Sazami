@@ -1,6 +1,7 @@
 import { SazamiComponent } from "./base";
 import { type Readable } from "@nisoku/sairin";
 declare const headingConfig: {
+    readonly observedAttributes: readonly ["content"];
     readonly properties: {
         readonly size: {
             readonly type: "string";
@@ -29,5 +30,6 @@ export declare class SazamiHeading extends SazamiComponent<typeof headingConfig>
     private _setTextContent;
     private _setupSignalBinding;
     render(): void;
+    attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void;
 }
 export {};

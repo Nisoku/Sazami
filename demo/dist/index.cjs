@@ -3,6 +3,8 @@ Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const defaultTokens = {
   "color.background": "#ffffff",
   "color.surface": "#f8f9fa",
+  "color.surface-hover": "#d6d6d6ff",
+  "color.surface-active": "#b0b0b09c",
   "color.border": "#e0e0e0",
   "color.primary": "#2563eb",
   "color.accent": "#ff4d8a",
@@ -3016,6 +3018,7 @@ ${TYPO_TONE}
 :host([leading="loose"])  { line-height: var(--saz-text-leading-loose); }
 `;
 const textConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string", reflect: false },
     weight: { type: "string", reflect: false },
@@ -3056,7 +3059,7 @@ class SazamiText extends (_a$r = SazamiComponent) {
     this.onCleanup(dispose);
   }
   render() {
-    this.mount(STYLES$s, `<slot></slot>`);
+    this.mountSync(STYLES$s, `<slot></slot>`);
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       this._textNode = document.createTextNode("");
@@ -3076,6 +3079,12 @@ class SazamiText extends (_a$r = SazamiComponent) {
           this._setTextContent(slottedText);
         }
       }
+    }
+  }
+  attributeChangedCallback(name, oldVal, newVal) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
@@ -3128,6 +3137,7 @@ ${TYPO_WEIGHT}
 ${TYPO_TONE}
 `;
 const headingConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string", reflect: false },
     weight: { type: "string", reflect: false },
@@ -3170,7 +3180,7 @@ class SazamiHeading extends (_a$q = SazamiComponent) {
     this.onCleanup(dispose);
   }
   render() {
-    this.mount(STYLES$r, `<slot></slot>`);
+    this.mountSync(STYLES$r, `<slot></slot>`);
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       this._textNode = document.createTextNode("");
@@ -3182,6 +3192,12 @@ class SazamiHeading extends (_a$q = SazamiComponent) {
       this._setupSignalBinding();
     } else {
       this._setTextContent(this._content);
+    }
+  }
+  attributeChangedCallback(name, oldVal, newVal) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
@@ -3233,6 +3249,7 @@ const STYLES$q = `
 }
 `;
 const labelConfig = {
+  observedAttributes: ["content"],
   properties: {
     for: { type: "string", reflect: true }
   }
@@ -3282,7 +3299,7 @@ class SazamiLabel extends (_a$p = SazamiComponent) {
     this.onCleanup(dispose);
   }
   render() {
-    this.mount(STYLES$q, `<label><slot></slot></label>`);
+    this.mountSync(STYLES$q, `<label><slot></slot></label>`);
     const label = this.shadow.querySelector("label");
     if (label) {
       if (!this._textNode) {
@@ -3297,6 +3314,12 @@ class SazamiLabel extends (_a$p = SazamiComponent) {
       if (this.hasAttribute("for")) {
         label.setAttribute("for", this.getAttribute("for") || "");
       }
+    }
+  }
+  attributeChangedCallback(name, oldVal, newVal) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
@@ -3601,12 +3624,19 @@ const STYLES$o = `
   background: transparent;
   color: var(--saz-color-text);
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   line-height: 1;
 }
-${INTERACTIVE_HOVER}
+:host(:hover) {
+  background: var(--saz-color-surface-hover);
+}
+:host(:active) {
+  background: var(--saz-color-surface-active);
+  transform: scale(0.75);
+}
 ${VARIANT_TEXT_RULES}
 ${STATE_DISABLED}
+${STATE_ACTIVE}
 ${INTERACTIVE_FOCUS}
 :host([size="small"]) { padding: var(--saz-space-tiny); }
 :host([size="large"]) { padding: var(--saz-space-medium); }
@@ -4937,6 +4967,7 @@ ${VARIANT_BG_RULES}
 ${SHAPE_RULES}
 `;
 const badgeConfig = {
+  observedAttributes: ["content"],
   properties: {
     size: { type: "string", reflect: true },
     variant: { type: "string", reflect: true },
@@ -4979,7 +5010,7 @@ class SazamiBadge extends (_a$g = SazamiComponent) {
     return this._contentSignal || this._textContent;
   }
   render() {
-    this.mount(STYLES$h, `<slot></slot>`);
+    this.mountSync(STYLES$h, `<slot></slot>`);
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       const initialText = this._contentSignal ? this._contentSignal.get() : this._textContent ?? "";
@@ -4990,6 +5021,12 @@ class SazamiBadge extends (_a$g = SazamiComponent) {
       const dispose = bindText(this._textNode, this._contentSignal);
       this._contentDispose = dispose;
       this.onCleanup(dispose);
+    }
+  }
+  attributeChangedCallback(name, oldVal, newVal) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
@@ -5043,6 +5080,7 @@ const STYLES$g = `
 ${VARIANT_BG_RULES}
 `;
 const tagConfig = {
+  observedAttributes: ["content"],
   properties: {
     variant: { type: "string", reflect: true }
   }
@@ -5051,8 +5089,8 @@ _SazamiTag_decorators = [component(tagConfig)];
 class SazamiTag extends (_a$f = SazamiComponent) {
   constructor() {
     super(...arguments);
-    this._content = "";
     this._contentSignal = null;
+    this._contentValue = "";
     this._textNode = null;
   }
   _isReadableStr(value) {
@@ -5064,12 +5102,12 @@ class SazamiTag extends (_a$f = SazamiComponent) {
       this._setupContentBinding();
     } else {
       this._contentSignal = null;
-      this._content = value;
+      this._contentValue = value;
       this._updateContent(value);
     }
   }
   get content() {
-    return this._contentSignal || this._content;
+    return this._contentSignal || this._contentValue;
   }
   _updateContent(value) {
     if (this._textNode) {
@@ -5082,7 +5120,7 @@ class SazamiTag extends (_a$f = SazamiComponent) {
     this.onCleanup(dispose);
   }
   render() {
-    this.mount(STYLES$g, `<slot></slot>`);
+    this.mountSync(STYLES$g, `<slot></slot>`);
     const slot = this.shadow.querySelector("slot");
     if (slot) {
       this._textNode = document.createTextNode("");
@@ -5093,7 +5131,13 @@ class SazamiTag extends (_a$f = SazamiComponent) {
     if (this._contentSignal) {
       this._setupContentBinding();
     } else {
-      this._updateContent(this._content);
+      this._updateContent(this._contentValue);
+    }
+  }
+  attributeChangedCallback(name, oldVal, newVal) {
+    super.attributeChangedCallback(name, oldVal, newVal);
+    if (name === "content" && newVal !== null) {
+      this.content = newVal;
     }
   }
 }
@@ -5493,8 +5537,8 @@ const modalConfig = {
 _SazamiModal_decorators = [component(modalConfig)];
 class SazamiModal extends (_a$b = SazamiComponent) {
   constructor() {
-    this.openSignal = void 0;
     super(...arguments);
+    this.openSignal = void 0;
   }
   render() {
     const title = escapeHtml(this.getAttribute("title") || "");
@@ -8280,6 +8324,13 @@ function getTag(name) {
   return entry.tag;
 }
 const ICON_COMPONENTS = /* @__PURE__ */ new Set(["saz-icon", "saz-icon-button"]);
+const CONTENT_SLOT_COMPONENTS = /* @__PURE__ */ new Set([
+  "saz-heading",
+  "saz-badge",
+  "saz-tag",
+  "saz-text",
+  "saz-label"
+]);
 function serializeValue(value) {
   if (typeof value === "string") return value;
   return value.parts.map((p2) => p2.value).join("");
@@ -8292,10 +8343,13 @@ function transformAST(node) {
     if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {
       props.icon = typeof node.value === "string" ? node.value : serializeValue(node.value);
     }
+    if (CONTENT_SLOT_COMPONENTS.has(tag) && node.value && !props.content) {
+      props.content = typeof node.value === "string" ? node.value : serializeValue(node.value);
+    }
     return {
       type: tag,
       props,
-      children: [value]
+      children: CONTENT_SLOT_COMPONENTS.has(tag) ? [] : value ? [value] : []
     };
   }
   if (node.type === "element") {

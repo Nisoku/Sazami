@@ -258,6 +258,11 @@
 <span class="hljs-keyword">const</span> ast = <span class="hljs-title function_">parseSakko</span>(<span class="hljs-string">&#x27;&lt;page { button(accent): Save }&gt;&#x27;</span>);
 <span class="hljs-keyword">const</span> vnodes = ast.<span class="hljs-property">children</span>.<span class="hljs-title function_">map</span>(transformAST).<span class="hljs-title function_">flat</span>();
 <span class="hljs-comment">// Returns: [{ type: &quot;saz-button&quot;, props: { variant: &quot;accent&quot; }, children: [&quot;Save&quot;] }]</span>
+
+<span class="hljs-comment">// For content components (text, heading, badge, etc.), content is in props.content:</span>
+<span class="hljs-keyword">const</span> ast2 = <span class="hljs-title function_">parseSakko</span>(<span class="hljs-string">&#x27;&lt;page { text(bold): &quot;Hello&quot; }&gt;&#x27;</span>);
+<span class="hljs-keyword">const</span> vnode2 = <span class="hljs-title function_">transformAST</span>(ast2.<span class="hljs-property">children</span>[<span class="hljs-number">0</span>]);
+<span class="hljs-comment">// Returns: { type: &quot;saz-text&quot;, props: { weight: &quot;bold&quot;, content: &quot;Hello&quot; }, children: [] }</span>
 </code></pre>
 <h3 id="rendervnode-parent"><code>render(vnode, parent)</code></h3>
 <p>Render a VNode tree into a DOM element.</p>
@@ -332,8 +337,8 @@
 <pre class="hljs"><code><span class="hljs-keyword">import</span> { parseModifiers } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 
 <span class="hljs-title function_">parseModifiers</span>([
-  { <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;flag&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-string">&#x27;accent&#x27;</span> },
-  { <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;pair&#x27;</span>, <span class="hljs-attr">key</span>: <span class="hljs-string">&#x27;gap&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-string">&#x27;large&#x27;</span> },
+  { <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;pair&#x27;</span>, <span class="hljs-attr">key</span>: <span class="hljs-string">&#x27;accent&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-string">&#x27;&#x27;</span> },  <span class="hljs-comment">// flag modifier</span>
+  { <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;pair&#x27;</span>, <span class="hljs-attr">key</span>: <span class="hljs-string">&#x27;gap&#x27;</span>, <span class="hljs-attr">value</span>: <span class="hljs-string">&#x27;large&#x27;</span> }, <span class="hljs-comment">// pair modifier</span>
 ]);
 <span class="hljs-comment">// Returns: { variant: &#x27;accent&#x27;, gap: &#x27;large&#x27; }</span>
 </code></pre>
@@ -352,14 +357,14 @@
 <span class="hljs-variable constant_">MODIFIER_MAP</span>[<span class="hljs-string">&#x27;bold&#x27;</span>];    <span class="hljs-comment">// { weight: &#x27;bold&#x27; }</span>
 </code></pre>
 <h3 id="icon_svgs"><code>ICON_SVGS</code></h3>
-<p>A record mapping icon names to SVG markup strings. All 43 built-in icons use <code>currentColor</code> and scale to their container.</p>
+<p>A record mapping icon names to SVG markup strings. All 50+ built-in icons use <code>currentColor</code> and scale to their container.</p>
 <pre class="hljs"><code><span class="hljs-keyword">import</span> { <span class="hljs-variable constant_">ICON_SVGS</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@nisoku/sazami&#x27;</span>;
 
-<span class="hljs-comment">// Available: play, pause, stop, previous, next, skip, close, menu,</span>
-<span class="hljs-comment">// search, settings, heart, star, check, plus, minus, edit, share,</span>
-<span class="hljs-comment">// download, upload, refresh, home, back, forward, up, down,</span>
-<span class="hljs-comment">// mail, phone, calendar, clock, user, users, folder, file, image,</span>
-<span class="hljs-comment">// camera, bell, lock, link, trash, copy, bookmark, pin, globe</span>
+<span class="hljs-comment">// Available: play, pause, stop, previous, next, skip, back, forward,</span>
+<span class="hljs-comment">// close, menu, search, settings, heart, star, check, plus, minus,</span>
+<span class="hljs-comment">// edit, share, download, upload, refresh, home, up, down,</span>
+<span class="hljs-comment">// mail, phone, calendar, clock, user, users, folder, file,</span>
+<span class="hljs-comment">// image, camera, bell, lock, link, trash, copy, bookmark, pin, globe</span>
 <span class="hljs-variable constant_">ICON_SVGS</span>[<span class="hljs-string">&#x27;play&#x27;</span>];  <span class="hljs-comment">// &#x27;&lt;svg ...&gt;...&lt;/svg&gt;&#x27;</span>
 </code></pre>
 <hr>

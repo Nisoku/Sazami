@@ -25,7 +25,7 @@ declare const modalConfig: {
 export declare class SazamiModal extends SazamiComponent<typeof modalConfig> {
     title: string;
     open: boolean;
-    openSignal?: Signal<boolean>;
+    openSignal: Signal<boolean> | undefined;
     render(): void;
     private _open;
     private _close;

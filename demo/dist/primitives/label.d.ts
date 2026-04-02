@@ -1,6 +1,7 @@
 import { SazamiComponent } from "./base";
 import { type Readable } from "@nisoku/sairin";
 declare const labelConfig: {
+    readonly observedAttributes: readonly ["content"];
     readonly properties: {
         readonly for: {
             readonly type: "string";
@@ -20,5 +21,6 @@ export declare class SazamiLabel extends SazamiComponent<typeof labelConfig> {
     private _setTextContent;
     private _setupSignalBinding;
     render(): void;
+    attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void;
 }
 export {};

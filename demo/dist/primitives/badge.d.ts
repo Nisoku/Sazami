@@ -1,6 +1,7 @@
 import { SazamiComponent } from "./base";
 import { type Readable } from "@nisoku/sairin";
 declare const badgeConfig: {
+    readonly observedAttributes: readonly ["content"];
     readonly properties: {
         readonly size: {
             readonly type: "string";
@@ -28,5 +29,6 @@ export declare class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
     set content(value: string | Readable<string>);
     get content(): string | Readable<string> | undefined;
     render(): void;
+    attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void;
 }
 export {};

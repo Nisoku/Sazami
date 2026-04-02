@@ -511,7 +511,7 @@ heading(xlarge): &quot;Big Title&quot;
 <tbody>
 <tr>
 <td><code>variant</code></td>
-<td><code>primary</code>, <code>accent</code>, <code>secondary</code>, <code>danger</code>, <code>dim</code></td>
+<td><code>primary</code>, <code>accent</code>, <code>secondary</code>, <code>danger</code>, <code>success</code>, <code>dim</code></td>
 <td><code>primary</code></td>
 <td>Color variant</td>
 </tr>
@@ -527,14 +527,27 @@ heading(xlarge): &quot;Big Title&quot;
 <td>-</td>
 <td>Disable interaction</td>
 </tr>
+<tr>
+<td><code>loading</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Show loading state</td>
+</tr>
+<tr>
+<td><code>active</code></td>
+<td>(boolean)</td>
+<td>-</td>
+<td>Active/pressed state</td>
+</tr>
 </tbody>
 </table>
 </div><pre class="hljs"><code>button(accent large): &quot;Save&quot;
 button(secondary): &quot;Cancel&quot;
 button(danger disabled): &quot;Delete&quot;
+button(loading): &quot;Saving...&quot;
 </code></pre>
 <h3 id="icon-btn"><code>icon-btn</code></h3>
-<p>Icon-only button with built-in SVG icons.</p>
+<p>Icon-only button with built-in SVG icons. Includes hover (subtle background) and press (darker background + scale) animations.</p>
 <div class="table-wrapper"><table>
 <thead>
 <tr>
@@ -547,7 +560,7 @@ button(danger disabled): &quot;Delete&quot;
 <tbody>
 <tr>
 <td><code>icon</code></td>
-<td><code>play</code>, <code>pause</code>, <code>stop</code>, <code>previous</code>, <code>next</code>, <code>skip</code>, <code>close</code>, <code>menu</code>, <code>search</code></td>
+<td><code>play</code>, <code>pause</code>, <code>stop</code>, <code>previous</code>, <code>next</code>, <code>skip</code>, <code>close</code>, <code>menu</code>, <code>search</code>, and 40+ more</td>
 <td>-</td>
 <td>Icon name</td>
 </tr>
@@ -559,7 +572,7 @@ button(danger disabled): &quot;Delete&quot;
 </tr>
 <tr>
 <td><code>size</code></td>
-<td><code>small</code>, <code>medium</code>, <code>large</code></td>
+<td><code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
 <td><code>medium</code></td>
 <td>Icon and padding size</td>
 </tr>
@@ -1117,7 +1130,7 @@ avatar(src &quot;https://example.com/img.jpg&quot;): &quot;&quot;
 avatar(alt &quot;John Doe&quot; large): &quot;&quot;
 </code></pre>
 <h3 id="chip"><code>chip</code></h3>
-<p>Selectable/removable tag.</p>
+<p>Selectable/removable tag with built-in remove button.</p>
 <div class="table-wrapper"><table>
 <thead>
 <tr>
@@ -1132,11 +1145,11 @@ avatar(alt &quot;John Doe&quot; large): &quot;&quot;
 <td><code>label</code></td>
 <td>string</td>
 <td>-</td>
-<td>Chip text</td>
+<td>Chip text content</td>
 </tr>
 <tr>
 <td><code>variant</code></td>
-<td><code>default</code>, <code>primary</code>, <code>accent</code>, <code>success</code>, <code>danger</code>, <code>warning</code></td>
+<td><code>default</code>, <code>primary</code>, <code>accent</code>, <code>success</code>, <code>danger</code></td>
 <td><code>default</code></td>
 <td>Color variant</td>
 </tr>
@@ -1284,14 +1297,27 @@ icon(accent large): &quot;heart&quot;
 <tbody>
 <tr>
 <td><code>variant</code></td>
-<td><code>default</code>, <code>accent</code>, <code>primary</code>, <code>success</code>, <code>danger</code></td>
+<td><code>default</code>, <code>accent</code>, <code>primary</code>, <code>secondary</code>, <code>success</code>, <code>danger</code>, <code>warning</code>, <code>dim</code></td>
 <td><code>default</code></td>
 <td>Color variant</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>xsmall</code>, <code>tiny</code>, <code>small</code>, <code>medium</code>, <code>large</code>, <code>xlarge</code></td>
+<td><code>small</code></td>
+<td>Badge size</td>
+</tr>
+<tr>
+<td><code>shape</code></td>
+<td><code>round</code>, <code>pill</code>, <code>square</code>, <code>rounded</code>, <code>circle</code></td>
+<td><code>round</code></td>
+<td>Border shape</td>
 </tr>
 </tbody>
 </table>
 </div><pre class="hljs"><code>badge(accent): &quot;NEW&quot;
 badge(success): &quot;Active&quot;
+badge(danger large): &quot;Error&quot;
 </code></pre>
 <h3 id="tag"><code>tag</code></h3>
 <p>Larger label/category tag with border.</p>

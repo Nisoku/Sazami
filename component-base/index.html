@@ -297,6 +297,7 @@
 <ul>
 <li><code>connectedCallback()</code> - Called when element is added to DOM</li>
 <li><code>disconnectedCallback()</code> - Called when element is removed (runs cleanup)</li>
+<li><code>attributeChangedCallback(name, oldVal, newVal)</code> - Called when observed attributes change</li>
 <li><code>render()</code> - Override in subclass to render content</li>
 </ul>
 <hr>
@@ -363,8 +364,13 @@
 <hr>
 <h2 id="utility-methods">Utility Methods</h2>
 <h3 id="mountstyles-template"><code>mount(styles, template)</code></h3>
-<p>Render template with styles into Shadow DOM.</p>
+<p>Render template with styles into Shadow DOM with batching. Use for components that don’t need immediate DOM access after mounting.</p>
 <pre class="hljs"><code><span class="hljs-variable language_">this</span>.<span class="hljs-title function_">mount</span>(<span class="hljs-string">&#x27;p { color: red }&#x27;</span>, <span class="hljs-string">&#x27;&lt;p&gt;Hello&lt;/p&gt;&#x27;</span>);
+</code></pre>
+<h3 id="mountsyncstyles-template"><code>mountSync(styles, template)</code></h3>
+<p>Synchronous version of <code>mount()</code>. Immediately renders without batching. Use when you need to query/bind DOM nodes right after mounting.</p>
+<pre class="hljs"><code><span class="hljs-variable language_">this</span>.<span class="hljs-title function_">mountSync</span>(<span class="hljs-string">&#x27;p { color: red }&#x27;</span>, <span class="hljs-string">&#x27;&lt;p&gt;Hello&lt;/p&gt;&#x27;</span>);
+<span class="hljs-comment">// DOM is immediately ready for querySelector, binding, etc.</span>
 </code></pre>
 <h3 id="selector"><code>$(selector)</code></h3>
 <p>Query stable internal nodes.</p>
@@ -518,6 +524,10 @@
       
         <li class="toc-item toc-level-3">
           <a href="#mountstyles-template" class="toc-link">mount(styles, template)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#mountsyncstyles-template" class="toc-link">mountSync(styles, template)</a>
         </li>
       
         <li class="toc-item toc-level-3">
