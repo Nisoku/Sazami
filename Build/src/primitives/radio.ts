@@ -67,16 +67,25 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
 
   private _handlersInstalled = false;
   private _checkedSignal: Readable<boolean> | null = null;
+  private _checkedBindingDispose: (() => void) | null = null;
   private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledBindingDispose: (() => void) | null = null;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
   }
 
   set checked(value: boolean | Readable<boolean>) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
     if (this._isReadableBool(value)) {
       this._checkedSignal = value;
-      this.bindAttribute(":host", "checked", value);
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
     } else {
       this._checkedSignal = null;
       this._setChecked(value);
@@ -97,9 +106,16 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
     if (this._isReadableBool(value)) {
       this._disabledSignal = value;
-      this.bindDisabled(":host", value);
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
     } else {
       this._disabledSignal = null;
       this._setDisabled(value);

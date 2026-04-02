@@ -449,8 +449,8 @@ export class SazamiComponent<
     selector: string,
     attr: string,
     readable: Readable<any>,
-  ): void {
-    this.bind(selector, attr, readable);
+  ): (() => void) | void {
+    return this.bind(selector, attr, readable);
   }
 
   protected bindProperty<T>(
