@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { Signal } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -79,6 +80,8 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
   declare duration: number;
   declare visible: boolean;
 
+  messageSignal?: Signal<string>;
+
   private _hideTimeout?: ReturnType<typeof setTimeout>;
   private _removeTimeout?: ReturnType<typeof setTimeout>;
   private _closeHandler = () => this.hide();
@@ -144,6 +147,10 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
     const messageSpan = this.$(".message");
     if (messageSpan) {
       messageSpan.textContent = message;
+    }
+
+    if (this.messageSignal) {
+      this.bindText(".message", this.messageSignal);
     }
 
     if (showClose) {

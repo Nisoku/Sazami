@@ -34,6 +34,7 @@ That renders a styled card with a heading, paragraph, and themed button into the
 | **Icons** | 41 SVG icons built in, no external dependencies |
 | **Tokens** | Design token system: colors, spacing, typography, radii, shadows |
 | **Curvomorphism** | Directional corner rounding based on element position |
+| **Signal Integration** | Reactive state binding with [Sairin](https://github.com/nisoku/sairin) signals |
 | **Output** | ESM + CJS builds with full TypeScript declarations |
 | **Dependencies** | Zero. The entire library ships as a single bundle. |
 
@@ -41,8 +42,12 @@ That renders a styled card with a heading, paragraph, and themed button into the
 
 | Page | Description |
 | --- | --- |
-| [**Language Reference**](/Sazami/language-reference/) | Full Sakko syntax: blocks, modifiers, lists, void elements |
 | [**Primitives**](/Sazami/primitives/) | All 48 web components with usage examples |
 | [**Config & Theming**](/Sazami/config-theming/) | Design tokens, custom themes, CSS variable generation |
 | [**Curvomorphism**](/Sazami/curvomorphism/) | How directional corner rounding works |
-| [**API Reference**](/Sazami/api-reference/) | Complete public API: functions, types, exports |
+| [**API Reference**](/Sazami/api-reference/) | Complete public API: functions, types, exports, Sairin signal integration |
+
+## Related Documentation
+
+- [**Sairin Docs**](https://github.com/nisoku/sairin) - Reactive state management with signals, derived values, effects, and resources
+- [**Sakko Docs**](https://github.com/nisoku/sakko) - DSL syntax for writing component markup

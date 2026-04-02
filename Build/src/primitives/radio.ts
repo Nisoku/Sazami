@@ -1,6 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { escapeHtml } from "../escape";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -51,8 +52,6 @@ ${INTERACTIVE_FOCUS}
 // Config
 const radioConfig = {
   properties: {
-    checked: { type: "boolean" as const, reflect: true },
-    disabled: { type: "boolean" as const, reflect: true },
     name: { type: "string" as const, reflect: false },
     value: { type: "string" as const, reflect: false },
   },
@@ -63,12 +62,90 @@ const radioConfig = {
 
 @component(radioConfig)
 export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
-  declare checked: boolean;
-  declare disabled: boolean;
   declare name: string;
   declare value: string;
 
   private _handlersInstalled = false;
+  private _checkedSignal: Readable<boolean> | null = null;
+  private _checkedBindingDispose: (() => void) | null = null;
+  private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledBindingDispose: (() => void) | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set checked(value: boolean | Readable<boolean>) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+
+  get checked(): boolean | Readable<boolean> {
+    return this._checkedSignal || (this as any)._checked || false;
+  }
+
+  private _setChecked(value: boolean) {
+    (this as any)._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled || false;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    return this.hasAttribute("disabled");
+  }
+
+  private _getIsChecked(): boolean {
+    if (this._checkedSignal) return this._checkedSignal.get();
+    if (this.hasAttribute("checked")) return true;
+    return !!(this as any)._checked;
+  }
 
   render() {
     const label = this.textContent?.trim() || "";
@@ -92,8 +169,8 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   private _updateAria() {
-    this.setAttribute("aria-checked", String(this.checked));
-    if (this.disabled) {
+    this.setAttribute("aria-checked", String(this._getIsChecked()));
+    if (this._getIsDisabled()) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -103,8 +180,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled) return;
-    if (this.checked) return;
+    if (this._getIsDisabled()) return;
+    if (this._getIsChecked()) return;
+
+    const canWrite = !this._checkedSignal || "set" in this._checkedSignal;
+    if (!canWrite) return;
 
     const name = this.getAttribute("name") || "";
     const value = this.getAttribute("value") || "";
@@ -116,11 +196,22 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
         .querySelectorAll(`saz-radio[name="${escapedName}"]`)
         .forEach((el) => {
           if (el === this) return;
-          el.removeAttribute("checked");
+          const siblingSignal = (el as any)._checkedSignal;
+          if (siblingSignal && "set" in siblingSignal) {
+            (siblingSignal as Signal<boolean>).set(false);
+          } else {
+            (el as any).checked = false;
+          }
         });
     }
 
-    this.checked = true;
+    if (this._checkedSignal) {
+      if ("set" in this._checkedSignal) {
+        (this._checkedSignal as Signal<boolean>).set(true);
+      }
+    } else {
+      this._setChecked(true);
+    }
     this._updateAria();
     this.dispatchEventTyped("change", { value });
   };

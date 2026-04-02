@@ -10,6 +10,8 @@ import {
   INTERACTIVE_HOVER,
   TYPO_TONE,
 } from "./shared";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { bindDisabled } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -60,20 +62,62 @@ const buttonConfig = {
 
 @component(buttonConfig)
 export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
-  declare disabled: boolean;
   declare loading: boolean;
-  declare active: boolean;
-  declare size: string;
-  declare variant: string;
-  declare shape: string;
-  declare tone: string;
+
+  private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledValue: boolean = false;
+  private _disabledDispose: (() => void) | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledDispose) {
+      this._disabledDispose();
+      this._disabledDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = bindDisabled(this, value);
+      this._disabledDispose = dispose;
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || this._disabledValue;
+  }
+
+  private _setDisabled(value: boolean) {
+    this._disabledValue = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  private _getIsDisabled(): boolean {
+    let baseDisabled = false;
+    if (this._disabledSignal) {
+      baseDisabled = this._disabledSignal.get();
+    } else if (this._disabledValue) {
+      baseDisabled = true;
+    } else if (this.hasAttribute("disabled")) {
+      baseDisabled = true;
+    }
+    return baseDisabled || !!this.loading;
+  }
 
   render() {
     this.mount(STYLES, `<slot></slot>`);
 
     if (!this.hasAttribute("role")) this.setAttribute("role", "button");
 
-    const isInert = this.disabled || this.loading;
+    const isInert = this._getIsDisabled();
     if (isInert) {
       this.setAttribute("aria-disabled", "true");
       this.setAttribute("tabindex", "-1");
@@ -92,12 +136,12 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled || this.loading) return;
+    if (this._getIsDisabled()) return;
     this.dispatchEventTyped("click", {});
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
-    if (this.disabled || this.loading) return;
+    if (this._getIsDisabled()) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       this.click();

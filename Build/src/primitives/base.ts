@@ -4,12 +4,36 @@ import {
   bindingError,
   renderError,
 } from "../errors";
+import { type Signal, type Readable, effect } from "@nisoku/sairin";
+import {
+  bindText,
+  bindHtml,
+  bindAttribute,
+  bindProperty,
+  bindStyle,
+  bindInputValue,
+  bindInputChecked,
+  bindVisibility,
+  bindDisabled,
+  bindBooleanAttribute,
+  bindSelectValue,
+} from "@nisoku/sairin";
+
+export type BindTarget =
+  | "textContent"
+  | "innerHTML"
+  | "value"
+  | "checked"
+  | "disabled"
+  | "visible"
+  | string;
 
 export interface SazamiComponentConfig {
   observedAttributes?: readonly string[] | string[];
   properties?: Record<string, AnyPropertyConfig>;
   events?: Record<string, EventConfig>;
   binds?: Record<string, BindingType>;
+  structuralRoots?: Record<string, string>;
 }
 
 export interface PropertyConfig {
@@ -96,16 +120,32 @@ export function component<C extends SazamiComponentConfig>(config: C) {
   };
 }
 
+let _nextComponentId = 0;
+
 export class SazamiComponent<
   C extends SazamiComponentConfig = any,
 > extends HTMLElement {
   // Declare sazamiConfig, set by decorator on prototype
   declare sazamiConfig: C;
 
+  componentId: string = `${this.tagName?.toLowerCase() ?? "element"}_${++_nextComponentId}`;
+
   protected shadow: ShadowRoot;
   protected _cleanupFns: Array<() => void> = [];
   private _rendered = false;
   private _propStorage: Map<string, string | number | boolean> = new Map();
+
+  // Batching and backpressure
+  private _dirty = false;
+  private _pendingStyles: string | null = null;
+  private _pendingTemplate: string | null = null;
+
+  // Template and styles identity, skip no-op renders
+  private _lastTemplate = "";
+  private _lastStyles = "";
+
+  // Structural change detection
+  private _currentRootElement: string | null = null;
 
   // Handler registry: { type: [{ id, fn, source, target }] }
   private _handlerId = 0;
@@ -147,6 +187,24 @@ export class SazamiComponent<
     return [];
   }
 
+  protected getStructuralRoot(): string | null {
+    const cfg = (this as any).sazamiConfig as SazamiComponentConfig | undefined;
+    if (cfg?.structuralRoots) {
+      const mode = this.getRenderMode();
+      return cfg.structuralRoots[mode] ?? null;
+    }
+    return this._currentRootElement;
+  }
+
+  protected getRenderMode(): string {
+    return "";
+  }
+
+  private _extractRootElement(template: string): string {
+    const match = template.match(/<([a-z][a-z0-9-]*)/i);
+    return match ? match[1].toLowerCase() : "";
+  }
+
   // Lifecycle
   connectedCallback() {
     if (!this._rendered) {
@@ -182,18 +240,322 @@ export class SazamiComponent<
 
   /**
    * Mounts the component's shadow DOM with the given styles and template.
+   * Auto-detects structural changes and renders synchronously when needed.
+   * For non-structural re-renders, defers to a microtask for batching.
    * @param styles - CSS styles to inject
    * @param template - HTML template string. Callers are responsible for escaping
    *   user-provided data using escapeHtml() before interpolating into the template.
    */
   protected mount(styles: string, template: string) {
+    const newRootElement = this._extractRootElement(template);
+    const isStructuralChange =
+      newRootElement !== "" && newRootElement !== this._currentRootElement;
+
+    if (!this._rendered || isStructuralChange) {
+      try {
+        this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+        this._currentRootElement = newRootElement;
+      } catch (e) {
+        renderError(`Failed to render component: ${(e as Error).message}`, {
+          suggestion: "Check the template syntax and styles",
+        });
+      }
+    } else {
+      this.scheduleRender(styles, template);
+    }
+  }
+
+  /**
+   * Mounts the component's shadow DOM synchronously.
+   * Use this when you need to query/bind immediately after mounting.
+   * @param styles - CSS styles to inject
+   * @param template - HTML template string. Callers are responsible for escaping
+   *   user-provided data using escapeHtml() before interpolating into the template.
+   */
+  protected mountSync(styles: string, template: string) {
+    const newRootElement = this._extractRootElement(template);
+    this._pendingStyles = null;
+    this._pendingTemplate = null;
+    this._dirty = false;
+    this._lastTemplate = template;
+    this._lastStyles = styles;
     try {
       this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = newRootElement;
     } catch (e) {
       renderError(`Failed to render component: ${(e as Error).message}`, {
         suggestion: "Check the template syntax and styles",
       });
     }
+  }
+
+  /**
+   * Schedules a render to occur in the next microtask.
+   * Collapses multiple render() calls within the same tick into one DOM write.
+   * Uses backpressure, if a render is already queued, subsequent calls are dropped.
+   */
+  protected scheduleRender(styles: string, template: string): void {
+    this._pendingStyles = styles;
+    this._pendingTemplate = template;
+    if (this._dirty) return;
+    this._dirty = true;
+    queueMicrotask(() => {
+      this._dirty = false;
+      if (this._pendingTemplate !== null) {
+        const currentTemplate = this._pendingTemplate;
+        const currentStyles = this._pendingStyles!;
+        this._pendingStyles = null;
+        this._pendingTemplate = null;
+        this._flush(currentStyles, currentTemplate);
+      }
+    });
+  }
+
+  /**
+   * Flushes pending styles and template to the shadow DOM.
+   * Called by scheduleRender when the microtask runs.
+   * Skips stale renders if structural change made them obsolete.
+   */
+  private _flush(styles: string, template: string): void {
+    const pendingRoot = this._extractRootElement(template);
+    if (pendingRoot !== "" && pendingRoot !== this._currentRootElement) {
+      return;
+    }
+    if (template === this._lastTemplate && styles === this._lastStyles) return;
+    this._lastTemplate = template;
+    this._lastStyles = styles;
+
+    try {
+      this.shadow.innerHTML = `<style>${styles}</style>${template}`;
+      this._currentRootElement = pendingRoot || this._currentRootElement;
+    } catch (e) {
+      renderError(`Failed to render component: ${(e as Error).message}`, {
+        suggestion: "Check the template syntax and styles",
+      });
+    }
+  }
+
+  // Unified binding API - delegates to Sairin's dom/bindings
+  protected bind(
+    selector: string,
+    target: BindTarget,
+    readable: Readable<any>,
+  ): void {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+
+    let dispose: (() => void) | undefined;
+
+    switch (target) {
+      case "textContent":
+        dispose = bindText(element, readable as Readable<string>);
+        break;
+      case "innerHTML":
+        dispose = bindHtml(element, readable as Readable<string>);
+        break;
+      case "value":
+        if (
+          element instanceof HTMLInputElement ||
+          element instanceof HTMLTextAreaElement
+        ) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"value" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion:
+                  "Use Signal instead of Derived for two-way bindings",
+              },
+            );
+            break;
+          }
+          dispose = bindInputValue(element, readable as Signal<string>);
+        } else if (element instanceof HTMLSelectElement) {
+          if ("set" in readable) {
+            dispose = bindSelectValue(element, readable as Signal<string>);
+          } else {
+            dispose = bindProperty(element, "value", readable);
+          }
+        } else {
+          bindingError(
+            `Cannot bind "value" to element type: ${element.constructor.name}`,
+            {
+              suggestion:
+                "Use bindAttribute or bindProperty for this element type",
+            },
+          );
+        }
+        break;
+      case "checked":
+        if (element instanceof HTMLInputElement) {
+          if (!("set" in readable)) {
+            bindingError(
+              `"checked" binding requires a writable Signal, got a read-only Readable`,
+              {
+                suggestion:
+                  "Use Signal instead of Derived for two-way bindings",
+              },
+            );
+            break;
+          }
+          dispose = bindInputChecked(element, readable as Signal<boolean>);
+        } else {
+          dispose = bindBooleanAttribute(
+            element,
+            "checked",
+            readable as Readable<boolean>,
+          );
+        }
+        break;
+      case "disabled":
+        dispose = bindDisabled(element, readable as Readable<boolean>);
+        break;
+      case "visible":
+        dispose = bindVisibility(element, readable as Readable<boolean>);
+        break;
+      default:
+        if (typeof target === "string") {
+          dispose = bindAttribute(element, target, readable);
+        }
+    }
+
+    if (dispose) {
+      this._cleanupFns.push(dispose);
+    }
+  }
+
+  protected bindText(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "textContent", readable);
+  }
+
+  protected bindHtml(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "innerHTML", readable);
+  }
+
+  protected bindValue(selector: string, readable: Readable<string>): void {
+    this.bind(selector, "value", readable);
+  }
+
+  protected bindChecked(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "checked", readable);
+  }
+
+  protected bindDisabled(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "disabled", readable);
+  }
+
+  protected bindVisible(selector: string, readable: Readable<boolean>): void {
+    this.bind(selector, "visible", readable);
+  }
+
+  protected bindAttribute(
+    selector: string,
+    attr: string,
+    readable: Readable<any>,
+  ): (() => void) | void {
+    return this.bind(selector, attr, readable);
+  }
+
+  protected bindProperty<T>(
+    selector: string,
+    prop: string,
+    readable: Readable<T>,
+  ): void {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindProperty(element, prop as any, readable);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindStyle(
+    selector: string,
+    styleProp: string,
+    readable: Readable<string>,
+  ): void {
+    const element = this.$(selector) as HTMLElement;
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    const dispose = bindStyle(element, styleProp, readable);
+    this._cleanupFns.push(dispose);
+  }
+
+  protected bindToggleClass(
+    selector: string,
+    className: string,
+    readable: Readable<boolean>,
+  ): void {
+    const element = this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    this._cleanupFns.push(
+      effect(() => {
+        const active = readable.get();
+        if (active) {
+          element.classList.add(className);
+        } else {
+          element.classList.remove(className);
+        }
+      }),
+    );
+  }
+
+  protected bindWidthPercent(
+    selector: string,
+    readable: Readable<number>,
+    min: number = 0,
+    max: number = 100,
+  ): () => void {
+    const element =
+      selector === ":host" ? this : (this.$(selector) as HTMLElement);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return () => {};
+    }
+    const dispose = effect(() => {
+      const value = readable.get();
+      const range = max - min;
+      const percent =
+        range > 0
+          ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
+          : 0;
+      element.style.width = `${percent}%`;
+    });
+    this._cleanupFns.push(dispose);
+    return dispose;
+  }
+
+  protected bindWidthPercentAttribute(
+    selector: string,
+    attr: string,
+    readable: Readable<number>,
+    min: number = 0,
+    max: number = 100,
+  ): void {
+    const element = selector === ":host" ? this : this.$(selector);
+    if (!element) {
+      bindingError(`Element not found: ${selector}`, {});
+      return;
+    }
+    this._cleanupFns.push(
+      effect(() => {
+        const value = readable.get();
+        const range = max - min;
+        const percent =
+          range > 0
+            ? Math.min(100, Math.max(0, ((value - min) / range) * 100))
+            : 0;
+        element.setAttribute(attr, String(percent));
+      }),
+    );
   }
 
   // query stable internal nodes
@@ -352,6 +714,14 @@ export class SazamiComponent<
     if (!props) return;
 
     for (const [prop, cfg] of Object.entries(props)) {
+      // Skip if subclass has a custom setter for this property
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(this),
+        prop,
+      );
+      if (descriptor && "set" in descriptor) {
+        continue;
+      }
       this._createReflector(prop, cfg.type, cfg.default, cfg.reflect);
     }
   }

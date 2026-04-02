@@ -2,6 +2,7 @@ import { SazamiComponent, component } from "./base";
 import { INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
+import { Signal } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -91,6 +92,8 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
   declare title: string;
   declare open: boolean;
 
+  openSignal?: Signal<boolean>;
+
   render() {
     const title = escapeHtml(this.getAttribute("title") || "");
 
@@ -131,6 +134,10 @@ export class SazamiModal extends SazamiComponent<typeof modalConfig> {
     this.onCleanup(() =>
       document.removeEventListener("keydown", handleKeydown),
     );
+
+    if (this.openSignal) {
+      this.bindVisible(":host", this.openSignal);
+    }
   }
 
   private _open() {

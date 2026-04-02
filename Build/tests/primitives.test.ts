@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { compileSakko } from "../src/index";
 
 describe("Sazami Primitives", () => {

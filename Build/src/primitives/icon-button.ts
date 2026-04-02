@@ -6,6 +6,7 @@ import {
   VARIANT_TEXT_RULES,
 } from "./shared";
 import { ICON_SVGS } from "../icons/index";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -55,7 +56,6 @@ ${INTERACTIVE_FOCUS}
 const iconButtonConfig = {
   properties: {
     icon: { type: "string" as const, reflect: true },
-    disabled: { type: "boolean" as const, reflect: true },
     size: { type: "string" as const, reflect: true },
     variant: { type: "string" as const, reflect: true },
   },
@@ -67,12 +67,45 @@ const iconButtonConfig = {
 @component(iconButtonConfig)
 export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   declare icon: string;
-  declare disabled: boolean;
   declare size: string;
   declare variant: string;
 
   private _handlersAdded = false;
   private _autoAriaLabel = false;
+  private _disabledSignal: Readable<boolean> | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled || false;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    return this.hasAttribute("disabled");
+  }
 
   render() {
     const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
@@ -108,7 +141,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   }
 
   private _updateTabIndex() {
-    if (this.disabled) {
+    if (this._getIsDisabled()) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {
@@ -141,7 +174,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled) return;
+    if (this._getIsDisabled()) return;
     this.dispatchEventTyped("click", {});
   };
 

@@ -21,6 +21,7 @@ module.exports = {
       collapsible: true,
       children: [
         { title: 'Primitives', path: '/primitives/' },
+        { title: 'Component Base', path: '/component-base/' },
         { title: 'Config & Theming', path: '/config-theming/' },
         { title: 'Curvomorphism', path: '/curvomorphism/' },
       ],

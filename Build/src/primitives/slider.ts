@@ -1,5 +1,12 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED } from "./shared";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -83,11 +90,9 @@ ${STATE_DISABLED}
 
 const sliderConfig = {
   properties: {
-    value: { type: "number" as const, reflect: false, default: 50 },
     min: { type: "number" as const, reflect: false, default: 0 },
     max: { type: "number" as const, reflect: false, default: 100 },
     step: { type: "number" as const, reflect: false, default: 1 },
-    disabled: { type: "boolean" as const, reflect: true },
     size: { type: "string" as const, reflect: false, default: "medium" },
   },
   events: {
@@ -97,30 +102,127 @@ const sliderConfig = {
 
 @component(sliderConfig)
 export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
-  declare value: number;
   declare min: number;
   declare max: number;
   declare step: number;
-  declare disabled: boolean;
   declare size: string;
+
+  private _valueSignal: Readable<number> | null = null;
+  private _disabledSignal: Readable<boolean> | null = null;
+  private _sliderElement: HTMLInputElement | null = null;
+  private _filledElement: HTMLElement | null = null;
+  private _rangeMin: number = 0;
+  private _rangeMax: number = 100;
+
+  private _isReadableNum(value: unknown): value is Readable<number> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set value(valueOrSignal: number | Readable<number>) {
+    if (this._isReadableNum(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+      this._setupValueBinding();
+    } else {
+      this._valueSignal = null;
+      (this as any)._value = valueOrSignal;
+      this._updateSliderValue(valueOrSignal);
+    }
+  }
+
+  get value(): number | Readable<number> {
+    return this._valueSignal || (this as any)._value || 50;
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled || false;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    return this.hasAttribute("disabled");
+  }
+
+  private _setupValueBinding() {
+    if (!this._sliderElement || !this._filledElement) return;
+
+    const slider = this._sliderElement;
+    const filled = this._filledElement;
+    const min = this._rangeMin;
+    const max = this._rangeMax;
+    const range = max - min;
+
+    this.onCleanup(
+      effect(() => {
+        const val = this._valueSignal!.get();
+        if (slider.value !== String(val)) {
+          slider.value = String(val);
+        }
+        const percent = range !== 0 ? ((val - min) / range) * 100 : 0;
+        filled.style.width = `${percent}%`;
+      }),
+    );
+  }
+
+  private _updateSliderValue(value: number) {
+    if (this._sliderElement) {
+      this._sliderElement.value = String(value);
+    }
+    if (this._filledElement) {
+      const range = this._rangeMax - this._rangeMin;
+      const percent =
+        range !== 0 ? ((value - this._rangeMin) / range) * 100 : 0;
+      this._filledElement.style.width = `${percent}%`;
+    }
+  }
 
   render() {
     let min = this.min;
     let max = this.max;
-    let value = this.value;
     let step = this.step;
 
     if (!Number.isFinite(min)) min = 0;
     if (!Number.isFinite(max)) max = 100;
-    if (!Number.isFinite(value)) value = 50;
     if (!Number.isFinite(step)) step = 1;
     if (step <= 0) step = 1;
 
     if (min > max) [min, max] = [max, min];
+
+    this._rangeMin = min;
+    this._rangeMax = max;
+
+    const currentValue = this._valueSignal
+      ? this._valueSignal.get()
+      : (this as any)._value || 50;
+    let value = Number(currentValue);
+    if (!Number.isFinite(value)) value = 50;
     if (value < min) value = min;
     if (value > max) value = max;
 
-    const disabled = this.disabled;
+    const disabled = this._getIsDisabled();
     const size = this.size || "medium";
 
     const sizes: Record<string, { track: string; thumb: string }> = {
@@ -152,22 +254,31 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     `,
     );
 
-    const slider = this.$(".slider") as HTMLInputElement;
-    const filled = this.$(".filled") as HTMLElement;
+    this._sliderElement = this.$(".slider") as HTMLInputElement;
+    this._filledElement = this.$(".filled") as HTMLElement;
 
-    if (slider) {
+    if (this._sliderElement) {
       this.removeAllHandlers({ type: "input", source: "internal" });
       this.addHandler(
         "input",
         () => {
-          const val = parseFloat(slider.value);
+          const val = parseFloat(this._sliderElement!.value);
           const pct = range !== 0 ? ((val - min) / range) * 100 : 0;
-          filled.style.width = `${pct}%`;
-          this.value = val;
-          this.dispatchEventTyped("input", { value: val });
+          this._filledElement!.style.width = `${pct}%`;
+
+          if (this._valueSignal && "set" in this._valueSignal) {
+            (this._valueSignal as Signal<number>).set(val);
+          } else {
+            (this as any)._value = val;
+          }
+          (this.dispatchEventTyped as any)("input", { value: val });
         },
-        { internal: true, element: slider },
+        { internal: true, element: this._sliderElement },
       );
+    }
+
+    if (this._valueSignal) {
+      this._setupValueBinding();
     }
   }
 
@@ -188,7 +299,14 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
     ) {
       let parsed = newVal !== null ? parseFloat(newVal) : null;
       if (parsed === null || Number.isNaN(parsed)) {
-        parsed = name === "value" ? 50 : name === "step" ? 1 : name === "max" ? 100 : 0;
+        parsed =
+          name === "value"
+            ? 50
+            : name === "step"
+              ? 1
+              : name === "max"
+                ? 100
+                : 0;
       }
       if (name === "step" && parsed <= 0) {
         parsed = 1;
@@ -197,8 +315,9 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
       if (name === "value" || name === "min" || name === "max") {
         const min = this.min;
         const max = this.max;
-        if (this.value < min) (this as any).value = min;
-        if (this.value > max) (this as any).value = max;
+        const currentVal = ((this as any)._value as number) || 50;
+        if (currentVal < min) (this as any).value = min;
+        if (currentVal > max) (this as any).value = max;
       }
     } else if (name === "size") {
       (this as any)[name] = newVal ?? "";

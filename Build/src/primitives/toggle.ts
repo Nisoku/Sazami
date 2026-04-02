@@ -1,5 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -54,9 +55,84 @@ const toggleConfig = {
 
 @component(toggleConfig)
 export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
-  declare checked: boolean;
-  declare disabled: boolean;
   declare variant: string;
+
+  private _checkedSignal: Readable<boolean> | null = null;
+  private _checkedBindingDispose: (() => void) | null = null;
+  private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledBindingDispose: (() => void) | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set checked(value: boolean | Readable<boolean>) {
+    if (this._checkedBindingDispose) {
+      this._checkedBindingDispose();
+      this._checkedBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      const dispose = this.bindAttribute(":host", "checked", value);
+      if (typeof dispose === "function") {
+        this._checkedBindingDispose = dispose;
+      }
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+
+  get checked(): boolean | Readable<boolean> {
+    return this._checkedSignal || (this as any)._checked || false;
+  }
+
+  private _setChecked(value: boolean) {
+    (this as any)._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+    this._updateAria();
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._disabledBindingDispose) {
+      this._disabledBindingDispose();
+      this._disabledBindingDispose = null;
+    }
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      const dispose = this.bindDisabled(":host", value);
+      if (typeof dispose === "function") {
+        this._disabledBindingDispose = dispose;
+      }
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled || false;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateAria();
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    return this.hasAttribute("disabled");
+  }
 
   render() {
     this.mount(
@@ -75,10 +151,20 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled) return;
-    this.checked = !this.checked;
-    this._updateAria();
-    this.dispatchEventTyped("change", { checked: this.checked });
+    if (this._getIsDisabled()) return;
+    const newValue = this._checkedSignal
+      ? !this._checkedSignal.get()
+      : !((this as any)._checked || false);
+    if (this._checkedSignal) {
+      if ("set" in this._checkedSignal) {
+        (this._checkedSignal as Signal<boolean>).set(newValue);
+        this._updateAria();
+      }
+    } else {
+      this._setChecked(newValue);
+      this._updateAria();
+    }
+    this.dispatchEventTyped("change", { checked: newValue });
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
@@ -89,8 +175,12 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
   };
 
   private _updateAria() {
-    this.setAttribute("aria-checked", this.checked ? "true" : "false");
-    if (this.disabled) {
+    const isChecked = this._checkedSignal
+      ? this._checkedSignal.get()
+      : !!(this as any)._checked;
+    const isDisabled = this._getIsDisabled();
+    this.setAttribute("aria-checked", isChecked ? "true" : "false");
+    if (isDisabled) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {

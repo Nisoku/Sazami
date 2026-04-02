@@ -1,6 +1,14 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, STATE_DISABLED } from "./shared";
 import { escapeHtml } from "../escape";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
+import { bindInputValue } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; }
@@ -33,12 +41,11 @@ ${STATE_DISABLED}
 // Config
 const inputConfig = {
   properties: {
-    value: { type: "string" as const, reflect: true },
     placeholder: { type: "string" as const, reflect: false },
     type: { type: "string" as const, reflect: false },
-    disabled: { type: "boolean" as const, reflect: true },
     size: { type: "string" as const, reflect: false },
     variant: { type: "string" as const, reflect: false },
+    disabled: { type: "boolean" as const, reflect: false },
   },
   events: {
     input: { name: "saz-input", detail: { value: "value" } },
@@ -47,36 +54,127 @@ const inputConfig = {
 
 @component(inputConfig)
 export class SazamiInput extends SazamiComponent<typeof inputConfig> {
-  declare value: string;
   declare placeholder: string;
   declare type: string;
   declare disabled: boolean;
   declare size: string;
   declare variant: string;
 
+  private _valueSignal: Readable<string> | null = null;
+  private _input: HTMLInputElement | null = null;
+  private _valueEffectDisposer: (() => void) | null = null;
+  private _inputHandler: ((e: Event) => void) | null = null;
+
+  private _isReadableStr(value: unknown): value is Readable<string> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set value(valueOrSignal: string | Readable<string>) {
+    if (this._isReadableStr(valueOrSignal)) {
+      this._disposeValueBindings();
+      this._valueSignal = valueOrSignal;
+      if (this._input) {
+        this._input.value = valueOrSignal.get();
+        const dispose = effect(() => {
+          const val = valueOrSignal.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this._valueEffectDisposer = dispose;
+        this.onCleanup(dispose);
+        this._inputHandler = (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          (valueOrSignal as Signal<string>).set(target.value);
+        };
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
+      }
+    } else {
+      this._disposeValueBindings();
+      this._valueSignal = null;
+      (this as any)._value = valueOrSignal;
+      if (this._input && this._input.value !== valueOrSignal) {
+        this._input.value = valueOrSignal || "";
+      }
+    }
+  }
+
+  private _disposeValueBindings() {
+    if (this._valueEffectDisposer) {
+      this._valueEffectDisposer();
+      this._valueEffectDisposer = null;
+    }
+    if (this._inputHandler && this._input) {
+      this._input.removeEventListener("input", this._inputHandler);
+      this._inputHandler = null;
+    }
+  }
+
+  get value(): string | Readable<string> {
+    if (this._valueSignal) return this._valueSignal.get();
+    if ((this as any)._value) return (this as any)._value;
+    if (this._input) return this._input.value;
+    return this.getAttribute("value") || "";
+  }
+
   render() {
-    // Read attributes directly for non-reflected properties
+    this._disposeValueBindings();
+
     const placeholder = this.getAttribute("placeholder") || "";
     const type = this.getAttribute("type") || "text";
+    const initialValue = this._valueSignal
+      ? this._valueSignal.get()
+      : this.getAttribute("value") || (this as any)._value || "";
 
     this.mount(
       STYLES,
       `
-      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(this.value || "")}" ${this.disabled ? "disabled" : ""} />
+      <input type="${escapeHtml(type)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(initialValue)}" ${this.disabled ? "disabled" : ""} />
     `,
     );
 
-    const input = this.$("input") as HTMLInputElement;
-    if (input) {
-      this.addHandler(
-        "input",
-        (e: Event) => {
+    this._input = this.$("input") as HTMLInputElement;
+    if (this._input) {
+      this.removeAllHandlers({ type: "input", source: "internal" });
+
+      if (this._valueSignal) {
+        this._valueEffectDisposer = effect(() => {
+          const val = this._valueSignal!.get();
+          if (this._input && this._input.value !== val) {
+            this._input.value = val;
+          }
+        });
+        this.onCleanup(this._valueEffectDisposer);
+
+        this._inputHandler = (e: Event) => {
           const target = e.target as HTMLInputElement;
-          this.value = target.value;
-          this.dispatchEventTyped("input", { value: target.value });
-        },
-        { internal: true, element: input },
-      );
+          if (isSignal(this._valueSignal)) {
+            (this._valueSignal as Signal<string>).set(target.value);
+          }
+          (this.dispatchEventTyped as any)("input", { value: target.value });
+        };
+        this._input.addEventListener("input", this._inputHandler);
+        this.onCleanup(() => {
+          if (this._input && this._inputHandler) {
+            this._input.removeEventListener("input", this._inputHandler);
+          }
+        });
+      } else {
+        this.addHandler(
+          "input",
+          (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            (this as any)._value = target.value;
+            (this.dispatchEventTyped as any)("input", { value: target.value });
+          },
+          { internal: true, element: this._input },
+        );
+      }
     }
   }
 
@@ -89,21 +187,21 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     oldVal: string | null,
     newVal: string | null,
   ) {
-    const input = this.$("input") as HTMLInputElement;
-    if (!input) return;
+    if (!this._input) return;
 
     if (name === "value") {
+      if (this._valueSignal) return;
       if (newVal === null) {
-        if (input.value !== "") input.value = "";
-      } else if (input.value !== newVal) {
-        input.value = newVal;
+        if (this._input.value !== "") this._input.value = "";
+      } else if (this._input.value !== newVal) {
+        this._input.value = newVal;
       }
     } else if (name === "disabled") {
-      input.disabled = newVal !== null;
+      this._input.disabled = newVal !== null;
     } else if (name === "placeholder") {
-      input.placeholder = newVal ?? "";
+      this._input.placeholder = newVal ?? "";
     } else if (name === "type") {
-      input.type = newVal ?? "text";
+      this._input.type = newVal ?? "text";
     }
   }
 }

@@ -1,4 +1,11 @@
 import { SazamiComponent, component } from "./base";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; width: 100%; }
@@ -36,7 +43,6 @@ const STYLES = `
 
 const progressConfig = {
   properties: {
-    value: { type: "number" as const, reflect: true, default: 0 },
     max: { type: "number" as const, reflect: true, default: 100 },
     min: { type: "number" as const, reflect: true, default: 0 },
     size: { type: "string" as const, reflect: true },
@@ -47,15 +53,100 @@ const progressConfig = {
 
 @component(progressConfig)
 export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
-  declare value: number;
   declare max: number;
   declare min: number;
   declare size: string;
   declare variant: string;
   declare indeterminate: boolean;
 
+  private _valueSignal: Readable<number> | null = null;
+  private _barElement: HTMLElement | null = null;
+  private _rangeMin: number = 0;
+  private _rangeMax: number = 100;
+  private _valueBindingCleanup: (() => void) | null = null;
+
+  private _isReadableNum(value: unknown): value is Readable<number> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set value(valueOrSignal: number | Readable<number>) {
+    if (this._isReadableNum(valueOrSignal)) {
+      this._valueSignal = valueOrSignal;
+      if (this._barElement) {
+        this._setupValueBinding();
+      }
+    } else {
+      this._valueSignal = null;
+      if (this._valueBindingCleanup) {
+        this._valueBindingCleanup();
+        this._valueBindingCleanup = null;
+      }
+      (this as any)._value = valueOrSignal;
+      this._updateBarWidth(valueOrSignal);
+    }
+  }
+
+  get value(): number | Readable<number> {
+    return this._valueSignal || (this as any)._value || 0;
+  }
+
+  private _setupValueBinding() {
+    if (!this._barElement || !this._valueSignal) return;
+
+    if (this._valueBindingCleanup) {
+      this._valueBindingCleanup();
+    }
+
+    const cleanups: (() => void)[] = [];
+
+    const widthDisposer = this.bindWidthPercent(
+      ".bar",
+      this._valueSignal,
+      this._rangeMin,
+      this._rangeMax,
+    );
+    cleanups.push(widthDisposer);
+
+    const ariaDisposer = effect(() => {
+      const val = this._valueSignal!.get();
+      if (this.hasAttribute("indeterminate")) {
+        this.removeAttribute("aria-valuenow");
+        return;
+      }
+      const range = this._rangeMax - this._rangeMin;
+      const clamped =
+        range > 0
+          ? Math.min(this._rangeMax, Math.max(this._rangeMin, val))
+          : undefined;
+      if (clamped !== undefined) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
+    });
+    cleanups.push(ariaDisposer);
+
+    this._valueBindingCleanup = () => {
+      cleanups.forEach((fn) => fn());
+    };
+    this.onCleanup(this._valueBindingCleanup);
+  }
+
+  private _updateBarWidth(value: number) {
+    if (this._barElement) {
+      const range = this._rangeMax - this._rangeMin;
+      const percent =
+        range > 0
+          ? Math.min(100, Math.max(0, ((value - this._rangeMin) / range) * 100))
+          : 0;
+      this._barElement.style.width = `${percent}%`;
+    }
+  }
+
   render() {
-    const rawValue = Number(this.getAttribute("value") || "50");
+    const rawValue = this._valueSignal
+      ? this._valueSignal.get()
+      : ((this as any)._value ?? Number(this.getAttribute("value") || "50"));
     const rawMax = Number(this.getAttribute("max") || "100");
     const rawMin = Number(this.getAttribute("min") || "0");
     const value = Number.isFinite(rawValue) ? rawValue : 50;
@@ -63,10 +154,12 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     const min = Number.isFinite(rawMin) ? rawMin : 0;
     const indeterminate = this.hasAttribute("indeterminate");
 
+    this._rangeMin = min;
+    this._rangeMax = max;
+
     const range = max - min;
     const percent =
       range > 0 ? Math.min(100, Math.max(0, ((value - min) / range) * 100)) : 0;
-    const clampedValue = min + (percent / 100) * range;
 
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "progressbar");
@@ -76,10 +169,16 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     if (indeterminate) {
       this.removeAttribute("aria-valuenow");
     } else {
-      this.setAttribute("aria-valuenow", String(Math.round(clampedValue)));
+      const clamped =
+        range > 0 ? Math.min(max, Math.max(min, value)) : undefined;
+      if (clamped !== undefined) {
+        this.setAttribute("aria-valuenow", String(Math.round(clamped)));
+      } else {
+        this.removeAttribute("aria-valuenow");
+      }
     }
 
-    this.mount(
+    this.mountSync(
       STYLES,
       `
       <div class="track">
@@ -87,13 +186,24 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
       </div>
     `,
     );
+
+    this._barElement = this.$(".bar");
+
+    if (this._valueSignal && this._barElement) {
+      this._setupValueBinding();
+    }
   }
 
   static get observedAttributes() {
     return ["value", "max", "min", "indeterminate"];
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    if (oldValue === newValue) return;
     this.render();
   }
 }

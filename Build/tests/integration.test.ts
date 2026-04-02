@@ -1,3 +1,4 @@
+import { describe, test, expect, it } from '@jest/globals';
 import { tokenize, parseSakko } from '@nisoku/sakko';
 import { transformAST } from '../src/runtime/transformer';
 import { parseModifiers, MODIFIER_MAP } from '../src/primitives/modifier-map';
@@ -17,8 +18,9 @@ describe('Tokenizer - Error handling', () => {
     expect(() => tokenize('"hello world')).toThrow('Unterminated string');
   });
 
-  test('should throw on unexpected character @', () => {
-    expect(() => tokenize('text@ value')).toThrow('Unexpected character: @');
+  test('@ is a valid token for atcodes', () => {
+    const tokens = tokenize('text @state value');
+    expect(tokens.some(t => t.type === 'AT')).toBe(true);
   });
 
   test('should throw on unexpected character #', () => {
@@ -38,9 +40,15 @@ describe('Tokenizer - Error handling', () => {
     expect(tokens[2]).toMatchObject({ type: 'STRING', value: '   ' });
   });
 
-  test('should handle string with bracket characters inside', () => {
-    const tokens = tokenize('text: "{[(<>)]}"');
-    expect(tokens[2]).toMatchObject({ type: 'STRING', value: '{[(<>)]}' });
+  test('should handle string with bracket characters inside (escaped)', () => {
+    const tokens = tokenize('text: "\\{[(<>)]}"');
+    expect(tokens[2]).toMatchObject({ type: 'STRING', value: '\\{[(<>)]}' });
+  });
+
+  test('should handle interpolation in strings', () => {
+    const tokens = tokenize('text: "Hello {name}"');
+    const interpToken = tokens.find(t => t.type === 'INTERP_START');
+    expect(interpToken).toBeDefined();
   });
 
   test('should handle single-character identifiers', () => {
@@ -89,20 +97,18 @@ describe('Parser - Error handling', () => {
     expect(() => parseSakko('   \n\n   ')).toThrow();
   });
 
-  test('should throw on comment-only input', () => {
-    expect(() => parseSakko('// just a comment')).toThrow();
+  test('should auto-wrap comment-only input', () => {
+    const result = parseSakko('// just a comment');
+    expect(result).toBeDefined();
   });
 
-  test('should throw when missing opening <', () => {
-    expect(() => parseSakko('page { text: Hello }>')).toThrow("Expected '<'");
+  test('should auto-wrap input without <', () => {
+    const result = parseSakko('page { text: Hello }');
+    expect(result).toBeDefined();
   });
 
   test('should throw when missing closing >', () => {
-    expect(() => parseSakko('<page { text: Hello }')).toThrow("Expected '>'");
-  });
-
-  test('should throw when missing opening {', () => {
-    expect(() => parseSakko('<page text: Hello }>')).toThrow("Expected '{'");
+    expect(() => parseSakko('<page { text: Hello }')).toThrow();
   });
 
   test('should throw when missing closing }', () => {
@@ -530,8 +536,8 @@ describe('Full Pipeline - Error propagation', () => {
     expect(() => parseSakko('<page { text: "unterminated }>')).toThrow('Unterminated string');
   });
 
-  test('parser error on malformed input propagates', () => {
-    expect(() => parseSakko('garbage input here')).toThrow();
+  test('parser error on unbalanced brackets propagates', () => {
+    expect(() => parseSakko('<page { text: "Hello" >')).toThrow();
   });
 
   test('transformer handles full pipeline from parse to transform', () => {

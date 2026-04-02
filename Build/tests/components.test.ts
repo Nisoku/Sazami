@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+import { describe, test, expect, it, beforeAll } from '@jest/globals';
 import { registerComponents, COMPONENT_REGISTRY } from "../src/primitives/registry";
 import { generateThemeCSS } from "../src/config/generator";
 

@@ -99,7 +99,9 @@ export function compileSakko(
       | Array<() => void>
       | undefined;
     if (prevDisposers) {
-      prevDisposers.forEach((d) => { d(); });
+      prevDisposers.forEach((d) => {
+        d();
+      });
     }
     const disposers: Array<() => void> = [];
 
@@ -120,7 +122,9 @@ export function compileSakko(
         const centerX = (left + right) / 2;
         const centerY = (top + bottom) / 2;
 
-        disposers.forEach((d) => { d(); });
+        disposers.forEach((d) => {
+          d();
+        });
         disposers.length = 0;
 
         elements.forEach((el) => {

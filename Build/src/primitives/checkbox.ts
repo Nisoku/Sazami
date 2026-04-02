@@ -2,6 +2,7 @@ import { SazamiComponent, component } from "./base";
 import { STATE_DISABLED, INTERACTIVE_FOCUS } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
+import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -70,8 +71,66 @@ const checkboxConfig = {
 
 @component(checkboxConfig)
 export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
-  declare checked: boolean;
-  declare disabled: boolean;
+  private _checkedSignal: Readable<boolean> | null = null;
+  private _disabledSignal: Readable<boolean> | null = null;
+
+  private _isReadableBool(value: unknown): value is Readable<boolean> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set checked(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._checkedSignal = value;
+      this.bindAttribute(":host", "checked", value);
+    } else {
+      this._checkedSignal = null;
+      this._setChecked(value);
+    }
+  }
+
+  get checked(): boolean | Readable<boolean> {
+    return this._checkedSignal || (this as any)._checked || false;
+  }
+
+  private _setChecked(value: boolean) {
+    (this as any)._checked = value;
+    if (value) {
+      this.setAttribute("checked", "");
+    } else {
+      this.removeAttribute("checked");
+    }
+    this._updateAria();
+  }
+
+  set disabled(value: boolean | Readable<boolean>) {
+    if (this._isReadableBool(value)) {
+      this._disabledSignal = value;
+      this.bindDisabled(":host", value);
+    } else {
+      this._disabledSignal = null;
+      this._setDisabled(value);
+    }
+  }
+
+  get disabled(): boolean | Readable<boolean> {
+    return this._disabledSignal || (this as any)._disabled || false;
+  }
+
+  private _setDisabled(value: boolean) {
+    (this as any)._disabled = value;
+    if (value) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+    this._updateAria();
+  }
+
+  private _getIsDisabled(): boolean {
+    if (this._disabledSignal) return this._disabledSignal.get();
+    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    return this.hasAttribute("disabled");
+  }
 
   render() {
     const label = this.textContent?.trim() || "";
@@ -96,11 +155,22 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
   }
 
   private _handleClick = () => {
-    if (this.disabled) return;
-    this.checked = !this.checked;
-    this._updateAria();
-    // TypeScript enforces: { checked: boolean }
-    this.dispatchEventTyped("change", { checked: this.checked });
+    if (this._getIsDisabled()) return;
+    if (this._checkedSignal) {
+      if ("set" in this._checkedSignal) {
+        const newValue = !this._checkedSignal.get();
+        (this._checkedSignal as Signal<boolean>).set(newValue);
+        this._updateAria(newValue);
+        this.dispatchEventTyped("change", { checked: newValue });
+      } else {
+        this._updateAria();
+      }
+    } else {
+      const newValue = !((this as any)._checked || false);
+      this._setChecked(newValue);
+      this._updateAria(newValue);
+      this.dispatchEventTyped("change", { checked: newValue });
+    }
   };
 
   private _handleKeydown = (e: KeyboardEvent) => {
@@ -110,9 +180,16 @@ export class SazamiCheckbox extends SazamiComponent<typeof checkboxConfig> {
     }
   };
 
-  private _updateAria() {
-    this.setAttribute("aria-checked", this.checked ? "true" : "false");
-    if (this.disabled) {
+  private _updateAria(checked?: boolean) {
+    const isChecked =
+      checked !== undefined
+        ? checked
+        : this._checkedSignal
+          ? this._checkedSignal.get()
+          : !!(this as any)._checked;
+    const isDisabled = this._getIsDisabled();
+    this.setAttribute("aria-checked", isChecked ? "true" : "false");
+    if (isDisabled) {
       this.setAttribute("tabindex", "-1");
       this.setAttribute("aria-disabled", "true");
     } else {

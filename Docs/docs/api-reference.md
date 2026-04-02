@@ -8,7 +8,7 @@ order: 5
 
 Complete public API for Sazami.
 
-> Note: The parser (`parseSakko`, `tokenize`) is now in the separate `@nisoku/sakko` package.
+> **Note:** The Sakko parser is now in the separate [`@nisoku/sakko`](https://github.com/nisoku/sakko) package. For the full Sakko syntax, see the [Sakko Language Reference](https://github.com/nisoku/sakko).
 
 ---
 
@@ -236,6 +236,125 @@ Sazami provides a declarative component system with typed properties, events, an
 - `SazamiComponent` - Base class for all components
 - `addHandler()` / `removeHandler()` / `removeAllHandlers()` - Handler tracking
 - `dispatch()` / `dispatchEventTyped()` / `onCleanup()` - Event utilities
+
+---
+
+## Sairin Signal Integration
+
+Sazami primitives integrate with [Sairin](https://github.com/nisoku/sairin) signals for reactive state management. Components can accept both static values and Sairin `Signal` or `Derived` values.
+
+> **Note:** For full details on Sairin's signal system, see the [Sairin documentation](https://github.com/nisoku/sairin). Key concepts:
+> - [`signal(path, initial)`](https://github.com/nisoku/sairin) - Creates a reactive value
+> - [`derived(path, fn)`](https://github.com/nisoku/sairin) - Creates a computed value
+> - [`effect(fn)`](https://github.com/nisoku/sairin) - Runs side effects reactively
+> - [`resource(loader, initial)`](https://github.com/nisoku/sairin) - Async data fetching
+
+### Signal-Bound Properties
+
+Most component properties support binding to signals:
+
+| Component | Signal Properties |
+| --------- | ------------------ |
+| `text`, `badge`, `heading`, `label` | `content` |
+| `button`, `icon-button` | `disabled` |
+| `checkbox`, `switch`, `toggle`, `radio` | `checked`, `disabled` |
+| `input`, `select`, `slider`, `progress` | `value` |
+| `avatar`, `coverart`, `image` | `src` |
+
+### Basic Usage
+
+```typescript
+import { signal, path } from '@nisoku/sairin';
+
+// Create a signal
+const text = signal(path("app", "message"), "Hello");
+
+// Pass signal to component property
+const el = document.createElement('saz-text');
+el.content = text;
+document.body.appendChild(el);
+
+// Update signal - component re-renders automatically
+text.set("World");
+```
+
+### Derived Signals
+
+```typescript
+import { signal, derived, path } from '@nisoku/sairin';
+
+const firstName = signal(path("app", "firstName"), "John");
+const lastName = signal(path("app", "lastName"), "Doe");
+
+// Create derived signal
+const fullName = derived(path("app", "fullName"), () => 
+  `${firstName.get()} ${lastName.get()}`
+);
+
+// Pass derived to component
+const el = document.createElement('saz-text');
+el.content = fullName;
+```
+
+### Two-Way Binding
+
+For form controls, changes in the UI automatically update the signal:
+
+```typescript
+import { signal, path } from '@nisoku/sairin';
+
+const inputValue = signal(path("app", "inputValue"), "");
+
+// Input updates the signal on every keystroke
+const input = document.createElement('saz-input');
+input.value = inputValue;
+document.body.appendChild(input);
+
+// Programmatic updates also work
+inputValue.set("Hello");
+```
+
+### Boolean State
+
+```typescript
+import { signal, path } from '@nisoku/sairin';
+
+const isDisabled = signal(path("app", "disabled"), false);
+
+const button = document.createElement('saz-button');
+button.disabled = isDisabled;
+
+// Disable the button
+isDisabled.set(true);
+```
+
+### Resource Integration
+
+```typescript
+import { signal, path, effect, resource } from '@nisoku/sairin';
+
+const userData = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  null
+);
+
+// Derive a string value from the resource
+const userName = signal(path("app", "userName"), '');
+effect(() => {
+  userName.set(userData.value.get()?.name ?? '');
+});
+
+const el = document.createElement('saz-text');
+el.content = userName;
+```
+
+### Reactivity Model
+
+Sazami uses Sairin's `effect()` for reactive bindings:
+
+- **One-way**: Signal changes propagate to component properties
+- **Two-way**: Form inputs also write back to the signal
+- **Automatic cleanup**: Bindings are cleaned up when the component is removed from the DOM
 
 ---
 

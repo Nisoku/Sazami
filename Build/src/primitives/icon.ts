@@ -2,6 +2,13 @@ import { SazamiComponent, component } from "./base";
 import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
+import {
+  Signal,
+  Derived,
+  isSignal,
+  effect,
+  type Readable,
+} from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -39,22 +46,131 @@ const iconConfig = {
 
 @component(iconConfig)
 export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
-  declare icon: string;
   declare size: string;
   declare variant: string;
 
-  static get observedAttributes() {
-    return ["icon", "size", "variant"];
+  private _iconSignal: Readable<string> | null = null;
+  private _iconElement: HTMLElement | null = null;
+  private _iconEffectDispose: (() => void) | null = null;
+
+  private _isReadableStr(value: unknown): value is Readable<string> {
+    return isSignal(value) || value instanceof Derived;
+  }
+
+  set icon(value: string | Readable<string>) {
+    if (this._isReadableStr(value)) {
+      this._iconSignal = value;
+      if (this._iconElement) {
+        this._setupIconBinding();
+      }
+    } else {
+      this._iconSignal = null;
+      if (this._iconEffectDispose) {
+        this._iconEffectDispose();
+        this._iconEffectDispose = null;
+      }
+      (this as any)._icon = value;
+      this._updateIcon(value);
+    }
+  }
+
+  get icon(): string | Readable<string> {
+    return this._iconSignal || (this as any)._icon || "";
+  }
+
+  private _updateIcon(iconName: string) {
+    if (!this._iconElement) return;
+    const svg = ICON_SVGS[iconName];
+    const isSvg = !!svg;
+    const currentIsSvg = this._iconElement.tagName.toLowerCase() === "svg";
+
+    if (isSvg !== currentIsSvg) {
+      const parent = this._iconElement.parentNode;
+      let newElement: HTMLElement;
+      if (svg) {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        newElement = wrapper.firstElementChild as HTMLElement;
+      } else {
+        newElement = document.createElement("span");
+        newElement.textContent = iconName;
+      }
+      parent?.replaceChild(newElement, this._iconElement);
+      this._iconElement = newElement;
+    } else if (svg) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = svg;
+      const newSvg = wrapper.firstElementChild as HTMLElement;
+      this._iconElement.innerHTML = newSvg.innerHTML;
+    } else {
+      this._iconElement.textContent = iconName;
+    }
+  }
+
+  private _setupIconBinding() {
+    if (!this._iconElement || !this._iconSignal) return;
+
+    if (this._iconEffectDispose) {
+      this._iconEffectDispose();
+    }
+
+    const sig = this._iconSignal;
+    const dispose = effect(() => {
+      const iconName = sig.get();
+      const svg = ICON_SVGS[iconName];
+      const isSvg = !!svg;
+      const currentEl = this._iconElement;
+      if (!currentEl) return;
+      const currentIsSvg = currentEl.tagName.toLowerCase() === "svg";
+
+      if (isSvg !== currentIsSvg) {
+        const parent = currentEl.parentNode;
+        let newElement: HTMLElement;
+        if (svg) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = svg;
+          newElement = wrapper.firstElementChild as HTMLElement;
+        } else {
+          newElement = document.createElement("span");
+          newElement.textContent = iconName;
+        }
+        parent?.replaceChild(newElement, currentEl);
+        this._iconElement = newElement;
+      } else if (svg) {
+        const parent = currentEl.parentNode;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = svg;
+        const newElement = wrapper.firstElementChild as HTMLElement;
+        parent?.replaceChild(newElement, currentEl);
+        this._iconElement = newElement;
+      } else {
+        currentEl.textContent = iconName;
+      }
+    });
+    this._iconEffectDispose = dispose;
+    this.onCleanup(dispose);
   }
 
   render() {
-    const icon = this.getAttribute("icon") || this.textContent?.trim() || "";
-    const svg = ICON_SVGS[icon];
+    const iconName = this._iconSignal
+      ? this._iconSignal.get()
+      : (this as any)._icon ||
+        this.getAttribute("icon") ||
+        this.textContent?.trim() ||
+        "";
+    const svg = ICON_SVGS[iconName];
 
     if (svg) {
-      this.mount(STYLES, svg);
+      this.mountSync(STYLES, svg);
     } else {
-      this.mount(STYLES, `<span>${escapeHtml(icon)}</span>`);
+      this.mountSync(STYLES, `<span>${escapeHtml(iconName)}</span>`);
+    }
+
+    this._iconElement = (this.shadowRoot?.querySelector("svg") ||
+      this.shadowRoot?.querySelector("span")) as HTMLElement | null;
+
+    if (this._iconSignal) {
+      this._setupIconBinding();
     }
   }
 }
