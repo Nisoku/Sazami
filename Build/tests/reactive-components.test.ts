@@ -535,8 +535,8 @@ describe('Sazami Components - Signal Support', () => {
       await Promise.resolve();
       expect(el.shadowRoot?.textContent).toContain('static value');
       
-      const signal = derived(path("test", "dynamic"), () => 'dynamic value');
-      el.content = signal;
+      const dynamicContent = derived(path("test", "dynamic"), () => 'dynamic value');
+      el.content = dynamicContent;
       await Promise.resolve();
       expect(el.shadowRoot?.textContent).toContain('dynamic value');
       

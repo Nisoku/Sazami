@@ -148,7 +148,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     const self = this;
     this.onCleanup(
       effect(() => {
-        const val = (sig as Signal<string>).get?.() ?? '';
+        const val = sig.get();
         (self as any)._value = val;
         self._updateDisplay();
         self._updateSelectedState();

@@ -10,7 +10,7 @@ import {
   INTERACTIVE_HOVER,
   TYPO_TONE,
 } from "./shared";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindDisabled } from "@nisoku/sairin";
 
 const STYLES = `
@@ -63,6 +63,7 @@ const buttonConfig = {
 @component(buttonConfig)
 export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
   private _disabledSignal: Readable<boolean> | null = null;
+  private _disabledValue: boolean = false;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
@@ -80,11 +81,11 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled;
+    return this._disabledSignal || this._disabledValue;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabledValue = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -94,7 +95,7 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabledValue) return true;
     if (this.hasAttribute("disabled")) return true;
     return !!(this as any).loading;
   }

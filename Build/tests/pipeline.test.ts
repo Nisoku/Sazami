@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { describe, test, expect, it, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { compileSakko, transformAST, injectThemeCSS } from "../src/index";
 import { parseSakko } from "@nisoku/sakko";
 

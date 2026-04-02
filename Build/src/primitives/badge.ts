@@ -1,6 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { SIZE_PADDING_RULES, VARIANT_BG_RULES, SHAPE_RULES } from "./shared";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindText } from "@nisoku/sairin";
 
 const STYLES = `
@@ -70,12 +70,16 @@ export class SazamiBadge extends SazamiComponent<typeof badgeConfig> {
     
     const slot = this.shadow.querySelector("slot");
     if (slot) {
-      this._textNode = document.createTextNode(this._textContent);
+      const initialText = this._contentSignal 
+        ? this._contentSignal.get() 
+        : (this._textContent ?? "");
+      this._textNode = document.createTextNode(initialText);
       slot.replaceWith(this._textNode);
     }
     
     if (this._contentSignal) {
-      this.content = this._contentSignal;
+      const dispose = bindText(this._textNode!, this._contentSignal);
+      this.onCleanup(dispose);
     }
   }
 }

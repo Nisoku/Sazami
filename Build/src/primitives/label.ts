@@ -1,5 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindText } from "@nisoku/sairin";
 
 const STYLES = `
@@ -70,18 +70,15 @@ export class SazamiLabel extends SazamiComponent<typeof labelConfig> {
     if (label) {
       this._textNode = document.createTextNode("");
       label.prepend(this._textNode);
-    }
 
-    if (this._contentSignal) {
-      this._setupSignalBinding();
-    } else {
-      this._setTextContent(this._content as string);
-    }
+      if (this._contentSignal) {
+        this._setupSignalBinding();
+      } else {
+        this._setTextContent(this._content as string);
+      }
 
-    if (this.hasAttribute("for")) {
-      const labelEl = this.shadowRoot?.querySelector("label");
-      if (labelEl) {
-        labelEl.setAttribute("for", this.getAttribute("for") || "");
+      if (this.hasAttribute("for")) {
+        label.setAttribute("for", this.getAttribute("for") || "");
       }
     }
   }

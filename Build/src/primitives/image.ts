@@ -1,7 +1,7 @@
 import { SazamiComponent, component } from "./base";
 import { SHAPE_RULES, SIZE_RULES } from "./shared";
 import { escapeHtml } from "../escape";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindProperty } from "@nisoku/sairin";
 
 const STYLES = `
@@ -76,10 +76,15 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     this.onCleanup(dispose);
   }
 
+  private _getCurrentSrc(): string {
+    if (this._srcSignal) return this._srcSignal.get();
+    if (this._pendingSrc) return this._pendingSrc;
+    if ((this as any)._src) return (this as any)._src;
+    return this.getAttribute("src") || "";
+  }
+
   render() {
-    const currentSrc = this._srcSignal 
-      ? this._srcSignal.get() 
-      : (this._pendingSrc || (this as any)._src || this.getAttribute("src") || "");
+    const currentSrc = this._getCurrentSrc();
     if (!currentSrc) {
       this.mount(STYLES, "");
       return;

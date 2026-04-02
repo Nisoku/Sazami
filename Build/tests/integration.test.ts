@@ -536,9 +536,8 @@ describe('Full Pipeline - Error propagation', () => {
     expect(() => parseSakko('<page { text: "unterminated }>')).toThrow('Unterminated string');
   });
 
-  test('parser error on truly malformed input propagates', () => {
-    // Unterminated strings should still throw
-    expect(() => parseSakko('<page { text: "unterminated }>')).toThrow();
+  test('parser error on unbalanced brackets propagates', () => {
+    expect(() => parseSakko('<page { text: "Hello" >')).toThrow();
   });
 
   test('transformer handles full pipeline from parse to transform', () => {

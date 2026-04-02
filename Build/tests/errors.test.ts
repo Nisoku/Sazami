@@ -110,10 +110,6 @@ describe('Parser - Error handling', () => {
   });
 
   test('should throw when missing closing >', () => {
-    expect(() => parseSakko('<page { text: Hello }')).toThrow();
-  });
-
-  test('should throw when missing closing >', () => {
     expect(() => parseSakko('<page { text: Hello }')).toThrow("Expected '>'");
   });
 

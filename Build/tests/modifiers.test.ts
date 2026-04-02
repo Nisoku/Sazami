@@ -1,4 +1,4 @@
-import { describe, test, expect, it } from '@jest/globals';
+import { describe, test, expect } from '@jest/globals';
 import { parseModifiers, MODIFIER_MAP } from "../src/primitives/modifier-map";
 import type { Modifier } from "@nisoku/sakko";
 

@@ -13,7 +13,6 @@ import {
   bindStyle,
   bindInputValue,
   bindInputChecked,
-  bindSelectValue,
   bindVisibility,
   bindDisabled,
   bindBooleanAttribute,

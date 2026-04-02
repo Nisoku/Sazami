@@ -1,6 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { VARIANT_BG_RULES } from "./shared";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindText } from "@nisoku/sairin";
 
 const STYLES = `
