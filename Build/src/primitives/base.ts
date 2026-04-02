@@ -276,6 +276,7 @@ export class SazamiComponent<
     const newRootElement = this._extractRootElement(template);
     this._pendingStyles = null;
     this._pendingTemplate = null;
+    this._dirty = false;
     this._lastTemplate = template;
     this._lastStyles = styles;
     try {

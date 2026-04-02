@@ -595,7 +595,7 @@ describe('Sazami Components - Signal Support', () => {
       );
       
       const userName = signal(path("test", "userName"), '');
-      effect(() => {
+      const disposeEffect = effect(() => {
         const data = userData.value.get();
         userName.set(data?.name ?? '');
       });
@@ -608,6 +608,7 @@ describe('Sazami Components - Signal Support', () => {
       
       expect(el.shadowRoot?.textContent).toContain('John');
       
+      disposeEffect();
       el.remove();
     });
   });

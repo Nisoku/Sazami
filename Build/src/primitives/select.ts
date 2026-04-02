@@ -119,6 +119,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   private _options: Array<{ value: string; label: string }> = [];
   private _valueSignal: Readable<string> | null = null;
   private _valueEffectDisposer: (() => void) | null = null;
+  private _valueBindingInitialized = false;
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledEffectDisposer: (() => void) | null = null;
   private _handleDocumentClick = (e: Event) => {
@@ -173,6 +174,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       self._updateSelectedState();
     });
     this._valueEffectDisposer = dispose;
+    this._valueBindingInitialized = true;
     this.onCleanup(dispose);
   }
 
@@ -257,7 +259,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     this._updateTabIndex();
     this._wireHandlers();
 
-    if (this._valueSignal) {
+    if (this._valueSignal && !this._valueBindingInitialized) {
       this._setupValueBinding();
     }
   }

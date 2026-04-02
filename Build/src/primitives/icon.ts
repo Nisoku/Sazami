@@ -115,15 +115,16 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
     }
 
     const sig = this._iconSignal;
-    const el = this._iconElement;
     const dispose = effect(() => {
       const iconName = sig.get();
       const svg = ICON_SVGS[iconName];
       const isSvg = !!svg;
-      const currentIsSvg = el.tagName.toLowerCase() === "svg";
+      const currentEl = this._iconElement;
+      if (!currentEl) return;
+      const currentIsSvg = currentEl.tagName.toLowerCase() === "svg";
 
       if (isSvg !== currentIsSvg) {
-        const parent = el.parentNode;
+        const parent = currentEl.parentNode;
         let newElement: HTMLElement;
         if (svg) {
           const wrapper = document.createElement("div");
@@ -133,15 +134,17 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
           newElement = document.createElement("span");
           newElement.textContent = iconName;
         }
-        parent?.replaceChild(newElement, el);
+        parent?.replaceChild(newElement, currentEl);
         this._iconElement = newElement;
       } else if (svg) {
+        const parent = currentEl.parentNode;
         const wrapper = document.createElement("div");
         wrapper.innerHTML = svg;
-        const newSvg = wrapper.firstElementChild as HTMLElement;
-        el.innerHTML = newSvg.innerHTML;
+        const newElement = wrapper.firstElementChild as HTMLElement;
+        parent?.replaceChild(newElement, currentEl);
+        this._iconElement = newElement;
       } else {
-        el.textContent = iconName;
+        currentEl.textContent = iconName;
       }
     });
     this._iconEffectDispose = dispose;
