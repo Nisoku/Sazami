@@ -1,12 +1,15 @@
 # Sazami
 
-> [!WARNING]
-> Sazami is currently incomplete!!! I'm still working on adding basic library functionality, but the idea and design are in place.
----
+[![npm version](https://img.shields.io/npm/v/@nisoku/sazami.svg)](https://www.npmjs.com/package/@nisoku/sazami)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+
+[Documentation](https://nisoku.github.io/Sazami/) | [API Reference](https://nisoku.github.io/Sazami/api-reference/) | [Playground](https://nisoku.github.io/Sazami/playground/)
 
 **A zero-dependency UI engine for the web.**
 
-Write concise, readable markup in the Sakko language. Get real web components, automatic theming, and a unique directional corner-rounding effect called *[curvomorphism](https://github.com/NellowTCS/Curvomorphism/)*: all without installing a single dependency.
+Sazami is available on [npm](https://www.npmjs.com/package/@nisoku/sazami)!
+
+Write concise, readable markup in the Sakko language. Get real web components, automatic theming, and a unique directional corner-rounding effect called *[curvomorphism](https://github.com/NellowTCS/Curvomorphism/)*: all without installing a single external dependency.
 
 ## What does it look like?
 
