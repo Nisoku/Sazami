@@ -198,7 +198,12 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
     return ["value", "max", "min", "indeterminate"];
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    if (oldValue === newValue) return;
     this.render();
   }
 }

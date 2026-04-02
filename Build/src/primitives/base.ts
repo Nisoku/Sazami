@@ -120,13 +120,15 @@ export function component<C extends SazamiComponentConfig>(config: C) {
   };
 }
 
+let _nextComponentId = 0;
+
 export class SazamiComponent<
   C extends SazamiComponentConfig = any,
 > extends HTMLElement {
   // Declare sazamiConfig, set by decorator on prototype
   declare sazamiConfig: C;
 
-  componentId: string = `${this.tagName?.toLowerCase() ?? "element"}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  componentId: string = `${this.tagName?.toLowerCase() ?? "element"}_${++_nextComponentId}`;
 
   protected shadow: ShadowRoot;
   protected _cleanupFns: Array<() => void> = [];
@@ -292,7 +294,6 @@ export class SazamiComponent<
     this._pendingTemplate = template;
     if (this._dirty) return;
     this._dirty = true;
-    const pendingRoot = this._extractRootElement(template);
     queueMicrotask(() => {
       this._dirty = false;
       if (this._pendingTemplate !== null) {
@@ -300,7 +301,7 @@ export class SazamiComponent<
         const currentStyles = this._pendingStyles!;
         this._pendingStyles = null;
         this._pendingTemplate = null;
-        this._flush(currentStyles, currentTemplate, pendingRoot);
+        this._flush(currentStyles, currentTemplate);
       }
     });
   }
@@ -310,7 +311,8 @@ export class SazamiComponent<
    * Called by scheduleRender when the microtask runs.
    * Skips stale renders if structural change made them obsolete.
    */
-  private _flush(styles: string, template: string, pendingRoot: string): void {
+  private _flush(styles: string, template: string): void {
+    const pendingRoot = this._extractRootElement(template);
     if (pendingRoot !== "" && pendingRoot !== this._currentRootElement) {
       return;
     }

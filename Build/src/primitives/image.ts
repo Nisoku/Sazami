@@ -102,7 +102,6 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     }
     const dispose = bindProperty(this._imgElement, "src", this._srcSignal!);
     this._srcDispose = dispose;
-    this.onCleanup(dispose);
   }
 
   private _getCurrentSrc(): string {
@@ -131,11 +130,6 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     );
 
     this._imgElement = this.$("img");
-
-    if (this._pendingSrc) {
-      this._updateSrc(this._pendingSrc);
-      this._pendingSrc = null;
-    }
 
     if (this._srcSignal) {
       this._setupSrcBinding();
