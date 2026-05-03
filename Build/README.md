@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@nisoku/sazami.svg)](https://www.npmjs.com/package/@nisoku/sazami)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[Documentation](https://nisoku.github.io/Sazami/) | [API Reference](https://nisoku.github.io/Sazami/api-reference/) | [Playground](https://nisoku.github.io/Sazami/playground/)
+[Documentation](https://nisoku.org/Sazami/) | [API Reference](https://nisoku.org/Sazami/api-reference/) | [Playground](https://nisoku.org/Sazami/playground/)
 
 **A zero-dependency UI engine for the web.**
 
@@ -83,7 +83,7 @@ injectThemeCSS({
 });
 ```
 
-Tokens cover colors, spacing, typography, radii, shadows, and icon sizes. See the [theming docs](https://nisoku.github.io/Sazami/config-theming/) for the full list.
+Tokens cover colors, spacing, typography, radii, shadows, and icon sizes. See the [theming docs](https://nisoku.org/Sazami/config-theming/) for the full list.
 
 ## How it works
 
@@ -177,7 +177,7 @@ Enable it per-node with the `curved` flag, and set the center point on a parent:
 
 ## Playground
 
-Open the [playground](https://nisoku.github.io/Sazami/playground/) in a browser to use the live editor. 
+Open the [playground](https://nisoku.org/Sazami/playground/) in a browser to use the live editor. 
 
 Type your Sakko code on the left; see the rendered output on the right. Includes example presets and error display with line/column info.
 
@@ -229,11 +229,11 @@ npm run typecheck
 
 | Document | Summary |
 | --- | --- |
-| [Language Reference](https://nisoku.github.io/Sazami/language-reference/) | Full Sakko syntax guide |
-| [Primitives](https://nisoku.github.io/Sazami/primitives/) | Every component with examples |
-| [Config & Theming](https://nisoku.github.io/Sazami/config-theming/) | Token system and custom themes |
-| [Curvomorphism](https://nisoku.github.io/Sazami/curvomorphism/) | How directional rounding works |
-| [API Reference](https://nisoku.github.io/Sazami/api-reference/) | Public API surface |
+| [Language Reference](https://nisoku.org/Sazami/language-reference/) | Full Sakko syntax guide |
+| [Primitives](https://nisoku.org/Sazami/primitives/) | Every component with examples |
+| [Config & Theming](https://nisoku.org/Sazami/config-theming/) | Token system and custom themes |
+| [Curvomorphism](https://nisoku.org/Sazami/curvomorphism/) | How directional rounding works |
+| [API Reference](https://nisoku.org/Sazami/api-reference/) | Public API surface |
 
 ### Run locally
 
