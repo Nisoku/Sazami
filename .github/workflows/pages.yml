@@ -32,6 +32,7 @@ jobs:
           npm run build
 
       # Prepare full page deploy directory
+      # TODO: Make the layout the same across all sites
       - name: Prepare Pages assets
         run: |
           mkdir -p gh-pages-root
