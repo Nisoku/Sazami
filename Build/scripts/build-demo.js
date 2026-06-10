@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const srcDir = path.join(__dirname, '..', 'dist');
-const destDir = path.join(__dirname, '..', 'Demo', 'dist');
+const destDir = path.join(__dirname, '..', '..', 'Demo', 'dist');
 
 try {
   // Remove existing Demo/dist
