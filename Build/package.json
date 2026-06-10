@@ -30,6 +30,7 @@
   "scripts": {
     "build": "vite build",
     "build:demo": "vite build && node ./scripts/build-demo.js",
+    "dev:demo": "node ./scripts/dev-demo.js",
     "test": "jest --no-cache",
     "typecheck": "tsc --noEmit",
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"

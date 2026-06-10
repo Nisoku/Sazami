@@ -63,11 +63,13 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
       }
     } else if (mod.type === "pair") {
       props[mod.key] = mod.value;
-    } else {
-      throw new Error(
-        `Unknown modifier type "${mod.type}". ` +
-          `Expected "flag" or "pair". Modifier: ${JSON.stringify(mod)}`,
-      );
+    } else if (mod.type === "event") {
+      if (!props.__events) props.__events = [];
+      props.__events.push(mod);
+    } else if (mod.type === "atcode") {
+      if (mod.name === "bind") {
+        props.__bind = mod.body;
+      }
     }
   });
 

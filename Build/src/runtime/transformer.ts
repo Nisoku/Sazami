@@ -1,11 +1,14 @@
-import type { ASTNode } from "@nisoku/sakko";
+import type { ASTNode, InterpolatedText } from "@nisoku/sakko";
 import { parseModifiers } from "../primitives/modifier-map";
 import { unknownComponentError } from "../errors";
+import type { Readable } from "@nisoku/sairin";
+import { ReactiveContext } from "./reactive-context";
 
 export type VNode = {
   type: string;
   props: Record<string, any>;
-  children: (VNode | string)[];
+  children: (VNode | string | Readable<string>)[];
+  afterRender?: (el: HTMLElement) => void;
 };
 
 const SAZAMI_REGISTRY: Record<string, { tag: string }> = {
@@ -72,44 +75,107 @@ const CONTENT_SLOT_COMPONENTS = new Set([
 function serializeValue(
   value:
     | string
-    | {
-        type: "interpolated";
-        parts: Array<{ type: "text" | "expr"; value: string }>;
-      },
+    | InterpolatedText,
 ): string {
   if (typeof value === "string") return value;
   return value.parts.map((p) => p.value).join("");
 }
 
-export function transformAST(node: ASTNode): VNode | VNode[] {
+function hasReactiveExpr(
+  value: string | InterpolatedText,
+  context: ReactiveContext | undefined,
+): boolean {
+  if (!context || typeof value === "string") return false;
+  const signalNames = context.getAllSignalNames();
+  if (signalNames.length === 0) return false;
+  return value.parts.some(
+    (p) =>
+      p.type === "expr" &&
+      signalNames.some((name) => {
+        const re = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+        return re.test(p.value);
+      }),
+  );
+}
+
+export function transformAST(
+  node: ASTNode,
+  context?: ReactiveContext,
+): VNode | VNode[] {
   if (node.type === "inline") {
     const tag = getTag(node.name);
     const props = parseModifiers(node.modifiers);
-    const value =
-      typeof node.value === "string" ? node.value : serializeValue(node.value);
-    if (ICON_COMPONENTS.has(tag) && node.value && !props.icon) {
-      props.icon =
-        typeof node.value === "string"
-          ? node.value
-          : serializeValue(node.value);
+    const afterRenderFns: Array<(el: HTMLElement) => void> = [];
+
+    const events = props.__events as
+      | Array<{ event: string; handler: string }>
+      | undefined;
+    delete props.__events;
+
+    const bindSignal = props.__bind as string | undefined;
+    delete props.__bind;
+
+    let value:
+      | string
+      | Readable<string>
+      | undefined;
+
+    if (node.value) {
+      if (typeof node.value === "string") {
+        value = node.value;
+      } else if (hasReactiveExpr(node.value, context)) {
+        value = context!.createInterpolated(node.value.parts);
+      } else {
+        value = serializeValue(node.value);
+      }
     }
-    if (CONTENT_SLOT_COMPONENTS.has(tag) && node.value && !props.content) {
-      props.content =
-        typeof node.value === "string"
-          ? node.value
-          : serializeValue(node.value);
+
+    if (events && context) {
+      for (const evt of events) {
+        const handler = context.createEventHandler(evt.handler);
+        afterRenderFns.push((el: HTMLElement) => {
+          el.addEventListener(evt.event, handler);
+        });
+      }
     }
-    return {
+
+    if (bindSignal && context) {
+      const bindFn = context.createBindHandler(bindSignal, node.name);
+      if (bindFn) {
+        afterRenderFns.push(bindFn);
+      }
+    }
+
+    if (ICON_COMPONENTS.has(tag) && value && !props.icon) {
+      props.icon = value;
+    }
+    if (CONTENT_SLOT_COMPONENTS.has(tag) && value && !props.content) {
+      props.content = value;
+    }
+
+    const vnode: VNode = {
       type: tag,
       props,
-      children: CONTENT_SLOT_COMPONENTS.has(tag) ? [] : value ? [value] : [],
+      children: CONTENT_SLOT_COMPONENTS.has(tag)
+        ? []
+        : value !== undefined && value !== ""
+          ? [value]
+          : [],
     };
+
+    if (afterRenderFns.length > 0) {
+      vnode.afterRender = (el: HTMLElement) => {
+        afterRenderFns.forEach((fn) => fn(el));
+      };
+    }
+
+    return vnode;
   }
 
   if (node.type === "element") {
-    const children: (VNode | string)[] = [];
+    const children: (VNode | string | Readable<string>)[] = [];
     for (const child of node.children) {
-      const result = transformAST(child);
+      const result = transformAST(child, context);
       if (Array.isArray(result)) {
         children.push(...result);
       } else {
@@ -126,7 +192,7 @@ export function transformAST(node: ASTNode): VNode | VNode[] {
   if (node.type === "list") {
     const items: VNode[] = [];
     for (const item of node.items) {
-      const result = transformAST(item);
+      const result = transformAST(item, context);
       if (Array.isArray(result)) {
         items.push(...result);
       } else {
