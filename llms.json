@@ -1,0 +1,42 @@
+{
+  "title": "Sazami",
+  "description": "",
+  "pages": [
+    {
+      "title": "API Reference",
+      "url": "https://nisoku.org/Sazami/docs/api-reference/",
+      "description": "Complete public API for compileSakko, transformer, config, and curvomorphism",
+      "priority": "medium"
+    },
+    {
+      "title": "Component Base",
+      "url": "https://nisoku.org/Sazami/docs/component-base/",
+      "description": "Base component system, handler management, and events",
+      "priority": "medium"
+    },
+    {
+      "title": "Config & Theming",
+      "url": "https://nisoku.org/Sazami/docs/config-theming/",
+      "description": "Design token system, CSS custom properties, and custom theme configuration",
+      "priority": "medium"
+    },
+    {
+      "title": "Curvomorphism",
+      "url": "https://nisoku.org/Sazami/docs/curvomorphism/",
+      "description": "Directional corner-rounding algorithm and usage",
+      "priority": "medium"
+    },
+    {
+      "title": "Sazami Documentation",
+      "url": "https://nisoku.org/Sazami/docs/",
+      "description": "A zero-dependency UI engine with the Sakko DSL, semantic web components, and design tokens",
+      "priority": "high"
+    },
+    {
+      "title": "Sazami Primitives",
+      "url": "https://nisoku.org/Sazami/docs/primitives/",
+      "description": "All 48 semantic Web Components with attributes, modifiers, and examples",
+      "priority": "medium"
+    }
+  ]
+}
