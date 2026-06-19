@@ -1,5 +1,5 @@
-import { SazamiComponent } from "./base";
-import { type Readable } from "@nisoku/sairin";
+import { SazamiComponent } from './base';
+import { Readable } from '@nisoku/sairin';
 declare const iconConfig: {
     readonly properties: {
         readonly icon: {

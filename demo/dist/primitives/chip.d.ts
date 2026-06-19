@@ -1,5 +1,5 @@
-import { SazamiComponent } from "./base";
-import { Signal } from "@nisoku/sairin";
+import { SazamiComponent } from './base';
+import { Signal } from '@nisoku/sairin';
 declare const chipConfig: {
     readonly properties: {
         readonly label: {

@@ -1,5 +1,5 @@
-import { type Readable } from "@nisoku/sairin";
-export declare type BindTarget = "textContent" | "innerHTML" | "value" | "checked" | "disabled" | "visible" | string;
+import { Readable } from '@nisoku/sairin';
+export type BindTarget = "textContent" | "innerHTML" | "value" | "checked" | "disabled" | "visible" | string;
 export interface SazamiComponentConfig {
     observedAttributes?: readonly string[] | string[];
     properties?: Record<string, AnyPropertyConfig>;
@@ -22,24 +22,26 @@ export interface PropertyConfigBoolean {
     reflect?: boolean;
     default?: boolean;
 }
-export declare type AnyPropertyConfig = PropertyConfig | PropertyConfigNumber | PropertyConfigBoolean;
+export type AnyPropertyConfig = PropertyConfig | PropertyConfigNumber | PropertyConfigBoolean;
 export interface EventConfig {
     name: string;
     detail?: Record<string, string>;
 }
-export declare type BindingType = "attribute" | "property" | "input";
-declare type GetPropConfig<C extends SazamiComponentConfig, P extends string> = C["properties"] extends Record<string, AnyPropertyConfig> ? P extends keyof C["properties"] ? C["properties"][P] : never : never;
-declare type PropType<C extends SazamiComponentConfig, P extends string> = GetPropConfig<C, P> extends AnyPropertyConfig ? GetPropConfig<C, P>["type"] extends "boolean" ? boolean : GetPropConfig<C, P>["type"] extends "number" ? number : string : string;
-declare type EventDetail<C extends SazamiComponentConfig, D extends Record<string, string>> = {
+export type BindingType = "attribute" | "property" | "input";
+type GetPropConfig<C extends SazamiComponentConfig, P extends string> = C["properties"] extends Record<string, AnyPropertyConfig> ? P extends keyof C["properties"] ? C["properties"][P] : never : never;
+type PropType<C extends SazamiComponentConfig, P extends string> = GetPropConfig<C, P> extends AnyPropertyConfig ? GetPropConfig<C, P>["type"] extends "boolean" ? boolean : GetPropConfig<C, P>["type"] extends "number" ? number : string : string;
+type EventDetail<C extends SazamiComponentConfig, D extends Record<string, string>> = {
     [K in keyof D]: D[K] extends string ? PropType<C, D[K]> : never;
 };
-export declare type InferProps<C extends SazamiComponentConfig> = C["properties"] extends Record<string, AnyPropertyConfig> ? {
+export type InferProps<C extends SazamiComponentConfig> = C["properties"] extends Record<string, AnyPropertyConfig> ? {
     [P in keyof C["properties"]]: PropType<C, P & string>;
 } : {};
-export declare type InferEvents<C extends SazamiComponentConfig> = C["events"] extends Record<string, EventConfig> ? {
+export type InferEvents<C extends SazamiComponentConfig> = C["events"] extends Record<string, EventConfig> ? {
     [E in keyof C["events"]]: C["events"][E] extends EventConfig ? C["events"][E]["detail"] extends Record<string, string> ? EventDetail<C, C["events"][E]["detail"]> : {} : {};
 } : {};
-export declare function component<C extends SazamiComponentConfig>(config: C): <T extends new () => SazamiComponent<C>>(Constructor: T) => T;
+export declare function component<C extends SazamiComponentConfig>(config: C): <T extends {
+    new (): SazamiComponent<C>;
+}>(Constructor: T) => T;
 export declare class SazamiComponent<C extends SazamiComponentConfig = any> extends HTMLElement {
     sazamiConfig: C;
     componentId: string;
