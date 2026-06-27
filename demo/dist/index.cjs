@@ -6857,8 +6857,8 @@ function getTag(name) {
 	}
 	return entry.tag;
 }
-var ICON_COMPONENTS = new Set(["saz-icon", "saz-icon-button"]);
-var CONTENT_SLOT_COMPONENTS = new Set([
+var ICON_COMPONENTS = /* @__PURE__ */ new Set(["saz-icon", "saz-icon-button"]);
+var CONTENT_SLOT_COMPONENTS = /* @__PURE__ */ new Set([
 	"saz-heading",
 	"saz-badge",
 	"saz-tag",
