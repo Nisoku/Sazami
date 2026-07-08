@@ -1,4 +1,12 @@
-import { signal, derived, effect, path, bindInputValue, bindInputChecked, type Readable } from "@nisoku/sairin";
+import {
+  signal,
+  derived,
+  effect,
+  path,
+  bindInputValue,
+  bindInputChecked,
+  type Readable,
+} from "@nisoku/sairin";
 import type { InterpolatedTextPart } from "@nisoku/sakko";
 
 function escapeRegExp(str: string): string {
@@ -204,12 +212,13 @@ export class ReactiveContext {
     if (refd.length === 0) {
       const staticVal = parts
         .map((p) =>
-          p.type === "text"
-            ? p.value
-            : String(evaluateStatic(p.value)),
+          p.type === "text" ? p.value : String(evaluateStatic(p.value)),
         )
         .join("");
-      return derived(path("component", this.rootName, "__interp"), () => staticVal);
+      return derived(
+        path("component", this.rootName, "__interp"),
+        () => staticVal,
+      );
     }
 
     const d = derived(path("component", this.rootName, "__interp"), () => {

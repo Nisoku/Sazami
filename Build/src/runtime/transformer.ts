@@ -72,11 +72,7 @@ const CONTENT_SLOT_COMPONENTS = new Set([
   "saz-label",
 ]);
 
-function serializeValue(
-  value:
-    | string
-    | InterpolatedText,
-): string {
+function serializeValue(value: string | InterpolatedText): string {
   if (typeof value === "string") return value;
   return value.parts.map((p) => p.value).join("");
 }
@@ -92,7 +88,9 @@ function hasReactiveExpr(
     (p) =>
       p.type === "expr" &&
       signalNames.some((name) => {
-        const re = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+        const re = new RegExp(
+          `\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+        );
         return re.test(p.value);
       }),
   );
@@ -118,10 +116,7 @@ export function transformAST(
     const ifSignal = props.__if as string | undefined;
     delete props.__if;
 
-    let value:
-      | string
-      | Readable<string>
-      | undefined;
+    let value: string | Readable<string> | undefined;
 
     if (node.value) {
       if (typeof node.value === "string") {
@@ -150,14 +145,14 @@ export function transformAST(
     }
 
     if (ifSignal && context) {
-      const signal = context.getSignal(ifSignal);
-      if (signal) {
+      const sig = context.getSignal(ifSignal);
+      if (sig) {
         afterRenderFns.push((el: HTMLElement) => {
           const update = () => {
-            el.style.display = signal.get() ? "" : "none";
+            el.style.display = sig.get() ? "" : "none";
           };
           update();
-          signal.subscribe(update);
+          (el as any).__sazamiIfDisposer = sig.subscribe(update);
         });
       }
     }

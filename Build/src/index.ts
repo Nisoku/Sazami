@@ -85,6 +85,10 @@ export function compileSakko(
   options?: { tokens?: Record<string, string>; replace?: boolean },
 ): void {
   if (options?.replace !== false) {
+    target.querySelectorAll("*").forEach((el) => {
+      const d = (el as any).__sazamiIfDisposer as (() => void) | undefined;
+      if (d) d();
+    });
     target.innerHTML = "";
   }
 

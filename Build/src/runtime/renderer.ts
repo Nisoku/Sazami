@@ -2,13 +2,36 @@ import { VNode } from "./transformer";
 import { bindText, type Readable } from "@nisoku/sairin";
 
 const CSS_LENGTH_PROPS = new Set([
-  "top", "right", "bottom", "left", "inset",
-  "margin", "margin-top", "margin-right", "margin-bottom", "margin-left",
-  "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
-  "width", "height", "min-width", "min-height", "max-width", "max-height",
-  "font-size", "gap", "row-gap", "column-gap",
-  "border-radius", "border-width", "border",
-  "transform-origin", "perspective",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "inset",
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "width",
+  "height",
+  "min-width",
+  "min-height",
+  "max-width",
+  "max-height",
+  "font-size",
+  "gap",
+  "row-gap",
+  "column-gap",
+  "border-radius",
+  "border-width",
+  "border",
+  "transform-origin",
+  "perspective",
 ]);
 
 const NUMERIC_RE = /^-?\d+(\.\d+)?$/;
@@ -20,7 +43,10 @@ function styleValue(key: string, val: string): string {
   return val;
 }
 
-export function render(vnode: VNode | string | Readable<string>, parent: HTMLElement): void {
+export function render(
+  vnode: VNode | string | Readable<string>,
+  parent: HTMLElement,
+): void {
   if (typeof vnode === "string") {
     parent.appendChild(document.createTextNode(vnode));
     return;
