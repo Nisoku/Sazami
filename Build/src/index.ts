@@ -86,7 +86,8 @@ export function compileSakko(
 ): void {
   if (options?.replace !== false) {
     target.querySelectorAll("*").forEach((el) => {
-      const d = (el as Element & { __sazamiIfDisposer?: () => void }).__sazamiIfDisposer;
+      const d = (el as Element & { __sazamiIfDisposer?: () => void })
+        .__sazamiIfDisposer;
       if (d) d();
     });
     target.innerHTML = "";
@@ -130,11 +131,14 @@ export function compileSakko(
   if (typeof window !== "undefined") {
     // Disconnect any observer from a previous compileSakko call on this target
     // so re-renders (e.g. playground live preview) don't leave stale observers.
-    const prev = (target as HTMLElement & { __sazamiRO?: ResizeObserver }).__sazamiRO;
+    const prev = (target as HTMLElement & { __sazamiRO?: ResizeObserver })
+      .__sazamiRO;
     if (prev) prev.disconnect();
 
     // Dispose any previous curvomorphism listeners
-    const prevDisposers = (target as HTMLElement & { __sazamiCurvoDisposers?: Array<() => void> }).__sazamiCurvoDisposers;
+    const prevDisposers = (
+      target as HTMLElement & { __sazamiCurvoDisposers?: Array<() => void> }
+    ).__sazamiCurvoDisposers;
     if (prevDisposers) {
       prevDisposers.forEach((d) => {
         d();
@@ -179,7 +183,9 @@ export function compileSakko(
       });
     });
     (target as HTMLElement & { __sazamiRO: ResizeObserver }).__sazamiRO = ro;
-    (target as HTMLElement & { __sazamiCurvoDisposers: Array<() => void> }).__sazamiCurvoDisposers = disposers;
+    (
+      target as HTMLElement & { __sazamiCurvoDisposers: Array<() => void> }
+    ).__sazamiCurvoDisposers = disposers;
     ro.observe(target);
   }
 }

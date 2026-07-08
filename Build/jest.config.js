@@ -12,7 +12,7 @@ module.exports = {
         strict: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        moduleResolution: "node",
+        moduleResolution: "node16",
         isolatedModules: true,
       },
     }],

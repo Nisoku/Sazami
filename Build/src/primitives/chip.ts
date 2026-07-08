@@ -139,7 +139,7 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
     }
 
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
 
     if (this.disabledSignal) {
       this.bindDisabled(":host", this.disabledSignal);

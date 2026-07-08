@@ -1,14 +1,22 @@
-let logger: {
+type Logger = {
   info: (msg: string, opts?: Record<string, unknown>) => void;
   warn: (msg: string, opts?: Record<string, unknown>) => void;
   error: (msg: string, opts?: Record<string, unknown>) => void;
-} | null = null;
+};
 
-function getLogger(scope: string) {
+declare function require(id: string): unknown;
+
+let logger: Logger | null = null;
+
+function getLogger(scope: string): Logger {
   if (!logger) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const satori = require("@nisoku/satori-log");
+      const satori = require("@nisoku/satori-log") as {
+        createSatori: (opts: { logLevel: string; enableConsole: boolean }) => {
+          createLogger: (scope: string) => Logger;
+        };
+      };
       const s = satori.createSatori({ logLevel: "error", enableConsole: true });
       logger = s.createLogger(scope);
     } catch {

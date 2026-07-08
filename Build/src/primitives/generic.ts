@@ -12,9 +12,9 @@ ${GAP_RULES}
 :host([justify="space-between"]) { justify-content: space-between; }
 `;
 
-export function createGenericClass<C extends SazamiComponentConfig = SazamiComponentConfig>(
-  config?: C,
-): { new (): SazamiComponent<C> } {
+export function createGenericClass<
+  C extends SazamiComponentConfig = SazamiComponentConfig,
+>(config?: C): { new (): SazamiComponent<C> } {
   class Generic extends SazamiComponent<C> {
     render() {
       this.mount(STYLES, `<slot></slot>`);

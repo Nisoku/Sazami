@@ -67,7 +67,10 @@ export function render(
   }
   if (vnode.props.__style) {
     for (const [key, val] of Object.entries(vnode.props.__style)) {
-      (element.style as unknown as Record<string, string>)[key] = styleValue(key, String(val));
+      (element.style as unknown as Record<string, string>)[key] = styleValue(
+        key,
+        String(val),
+      );
     }
   }
 
@@ -102,5 +105,7 @@ export function render(
 function isReadable(v: unknown): v is Readable<string> {
   if (v === null || typeof v !== "object") return false;
   const maybe = v as { get?: unknown; subscribe?: unknown };
-  return typeof maybe.get === "function" && typeof maybe.subscribe === "function";
+  return (
+    typeof maybe.get === "function" && typeof maybe.subscribe === "function"
+  );
 }

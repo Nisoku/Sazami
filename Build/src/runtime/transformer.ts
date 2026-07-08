@@ -106,8 +106,7 @@ export function transformAST(
     const afterRenderFns: Array<(el: HTMLElement) => void> = [];
 
     const events = props.__events as
-      | Array<{ event: string; handler: string }>
-      | undefined;
+      Array<{ event: string; handler: string }> | undefined;
     delete props.__events;
 
     const bindSignal = props.__bind as string | undefined;
@@ -152,7 +151,8 @@ export function transformAST(
             el.style.display = sig.get() ? "" : "none";
           };
           update();
-          (el as unknown as Record<string, unknown>).__sazamiIfDisposer = sig.subscribe(update);
+          (el as unknown as Record<string, unknown>).__sazamiIfDisposer =
+            sig.subscribe(update);
         });
       }
     }

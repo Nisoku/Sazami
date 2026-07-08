@@ -1,6 +1,5 @@
 import { SazamiComponent, component } from "./base";
 
-
 const STYLES = `
 :host {
   display: block;

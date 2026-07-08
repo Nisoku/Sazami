@@ -177,7 +177,7 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
     this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
   }
 
   private _updateAria() {

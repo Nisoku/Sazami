@@ -2,12 +2,7 @@ import { SazamiComponent, component } from "./base";
 import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
-import {
-  Derived,
-  isSignal,
-  effect,
-  type Readable,
-} from "@nisoku/sairin";
+import { Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {

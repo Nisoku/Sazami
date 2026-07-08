@@ -130,9 +130,9 @@ export class SazamiButton extends SazamiComponent<typeof buttonConfig> {
     }
 
     this.removeHandler("click", this._handleClick);
-    this.removeHandler("keydown", this._handleKeydown);
+    this.removeHandler("keydown", this._handleKeydown as EventListener);
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
   }
 
   private _handleClick = () => {

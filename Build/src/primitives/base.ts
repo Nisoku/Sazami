@@ -1,8 +1,4 @@
-import {
-  eventError,
-  bindingError,
-  renderError,
-} from "../errors";
+import { eventError, bindingError, renderError } from "../errors";
 import { type Signal, type Readable, effect } from "@nisoku/sairin";
 import {
   bindText,
@@ -52,9 +48,7 @@ export interface PropertyConfigBoolean {
 }
 
 export type AnyPropertyConfig =
-  | PropertyConfig
-  | PropertyConfigNumber
-  | PropertyConfigBoolean;
+  PropertyConfig | PropertyConfigNumber | PropertyConfigBoolean;
 
 export interface EventConfig {
   name: string;
@@ -72,14 +66,16 @@ type _GetPropConfig<C extends SazamiComponentConfig, P extends string> =
     : never;
 
 // Map property name -> its actual TS type
-type PropType<C extends SazamiComponentConfig, P extends string> =
-  P extends keyof C["properties"]
-    ? C["properties"][P] extends { type: "boolean" }
-      ? boolean
-      : C["properties"][P] extends { type: "number" }
-        ? number
-        : string
-    : unknown;
+type PropType<
+  C extends SazamiComponentConfig,
+  P extends string,
+> = P extends keyof C["properties"]
+  ? C["properties"][P] extends { type: "boolean" }
+    ? boolean
+    : C["properties"][P] extends { type: "number" }
+      ? number
+      : string
+  : unknown;
 
 // Map event's detail object -> inferred detail type
 type EventDetail<
@@ -166,7 +162,8 @@ export class SazamiComponent<
 
   // Static observedAttributes derived from properties with reflect: true
   static get observedAttributes(): string[] {
-    const cfg = (this.prototype as { sazamiConfig?: SazamiComponentConfig }).sazamiConfig;
+    const cfg = (this.prototype as { sazamiConfig?: SazamiComponentConfig })
+      .sazamiConfig;
     if (!cfg) return [];
 
     // If explicitly provided, use that
@@ -373,7 +370,7 @@ export class SazamiComponent<
           if ("set" in readable) {
             dispose = bindSelectValue(element, readable as Signal<string>);
           } else {
-            dispose = bindProperty(element, "value", readable);
+            dispose = bindProperty(element, "value", readable as Readable<string>);
           }
         } else {
           bindingError(
@@ -465,7 +462,7 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindProperty(element, prop, readable as Readable<unknown>);
+    const dispose = bindProperty(element, prop as keyof HTMLElement, readable as Readable<HTMLElement[keyof HTMLElement]>);
     this._cleanupFns.push(dispose);
   }
 

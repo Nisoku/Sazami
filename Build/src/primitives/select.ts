@@ -292,7 +292,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._navigateOption(e.key === "ArrowDown" ? 1 : -1);
       }
     };
-    this.addHandler("keydown", handleKeydown, {
+    this.addHandler("keydown", handleKeydown as EventListener, {
       internal: true,
       element: trigger as HTMLElement,
     });

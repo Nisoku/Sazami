@@ -56,5 +56,4 @@ export function escapeUrl(str: string): string {
  */
 export function escapeCss(str: string): string {
   return str.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/g, "\\$&");
-
 }

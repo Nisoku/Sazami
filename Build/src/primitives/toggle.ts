@@ -149,7 +149,7 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
     this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
   }
 
   private _handleClick = () => {

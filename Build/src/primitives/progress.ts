@@ -1,10 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import {
-  Derived,
-  isSignal,
-  effect,
-  type Readable,
-} from "@nisoku/sairin";
+import { Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; width: 100%; }
