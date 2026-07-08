@@ -1,6 +1,25 @@
 import { VNode } from "./transformer";
 import { bindText, type Readable } from "@nisoku/sairin";
 
+const CSS_LENGTH_PROPS = new Set([
+  "top", "right", "bottom", "left", "inset",
+  "margin", "margin-top", "margin-right", "margin-bottom", "margin-left",
+  "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+  "width", "height", "min-width", "min-height", "max-width", "max-height",
+  "font-size", "gap", "row-gap", "column-gap",
+  "border-radius", "border-width", "border",
+  "transform-origin", "perspective",
+]);
+
+const NUMERIC_RE = /^-?\d+(\.\d+)?$/;
+
+function styleValue(key: string, val: string): string {
+  if (CSS_LENGTH_PROPS.has(key) && NUMERIC_RE.test(val)) {
+    return val + "px";
+  }
+  return val;
+}
+
 export function render(vnode: VNode | string | Readable<string>, parent: HTMLElement): void {
   if (typeof vnode === "string") {
     parent.appendChild(document.createTextNode(vnode));
@@ -15,6 +34,16 @@ export function render(vnode: VNode | string | Readable<string>, parent: HTMLEle
   }
 
   const element = document.createElement(vnode.type);
+
+  // Apply inline styles before other props
+  if (vnode.props.__rawStyle) {
+    element.style.cssText = vnode.props.__rawStyle;
+  }
+  if (vnode.props.__style) {
+    for (const [key, val] of Object.entries(vnode.props.__style)) {
+      (element.style as any)[key] = styleValue(key, String(val));
+    }
+  }
 
   Object.entries(vnode.props).forEach(([key, value]) => {
     if (key.startsWith("__")) return;

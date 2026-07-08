@@ -115,6 +115,9 @@ export function transformAST(
     const bindSignal = props.__bind as string | undefined;
     delete props.__bind;
 
+    const ifSignal = props.__if as string | undefined;
+    delete props.__if;
+
     let value:
       | string
       | Readable<string>
@@ -143,6 +146,19 @@ export function transformAST(
       const bindFn = context.createBindHandler(bindSignal, node.name);
       if (bindFn) {
         afterRenderFns.push(bindFn);
+      }
+    }
+
+    if (ifSignal && context) {
+      const signal = context.getSignal(ifSignal);
+      if (signal) {
+        afterRenderFns.push((el: HTMLElement) => {
+          const update = () => {
+            el.style.display = signal.get() ? "" : "none";
+          };
+          update();
+          signal.subscribe(update);
+        });
       }
     }
 

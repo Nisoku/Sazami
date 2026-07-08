@@ -58,6 +58,72 @@ describe("Modifier Map", () => {
   });
 });
 
+describe("Modifier Map CSS Style Pairs", () => {
+  test("converts position pair to __style", () => {
+    const modifiers: Modifier[] = [
+      { type: "pair", key: "position", value: "absolute" },
+      { type: "pair", key: "top", value: "10" },
+      { type: "pair", key: "left", value: "20" },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__style).toEqual({
+      position: "absolute",
+      top: "10",
+      left: "20",
+    });
+  });
+
+  test("converts display pair to __style", () => {
+    const modifiers: Modifier[] = [
+      { type: "pair", key: "display", value: "flex" },
+      { type: "pair", key: "width", value: "100%" },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__style).toEqual({
+      display: "flex",
+      width: "100%",
+    });
+  });
+
+  test("merges CSS flags with __style pairs", () => {
+    const modifiers: Modifier[] = [
+      { type: "flag", value: "absolute" },
+      { type: "pair", key: "top", value: "10" },
+      { type: "pair", key: "left", value: "20" },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__style).toEqual({
+      position: "absolute",
+      top: "10",
+      left: "20",
+    });
+  });
+
+  test("@style string becomes __rawStyle", () => {
+    const modifiers: Modifier[] = [
+      { type: "atcode", name: "style", body: "color: red; background: blue" },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__rawStyle).toBe("color: red; background: blue");
+  });
+
+  test("@style with JSON object merges into __style", () => {
+    const modifiers: Modifier[] = [
+      { type: "atcode", name: "style", body: '{"color": "red", "background": "blue"}' },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__style).toEqual({ color: "red", background: "blue" });
+  });
+
+  test("@if becomes __if", () => {
+    const modifiers: Modifier[] = [
+      { type: "atcode", name: "if", body: "isVisible" },
+    ];
+    const result = parseModifiers(modifiers);
+    expect(result.__if).toBe("isVisible");
+  });
+});
+
 describe("Modifier Map Constants", () => {
   test("has text variants", () => {
     expect(MODIFIER_MAP.accent).toEqual({ variant: "accent" });
@@ -99,5 +165,20 @@ describe("Modifier Map Constants", () => {
   test("has dim modifier with both tone and variant", () => {
     expect(MODIFIER_MAP.dim.tone).toBe("dim");
     expect(MODIFIER_MAP.dim.variant).toBe("dim");
+  });
+
+  test("has position modifier flags", () => {
+    expect(MODIFIER_MAP.absolute).toEqual({ position: "absolute" });
+    expect(MODIFIER_MAP.fixed).toEqual({ position: "fixed" });
+    expect(MODIFIER_MAP.relative).toEqual({ position: "relative" });
+    expect(MODIFIER_MAP.sticky).toEqual({ position: "sticky" });
+  });
+
+  test("has display modifier flags", () => {
+    expect(MODIFIER_MAP.block).toEqual({ display: "block" });
+    expect(MODIFIER_MAP.flex).toEqual({ display: "flex" });
+    expect(MODIFIER_MAP.hidden).toEqual({ display: "none" });
+    expect(MODIFIER_MAP["inline-block"]).toEqual({ display: "inline-block" });
+    expect(MODIFIER_MAP["inline-flex"]).toEqual({ display: "inline-flex" });
   });
 });

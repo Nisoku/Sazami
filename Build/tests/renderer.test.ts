@@ -197,4 +197,45 @@ describe("Renderer", () => {
     expect(div.textContent).toBe("Before bold after");
     expect(div.childNodes).toHaveLength(3);
   });
+
+  test("applies __style object as inline styles", () => {
+    const vnode: VNode = {
+      type: "div",
+      props: { __style: { position: "absolute", top: "10px", left: "20px" } },
+      children: [],
+    };
+    render(vnode, container);
+    const el = container.firstChild as HTMLElement;
+    expect(el.style.position).toBe("absolute");
+    expect(el.style.top).toBe("10px");
+    expect(el.style.left).toBe("20px");
+  });
+
+  test("applies __rawStyle as cssText", () => {
+    const vnode: VNode = {
+      type: "div",
+      props: { __rawStyle: "color: red; font-size: 16px" },
+      children: [],
+    };
+    render(vnode, container);
+    const el = container.firstChild as HTMLElement;
+    expect(el.style.color).toBe("red");
+    expect(el.style.fontSize).toBe("16px");
+  });
+
+  test("applies both __style and __rawStyle", () => {
+    const vnode: VNode = {
+      type: "div",
+      props: {
+        __rawStyle: "background: blue",
+        __style: { color: "red", position: "absolute" },
+      },
+      children: [],
+    };
+    render(vnode, container);
+    const el = container.firstChild as HTMLElement;
+    expect(el.style.position).toBe("absolute");
+    expect(el.style.color).toBe("red");
+    expect(el.style.background).toBe("blue");
+  });
 });
