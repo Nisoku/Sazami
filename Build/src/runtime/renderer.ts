@@ -63,18 +63,18 @@ export function render(
 
   // Apply inline styles before other props
   if (vnode.props.__rawStyle) {
-    element.style.cssText = vnode.props.__rawStyle;
+    element.style.cssText = vnode.props.__rawStyle as string;
   }
   if (vnode.props.__style) {
     for (const [key, val] of Object.entries(vnode.props.__style)) {
-      (element.style as any)[key] = styleValue(key, String(val));
+      (element.style as unknown as Record<string, string>)[key] = styleValue(key, String(val));
     }
   }
 
   Object.entries(vnode.props).forEach(([key, value]) => {
     if (key.startsWith("__")) return;
     if (isReadable(value)) {
-      (element as any)[key] = value;
+      (element as unknown as Record<string, unknown>)[key] = value;
     } else if (typeof value === "boolean" && value) {
       element.setAttribute(key, "");
     } else if (value !== undefined && value !== null && value !== false) {
@@ -100,12 +100,7 @@ export function render(
 }
 
 function isReadable(v: unknown): v is Readable<string> {
-  return (
-    v !== null &&
-    typeof v === "object" &&
-    "get" in v &&
-    typeof (v as any).get === "function" &&
-    "subscribe" in v &&
-    typeof (v as any).subscribe === "function"
-  );
+  if (v === null || typeof v !== "object") return false;
+  const maybe = v as { get?: unknown; subscribe?: unknown };
+  return typeof maybe.get === "function" && typeof maybe.subscribe === "function";
 }

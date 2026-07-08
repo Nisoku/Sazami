@@ -6,7 +6,7 @@ import { ReactiveContext } from "./reactive-context";
 
 export type VNode = {
   type: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   children: (VNode | string | Readable<string>)[];
   afterRender?: (el: HTMLElement) => void;
 };
@@ -152,7 +152,7 @@ export function transformAST(
             el.style.display = sig.get() ? "" : "none";
           };
           update();
-          (el as any).__sazamiIfDisposer = sig.subscribe(update);
+          (el as unknown as Record<string, unknown>).__sazamiIfDisposer = sig.subscribe(update);
         });
       }
     }
@@ -213,5 +213,5 @@ export function transformAST(
     return items;
   }
 
-  throw new Error(`Unknown node type: ${(node as any).type}`);
+  throw new Error(`Unknown node type: ${(node as { type: string }).type}`);
 }

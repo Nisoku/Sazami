@@ -1,6 +1,6 @@
 import { SazamiComponent, component } from "./base";
 import { ICON_SVGS } from "../icons/index";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindText } from "@nisoku/sairin";
 
 const STYLES = `
@@ -62,6 +62,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   private _labelSignal: Readable<string> | null = null;
   private _visibleSignal: Readable<boolean> | null = null;
   private _labelElement: HTMLElement | null = null;
+  private _label: string = "";
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -76,14 +77,14 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
       this._labelSignal = value;
     } else {
       this._labelSignal = null;
-      (this as any)._label = value;
+      this._label = value;
       this._updateLabel(value);
     }
   }
 
   get label(): string | Readable<string> {
     if (this._labelSignal) return this._labelSignal;
-    return (this as any)._label || "";
+    return this._label || "";
   }
 
   set visible(value: boolean | Readable<boolean>) {
@@ -120,7 +121,7 @@ export class SazamiSpinner extends SazamiComponent<typeof spinnerConfig> {
   render() {
     const labelText = this._labelSignal
       ? this._labelSignal.get()
-      : ((this as any)._label ?? "Loading...");
+      : (this._label ?? "Loading...");
 
     if (!this.hasAttribute("role")) {
       this.setAttribute("role", "status");

@@ -4,7 +4,7 @@ export interface SazamiConfig {
   satori: SatoriInstance | null;
 }
 
-let currentConfig: SazamiConfig = {
+const currentConfig: SazamiConfig = {
   satori: null,
 };
 

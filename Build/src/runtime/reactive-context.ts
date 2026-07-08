@@ -6,6 +6,7 @@ import {
   bindInputValue,
   bindInputChecked,
   type Readable,
+  type Signal,
 } from "@nisoku/sairin";
 import type { InterpolatedTextPart } from "@nisoku/sakko";
 
@@ -90,7 +91,7 @@ function transformHandlerBody(code: string, varNames: string[]): string {
   return addGetCalls(result, varNames);
 }
 
-function evaluateStatic(expr: string): any {
+function evaluateStatic(expr: string): unknown {
   const trimmed = expr.trim();
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
@@ -205,7 +206,7 @@ export class ReactiveContext {
       }
       const transformed = addGetCalls(p.value, partRefd);
       const fn = new Function(...partRefd, `return String(${transformed})`);
-      return (signalMap: Record<string, any>) =>
+      return (signalMap: Record<string, unknown>) =>
         fn(...partRefd.map((n) => signalMap[n]));
     });
 
@@ -222,15 +223,16 @@ export class ReactiveContext {
     }
 
     const d = derived(path("component", this.rootName, "__interp"), () => {
-      const signalMap: Record<string, any> = {};
+      const signalMap: Record<string, SignalLike> = {};
       for (const name of refd) {
-        signalMap[name] = this.getSignal(name)!;
-        signalMap[name].get();
+        const sig = this.getSignal(name)!;
+        signalMap[name] = sig;
+        sig.get();
       }
       return parts
         .map((p, i) => {
           const fn = exprFns[i];
-          if (!fn) return (p as any).value;
+          if (!fn) return (p as { value: string }).value;
           return fn(signalMap);
         })
         .join("");
@@ -259,11 +261,11 @@ export class ReactiveContext {
     if (!sig) return null;
     if (elementType === "checkbox" || elementType === "saz-checkbox") {
       return (el: HTMLElement) => {
-        bindInputChecked(el as HTMLInputElement, sig as any);
+        bindInputChecked(el as HTMLInputElement, sig as Signal<boolean>);
       };
     }
     return (el: HTMLElement) => {
-      bindInputValue(el as HTMLInputElement, sig as any);
+      bindInputValue(el as HTMLInputElement, sig as Signal<string>);
     };
   }
 }

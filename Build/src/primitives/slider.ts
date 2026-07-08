@@ -113,6 +113,8 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   private _filledElement: HTMLElement | null = null;
   private _rangeMin: number = 0;
   private _rangeMax: number = 100;
+  private _value: number = 50;
+  private _disabled: boolean = false;
 
   private _isReadableNum(value: unknown): value is Readable<number> {
     return isSignal(value) || value instanceof Derived;
@@ -128,13 +130,13 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
       this._setupValueBinding();
     } else {
       this._valueSignal = null;
-      (this as any)._value = valueOrSignal;
+      this._value = valueOrSignal;
       this._updateSliderValue(valueOrSignal);
     }
   }
 
   get value(): number | Readable<number> {
-    return this._valueSignal || (this as any)._value || 50;
+    return this._valueSignal || this._value || 50;
   }
 
   set disabled(value: boolean | Readable<boolean>) {
@@ -148,11 +150,11 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled || false;
+    return this._disabledSignal || this._disabled || false;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabled = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -162,7 +164,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabled !== undefined) return !!this._disabled;
     return this.hasAttribute("disabled");
   }
 
@@ -216,7 +218,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
 
     const currentValue = this._valueSignal
       ? this._valueSignal.get()
-      : (this as any)._value || 50;
+      : this._value || 50;
     let value = Number(currentValue);
     if (!Number.isFinite(value)) value = 50;
     if (value < min) value = min;
@@ -269,9 +271,9 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
           if (this._valueSignal && "set" in this._valueSignal) {
             (this._valueSignal as Signal<number>).set(val);
           } else {
-            (this as any)._value = val;
+            this._value = val;
           }
-          (this.dispatchEventTyped as any)("input", { value: val });
+          this.dispatchEventTyped("input", { value: val });
         },
         { internal: true, element: this._sliderElement },
       );
@@ -311,16 +313,16 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
       if (name === "step" && parsed <= 0) {
         parsed = 1;
       }
-      (this as any)[name] = parsed;
+      (this as unknown as Record<string, unknown>)[name] = parsed;
       if (name === "value" || name === "min" || name === "max") {
         const min = this.min;
         const max = this.max;
-        const currentVal = ((this as any)._value as number) || 50;
-        if (currentVal < min) (this as any).value = min;
-        if (currentVal > max) (this as any).value = max;
+        const currentVal = this._value || 50;
+        if (currentVal < min) this.value = min;
+        if (currentVal > max) this.value = max;
       }
     } else if (name === "size") {
-      (this as any)[name] = newVal ?? "";
+      (this as unknown as Record<string, unknown>)[name] = newVal ?? "";
     }
     super.attributeChangedCallback(name, oldVal, newVal);
   }

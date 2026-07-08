@@ -1,5 +1,4 @@
 import {
-  propertyError,
   eventError,
   bindingError,
   renderError,
@@ -65,7 +64,7 @@ export interface EventConfig {
 export type BindingType = "attribute" | "property" | "input";
 
 // Get property config safely
-type GetPropConfig<C extends SazamiComponentConfig, P extends string> =
+type _GetPropConfig<C extends SazamiComponentConfig, P extends string> =
   C["properties"] extends Record<string, AnyPropertyConfig>
     ? P extends keyof C["properties"]
       ? C["properties"][P]
@@ -74,13 +73,13 @@ type GetPropConfig<C extends SazamiComponentConfig, P extends string> =
 
 // Map property name -> its actual TS type
 type PropType<C extends SazamiComponentConfig, P extends string> =
-  GetPropConfig<C, P> extends AnyPropertyConfig
-    ? GetPropConfig<C, P>["type"] extends "boolean"
+  P extends keyof C["properties"]
+    ? C["properties"][P] extends { type: "boolean" }
       ? boolean
-      : GetPropConfig<C, P>["type"] extends "number"
+      : C["properties"][P] extends { type: "number" }
         ? number
         : string
-    : string;
+    : unknown;
 
 // Map event's detail object -> inferred detail type
 type EventDetail<
@@ -94,7 +93,7 @@ type EventDetail<
 export type InferProps<C extends SazamiComponentConfig> =
   C["properties"] extends Record<string, AnyPropertyConfig>
     ? { [P in keyof C["properties"]]: PropType<C, P & string> }
-    : {};
+    : Record<string, never>;
 
 // All events with their detail types
 export type InferEvents<C extends SazamiComponentConfig> =
@@ -103,10 +102,10 @@ export type InferEvents<C extends SazamiComponentConfig> =
         [E in keyof C["events"]]: C["events"][E] extends EventConfig
           ? C["events"][E]["detail"] extends Record<string, string>
             ? EventDetail<C, C["events"][E]["detail"]>
-            : {}
-          : {};
+            : Record<string, never>
+          : Record<string, never>;
       }
-    : {};
+    : Record<string, never>;
 
 // Decorator stores metadata on prototype for base class to consume
 export function component<C extends SazamiComponentConfig>(config: C) {
@@ -123,7 +122,7 @@ export function component<C extends SazamiComponentConfig>(config: C) {
 let _nextComponentId = 0;
 
 export class SazamiComponent<
-  C extends SazamiComponentConfig = any,
+  C extends SazamiComponentConfig = SazamiComponentConfig,
 > extends HTMLElement {
   // Declare sazamiConfig, set by decorator on prototype
   declare sazamiConfig: C;
@@ -167,9 +166,7 @@ export class SazamiComponent<
 
   // Static observedAttributes derived from properties with reflect: true
   static get observedAttributes(): string[] {
-    const cfg = (this.prototype as any).sazamiConfig as
-      | SazamiComponentConfig
-      | undefined;
+    const cfg = (this.prototype as { sazamiConfig?: SazamiComponentConfig }).sazamiConfig;
     if (!cfg) return [];
 
     // If explicitly provided, use that
@@ -188,7 +185,7 @@ export class SazamiComponent<
   }
 
   protected getStructuralRoot(): string | null {
-    const cfg = (this as any).sazamiConfig as SazamiComponentConfig | undefined;
+    const cfg = (this as { sazamiConfig?: SazamiComponentConfig }).sazamiConfig;
     if (cfg?.structuralRoots) {
       const mode = this.getRenderMode();
       return cfg.structuralRoots[mode] ?? null;
@@ -339,7 +336,7 @@ export class SazamiComponent<
   protected bind(
     selector: string,
     target: BindTarget,
-    readable: Readable<any>,
+    readable: Readable<unknown>,
   ): void {
     const element = selector === ":host" ? this : this.$(selector);
     if (!element) {
@@ -453,7 +450,7 @@ export class SazamiComponent<
   protected bindAttribute(
     selector: string,
     attr: string,
-    readable: Readable<any>,
+    readable: Readable<unknown>,
   ): (() => void) | void {
     return this.bind(selector, attr, readable);
   }
@@ -468,7 +465,7 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindProperty(element, prop as any, readable);
+    const dispose = bindProperty(element, prop, readable as Readable<unknown>);
     this._cleanupFns.push(dispose);
   }
 
@@ -568,11 +565,9 @@ export class SazamiComponent<
   }
 
   // Handler registry: addHandler returns an ID for later removal
-  // Using Function type to accept both EventListener and specific event handlers like KeyboardEvent
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected addHandler(
     type: string,
-    handler: Function,
+    handler: EventListener,
     options?: { internal?: boolean; element?: EventTarget },
   ): number {
     const id = ++this._handlerId;
@@ -588,11 +583,9 @@ export class SazamiComponent<
     return id;
   }
 
-  // Remove handler by ID, function reference, or type+id/type+fn
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected removeHandler(
     typeOrId: string | number,
-    idOrFn?: number | Function,
+    idOrFn?: number | EventListener,
   ) {
     // If only one arg and it's a number, remove by ID across all types
     if (typeof typeOrId === "number") {
@@ -656,7 +649,7 @@ export class SazamiComponent<
   }
 
   // dispatch custom events
-  protected dispatch<T = any>(
+  protected dispatch<T = unknown>(
     name: string,
     detail?: T,
     options: { bubbles?: boolean; composed?: boolean } = {},
@@ -681,7 +674,7 @@ export class SazamiComponent<
 
     // Find the event config by key
     const eventKey = event as string;
-    const eventConfig = (events as any)[eventKey];
+    const eventConfig = events[eventKey];
 
     if (!eventConfig) {
       eventError(`Event "${String(event)}" not defined in metadata`, {
@@ -693,7 +686,7 @@ export class SazamiComponent<
 
     this.dispatchEvent(
       new CustomEvent(eventConfig.name, {
-        detail: detail as any,
+        detail,
         bubbles: true,
         composed: true,
       }),

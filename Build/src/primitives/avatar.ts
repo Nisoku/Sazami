@@ -52,6 +52,7 @@ const avatarConfig = {
 @component(avatarConfig)
 export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   private _srcSignal: Readable<string> | null = null;
+  private _src: string | undefined;
   private _imgElement: HTMLImageElement | null = null;
   private _initialsElement: HTMLElement | null = null;
   private _srcDisposer: (() => void) | null = null;
@@ -84,7 +85,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
 
   private _getCurrentSrc(): string {
     if (this._srcSignal) return this._srcSignal.get();
-    if ((this as any)._src) return (this as any)._src;
+    if (this._src) return this._src;
     return this.getAttribute("src") || "";
   }
 
@@ -93,15 +94,15 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   set src(value: string | Readable<string>) {
-    const wasImageMode = this._isImageMode;
+    const _wasImageMode = this._isImageMode;
     const hasReadable = this._isReadableStr(value);
 
     if (hasReadable) {
       this._srcSignal = value;
-      (this as any)._src = undefined;
+      this._src = undefined;
     } else {
       this._srcSignal = null;
-      (this as any)._src = value;
+      this._src = value;
     }
 
     const nowImageMode = this._isImageModeNow();
@@ -116,7 +117,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
       this._disposeSrcBinding();
       this._setupSrcBinding();
       if (!this._srcSignal && this._imgElement) {
-        this._imgElement.src = (this as any)._src || "";
+        this._imgElement.src = this._src || "";
         this._imgElement.alt = this.getAttribute("alt") || "";
       }
     } else if (!nowImageMode && this._initialsElement) {
@@ -129,7 +130,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   }
 
   get src(): string | Readable<string> {
-    return this._srcSignal || (this as any)._src || "";
+    return this._srcSignal || this._src || "";
   }
 
   private _setupSrcBinding() {
@@ -263,7 +264,7 @@ export class SazamiAvatar extends SazamiComponent<typeof avatarConfig> {
   ) {
     super.attributeChangedCallback(name, oldValue, newValue);
     if (name === "src" && oldValue !== newValue) {
-      (this as any)._src = newValue || "";
+      this._src = newValue || "";
       if (!this._srcSignal) {
         const wasImageMode = this._isImageMode;
         const nowImageMode = !!this._getCurrentSrc();

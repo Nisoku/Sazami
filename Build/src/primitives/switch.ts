@@ -81,6 +81,8 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
   private _checkedBindingDispose: (() => void) | null = null;
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledBindingDispose: (() => void) | null = null;
+  private _checked: boolean = false;
+  private _disabled: boolean = false;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
@@ -104,11 +106,11 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
   }
 
   get checked(): boolean | Readable<boolean> {
-    return this._checkedSignal || (this as any)._checked || false;
+    return this._checkedSignal || this._checked || false;
   }
 
   private _setChecked(value: boolean) {
-    (this as any)._checked = value;
+    this._checked = value;
     if (value) {
       this.setAttribute("checked", "");
     } else {
@@ -135,11 +137,11 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled || false;
+    return this._disabledSignal || this._disabled || false;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabled = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -150,14 +152,14 @@ export class SazamiSwitch extends SazamiComponent<typeof switchConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabled !== undefined) return !!this._disabled;
     return this.hasAttribute("disabled");
   }
 
   private _getIsChecked(): boolean {
     if (this._checkedSignal) return this._checkedSignal.get();
     if (this.hasAttribute("checked")) return true;
-    return !!(this as any)._checked;
+    return !!this._checked;
   }
 
   render() {

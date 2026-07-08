@@ -1,6 +1,6 @@
 import type { Modifier } from "@nisoku/sakko";
 
-export const MODIFIER_MAP: Record<string, Record<string, any>> = {
+export const MODIFIER_MAP: Record<string, Record<string, string | boolean>> = {
   accent: { variant: "accent" },
   primary: { variant: "primary" },
   secondary: { variant: "secondary" },
@@ -82,8 +82,8 @@ const CSS_STYLE_KEYS = new Set([
   "justify-self",
 ]);
 
-export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
-  const props: Record<string, any> = {};
+export function parseModifiers(modifiers: Modifier[]): Record<string, unknown> {
+  const props: Record<string, unknown> = {};
 
   modifiers.forEach((mod) => {
     if (mod.type === "flag") {
@@ -91,8 +91,9 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
       if (mapping) {
         for (const [k, v] of Object.entries(mapping)) {
           if (CSS_STYLE_KEYS.has(k)) {
-            props.__style = props.__style || {};
-            props.__style[k] = v;
+            const style = (props.__style || {}) as Record<string, string>;
+            style[k] = v as string;
+            props.__style = style;
           } else {
             props[k] = v;
           }
@@ -105,14 +106,15 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
       }
     } else if (mod.type === "pair") {
       if (CSS_STYLE_KEYS.has(mod.key)) {
-        props.__style = props.__style || {};
-        props.__style[mod.key] = mod.value;
+        const style = (props.__style || {}) as Record<string, string>;
+        style[mod.key] = mod.value;
+        props.__style = style;
       } else {
         props[mod.key] = mod.value;
       }
     } else if (mod.type === "event") {
       if (!props.__events) props.__events = [];
-      props.__events.push(mod);
+      (props.__events as Modifier[]).push(mod);
     } else if (mod.type === "atcode") {
       if (mod.name === "bind") {
         props.__bind = mod.body;
@@ -121,7 +123,7 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
         try {
           const parsed = JSON.parse(mod.body);
           if (typeof parsed === "object" && parsed !== null) {
-            Object.assign(props.__style, parsed);
+            Object.assign(props.__style as Record<string, string>, parsed);
           }
         } catch {
           // Treat as raw CSS string

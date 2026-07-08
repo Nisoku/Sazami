@@ -6,7 +6,7 @@ import {
   VARIANT_TEXT_RULES,
 } from "./shared";
 import { ICON_SVGS } from "../icons/index";
-import { Signal, Derived, isSignal, type Readable } from "@nisoku/sairin";
+import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host {
@@ -79,6 +79,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
 
   private _handlersAdded = false;
   private _autoAriaLabel = false;
+  private _disabled: boolean | undefined;
   private _disabledSignal: Readable<boolean> | null = null;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
@@ -96,11 +97,11 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled || false;
+    return this._disabledSignal || this._disabled || false;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabled = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -110,7 +111,7 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabled !== undefined) return !!this._disabled;
     return this.hasAttribute("disabled");
   }
 

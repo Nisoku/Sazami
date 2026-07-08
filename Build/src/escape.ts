@@ -55,5 +55,6 @@ export function escapeUrl(str: string): string {
  * Escapes characters that have special meaning in CSS.
  */
 export function escapeCss(str: string): string {
-  return str.replace(/[!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~]/g, "\\$&");
+  return str.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/g, "\\$&");
+
 }

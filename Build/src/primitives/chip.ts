@@ -1,5 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import { STATE_DISABLED, INTERACTIVE_HOVER, VARIANT_BG_RULES } from "./shared";
+import { STATE_DISABLED, INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
 import { Signal } from "@nisoku/sairin";

@@ -1,5 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import { SHAPE_RULES, SIZE_RULES } from "./shared";
+import { SHAPE_RULES } from "./shared";
 import { escapeHtml } from "../escape";
 import { Derived, isSignal, type Readable } from "@nisoku/sairin";
 import { bindProperty } from "@nisoku/sairin";
@@ -41,6 +41,7 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
   private _srcSignal: Readable<string> | null = null;
   private _imgElement: HTMLImageElement | null = null;
   private _pendingSrc: string | null = null;
+  private _src: string | undefined;
   private _srcDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
@@ -58,13 +59,13 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     } else {
       this._srcSignal = null;
       this._pendingSrc = value;
-      (this as any)._src = value;
+      this._src = value;
       this._updateSrc(value);
     }
   }
 
   get src(): string | Readable<string> {
-    return this._srcSignal || (this as any)._src || "";
+    return this._srcSignal || this._src || "";
   }
 
   private _updateSrc(value: string) {
@@ -108,8 +109,8 @@ export class SazamiImage extends SazamiComponent<typeof imageConfig> {
     if (this._srcSignal) return this._srcSignal.get();
     if (this._pendingSrc !== undefined && this._pendingSrc !== null)
       return this._pendingSrc;
-    if ((this as any)._src !== undefined && (this as any)._src !== null)
-      return (this as any)._src;
+    if (this._src !== undefined && this._src !== null)
+      return this._src;
     return this.getAttribute("src") || "";
   }
 

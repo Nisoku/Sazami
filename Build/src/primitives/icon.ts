@@ -3,7 +3,6 @@ import { VARIANT_TEXT_RULES } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
 import {
-  Signal,
   Derived,
   isSignal,
   effect,
@@ -51,6 +50,7 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
 
   private _iconSignal: Readable<string> | null = null;
   private _iconElement: HTMLElement | null = null;
+  private _icon: string | undefined;
   private _iconEffectDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
@@ -69,13 +69,13 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
         this._iconEffectDispose();
         this._iconEffectDispose = null;
       }
-      (this as any)._icon = value;
+      this._icon = value;
       this._updateIcon(value);
     }
   }
 
   get icon(): string | Readable<string> {
-    return this._iconSignal || (this as any)._icon || "";
+    return this._iconSignal || this._icon || "";
   }
 
   private _updateIcon(iconName: string) {
@@ -154,7 +154,7 @@ export class SazamiIcon extends SazamiComponent<typeof iconConfig> {
   render() {
     const iconName = this._iconSignal
       ? this._iconSignal.get()
-      : (this as any)._icon ||
+      : this._icon ||
         this.getAttribute("icon") ||
         this.textContent?.trim() ||
         "";
