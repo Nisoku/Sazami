@@ -1,10 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const { spawn } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.resolve(ROOT, 'dist');
-const DEMO_DIST = path.resolve(__dirname, '..', '..', 'Demo', 'dist');
+const DEMO = path.resolve(__dirname, '..', '..', 'Demo');
+const DEMO_DIST = path.resolve(DEMO, 'dist');
 
 function copyDist() {
   try {
@@ -60,6 +62,38 @@ function startBuild() {
   });
 }
 
+function startServer() {
+  const MIME = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+  };
+  const PORT = 5173;
+  const server = http.createServer((req, res) => {
+    let file = req.url === '/' ? '/index.html' : req.url.split('?')[0];
+    const filePath = path.join(DEMO, file);
+    const ext = path.extname(filePath);
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+      res.end(data);
+    });
+  });
+  server.listen(PORT, () => {
+    console.log(`Demo server at http://localhost:${PORT}`);
+  });
+  server.unref();
+}
+
 async function main() {
   console.log('Building for demo…');
 
@@ -83,6 +117,9 @@ async function main() {
   // Copy the initial build
   copyDist();
   watchReady = true;
+
+  // Start a static dev server for Demo/
+  startServer();
 
   // Now start the watch mode build
   console.log('\nWatching for changes…');
