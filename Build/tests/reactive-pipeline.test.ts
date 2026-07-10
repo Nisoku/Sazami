@@ -2,7 +2,7 @@
  * @jest-environment jest-fixed-jsdom
  */
 import { describe, test, expect, beforeAll, beforeEach } from "@jest/globals";
-import { compileSakko, injectThemeCSS } from "../src/index";
+import { compileSakko } from "../src/index";
 import { __resetRegistryForTesting } from "@nisoku/sairin";
 
 function defineOnce(name: string, cls: any) {

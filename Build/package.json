@@ -32,6 +32,8 @@
     "build:demo": "vite build && node ./scripts/build-demo.js",
     "dev:demo": "node ./scripts/dev-demo.js",
     "test": "jest --no-cache",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'",
     "lint": "eslint ."

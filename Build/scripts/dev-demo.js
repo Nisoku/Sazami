@@ -42,7 +42,7 @@ function startBuild() {
     // When vite reports a completed build, trigger copy
     if (text.includes('built in') || text.includes('modules transformed')) {
       if (watchReady) {
-        // Debounce — wait for file writes to settle
+        // Debounce to wait for file writes to settle
         clearTimeout(watchTimer);
         watchTimer = setTimeout(() => {
           // Wait for the output files to exist
