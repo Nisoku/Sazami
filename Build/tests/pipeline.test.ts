@@ -10,7 +10,32 @@ describe("Full Pipeline - Advanced", () => {
     document.head.innerHTML = "";
   });
 
-  test("compiles the music player example from GUIDE.md", () => {
+  test("applies position modifier flags as inline styles", () => {
+    const container = document.createElement("div");
+    compileSakko(`<page { button(absolute top 10 left 20): "Click" }>`, container);
+    const btn = container.querySelector("saz-button") as HTMLElement;
+    expect(btn.style.position).toBe("absolute");
+    expect(btn.style.top).toBe("10px");
+    expect(btn.style.left).toBe("20px");
+  });
+
+  test("applies display modifier flags as inline styles", () => {
+    const container = document.createElement("div");
+    compileSakko(`<page { span(hidden): "Hidden" }>`, container);
+    const span = container.querySelector("span") as HTMLElement;
+    expect(span.style.display).toBe("none");
+  });
+
+  test("applies @style string as inline CSS", () => {
+    const container = document.createElement("div");
+    compileSakko(`<page { div(@style "color: red; font-size: 20px"): "Red" }>`, container);
+    const allDivs = container.querySelectorAll("div");
+    expect(allDivs.length).toBe(2);
+    expect(allDivs[1].style.color).toBe("red");
+    expect(allDivs[1].style.fontSize).toBe("20px");
+  });
+
+  test("compiles the music player example", () => {
     const source = `
       <player {
         card(row medium center curved) {
@@ -264,5 +289,84 @@ describe("Parser - Complex Real-World Examples", () => {
       expect(vnode.props.curved).toBe(true);
       expect(vnode.props.gap).toBe("large");
     }
+  });
+});
+
+describe("Reactive Stuff", () => {
+  const templates = [
+    // Counter
+    `<card {
+      @state { count = 0  step = 1  label = "Counter"  isRunning = false }
+      @derived { doubled = count * 2; isEven = count % 2 === 0; statusText = isEven ? "Even" : "Odd" }
+      @effect { console.log("count =", count) }
+      heading: "{label}"
+      text(bold large): "{count}"
+      text(dim): "{statusText} | doubled: {doubled}"
+      row(gap small center) {
+        button @on:click { count = count - step }: "\u2013"
+        button @on:click { count = 0 }: "Reset"
+        button @on:click { count = count + step }: "+"
+      }
+      row(gap small center) { label: "Step"; input(placeholder "Step" @bind="step"): "" }
+      row(gap small center) { label: "Label"; input(placeholder "Label" @bind="label"): "" }
+      row(gap small center) {
+        button(primary @if="!isRunning" @on:click { isRunning = true }): "Auto"
+        button(danger @if="isRunning" @on:click { isRunning = false }): "Stop"
+      }
+    }>`,
+    // Theme
+    `<card {
+      @state { theme = "light" }
+      @derived { isDark = theme === "dark" }
+      @effect {
+        const bg = isDark ? "#1a1a2e" : "#f0f2f5"
+        const fg = isDark ? "#e0e0e0" : "#1f2937"
+        document.body.style.background = bg; document.body.style.color = fg
+      }
+      heading: "Theme Switcher"
+      row(gap small) { button(primary @on:click { theme = "light" }): "Light"; button @on:click { theme = "dark" }: "Dark" }
+      text: "Current: {theme}"
+    }>`,
+    // Tasks
+    `<card {
+      @state { tasks = []  inputText = "" }
+      @derived { taskCount = tasks.length }
+      heading: "Quick Tasks ({taskCount})"
+      row(gap small) {
+        input(placeholder "New task..." @bind="inputText"): ""
+        button(primary @on:click { tasks = [...inputText !== "" ? [{ text: inputText, done: false }] : [], tasks]; inputText = "" }): "Add"
+      }
+      text(dim @if="taskCount === 0"): "No tasks yet"
+      text(dim @if="taskCount > 0"): "{taskCount} items"
+    }>`,
+    `<card(relative) {
+      @state { x = 0  y = 0  visible = true }
+      heading: "Position Stuff"
+      row(gap small center) {
+        button @on:click { y = y - 10 }: "\u2191"
+        button @on:click { x = x - 10 }: "\u2190"
+        button @on:click { x = 0; y = 0 }: "Reset"
+        button @on:click { x = x + 10 }: "\u2192"
+        button @on:click { y = y + 10 }: "\u2193"
+      }
+      button @on:click { visible = !visible }: "Toggle Dot"
+      div(absolute @style "top: 50px; left: 50px; width: 32px; height: 32px; background: #2563eb; border-radius: 8px" @if="visible"): ""
+    }>`,
+    // FAB
+    `<card(relative) {
+      @state { fabCount = 0 }
+      heading: "Floating Button"
+      button(fixed bottom 20 right 20 round accent @on:click { fabCount = fabCount + 1 }): "{fabCount}"
+      text(dim): "Clicked {fabCount} time{fabCount === 1 ? '' : 's'}."
+    }>`,
+  ];
+
+  templates.forEach((tmpl, i) => {
+    test(`reactive-lab template #${i + 1} parses and compiles`, () => {
+      const container = document.createElement("div");
+      expect(() => compileSakko(tmpl, container)).not.toThrow();
+      // at least the container should have been populated
+      expect(container.children.length).toBeGreaterThan(0);
+    });
   });
 });

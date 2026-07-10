@@ -1,11 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import {
-  Signal,
-  Derived,
-  isSignal,
-  effect,
-  type Readable,
-} from "@nisoku/sairin";
+import { Derived, isSignal, effect, type Readable } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; width: 100%; }
@@ -63,6 +57,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   private _barElement: HTMLElement | null = null;
   private _rangeMin: number = 0;
   private _rangeMax: number = 100;
+  private _value: number | undefined;
   private _valueBindingCleanup: (() => void) | null = null;
 
   private _isReadableNum(value: unknown): value is Readable<number> {
@@ -81,13 +76,13 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
         this._valueBindingCleanup();
         this._valueBindingCleanup = null;
       }
-      (this as any)._value = valueOrSignal;
+      this._value = valueOrSignal;
       this._updateBarWidth(valueOrSignal);
     }
   }
 
   get value(): number | Readable<number> {
-    return this._valueSignal || (this as any)._value || 0;
+    return this._valueSignal || this._value || 0;
   }
 
   private _setupValueBinding() {
@@ -146,7 +141,7 @@ export class SazamiProgress extends SazamiComponent<typeof progressConfig> {
   render() {
     const rawValue = this._valueSignal
       ? this._valueSignal.get()
-      : ((this as any)._value ?? Number(this.getAttribute("value") || "50"));
+      : (this._value ?? Number(this.getAttribute("value") || "50"));
     const rawMax = Number(this.getAttribute("max") || "100");
     const rawMin = Number(this.getAttribute("min") || "0");
     const value = Number.isFinite(rawValue) ? rawValue : 50;

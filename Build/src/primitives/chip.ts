@@ -1,5 +1,5 @@
 import { SazamiComponent, component } from "./base";
-import { STATE_DISABLED, INTERACTIVE_HOVER, VARIANT_BG_RULES } from "./shared";
+import { STATE_DISABLED, INTERACTIVE_HOVER } from "./shared";
 import { ICON_SVGS } from "../icons/index";
 import { escapeHtml } from "../escape";
 import { Signal } from "@nisoku/sairin";
@@ -139,7 +139,9 @@ export class SazamiChip extends SazamiComponent<typeof chipConfig> {
     }
 
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, {
+      internal: true,
+    });
 
     if (this.disabledSignal) {
       this.bindDisabled(":host", this.disabledSignal);

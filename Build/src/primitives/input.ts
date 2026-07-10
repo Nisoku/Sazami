@@ -8,7 +8,6 @@ import {
   effect,
   type Readable,
 } from "@nisoku/sairin";
-import { bindInputValue } from "@nisoku/sairin";
 
 const STYLES = `
 :host { display: block; }
@@ -64,6 +63,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
   private _input: HTMLInputElement | null = null;
   private _valueEffectDisposer: (() => void) | null = null;
   private _inputHandler: ((e: Event) => void) | null = null;
+  private _value: string = "";
 
   private _isReadableStr(value: unknown): value is Readable<string> {
     return isSignal(value) || value instanceof Derived;
@@ -97,7 +97,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     } else {
       this._disposeValueBindings();
       this._valueSignal = null;
-      (this as any)._value = valueOrSignal;
+      this._value = valueOrSignal;
       if (this._input && this._input.value !== valueOrSignal) {
         this._input.value = valueOrSignal || "";
       }
@@ -117,7 +117,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
 
   get value(): string | Readable<string> {
     if (this._valueSignal) return this._valueSignal.get();
-    if ((this as any)._value) return (this as any)._value;
+    if (this._value) return this._value;
     if (this._input) return this._input.value;
     return this.getAttribute("value") || "";
   }
@@ -129,7 +129,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
     const type = this.getAttribute("type") || "text";
     const initialValue = this._valueSignal
       ? this._valueSignal.get()
-      : this.getAttribute("value") || (this as any)._value || "";
+      : this.getAttribute("value") || this._value || "";
 
     this.mount(
       STYLES,
@@ -156,7 +156,7 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
           if (isSignal(this._valueSignal)) {
             (this._valueSignal as Signal<string>).set(target.value);
           }
-          (this.dispatchEventTyped as any)("input", { value: target.value });
+          this.dispatchEventTyped("input", { value: target.value });
         };
         this._input.addEventListener("input", this._inputHandler);
         this.onCleanup(() => {
@@ -169,8 +169,8 @@ export class SazamiInput extends SazamiComponent<typeof inputConfig> {
           "input",
           (e: Event) => {
             const target = e.target as HTMLInputElement;
-            (this as any)._value = target.value;
-            (this.dispatchEventTyped as any)("input", { value: target.value });
+            this._value = target.value;
+            this.dispatchEventTyped("input", { value: target.value });
           },
           { internal: true, element: this._input },
         );

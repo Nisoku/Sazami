@@ -1,6 +1,6 @@
 import type { Modifier } from "@nisoku/sakko";
 
-export const MODIFIER_MAP: Record<string, Record<string, any>> = {
+export const MODIFIER_MAP: Record<string, Record<string, string | boolean>> = {
   accent: { variant: "accent" },
   primary: { variant: "primary" },
   secondary: { variant: "secondary" },
@@ -45,16 +45,59 @@ export const MODIFIER_MAP: Record<string, Record<string, any>> = {
 
   heading: { heading: true },
   open: { open: true },
+
+  // Layout / display flags
+  absolute: { position: "absolute" },
+  fixed: { position: "fixed" },
+  relative: { position: "relative" },
+  sticky: { position: "sticky" },
+  "inline-block": { display: "inline-block" },
+  "inline-flex": { display: "inline-flex" },
+  block: { display: "block" },
+  flex: { display: "flex" },
+  hidden: { display: "none" },
 };
 
-export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
-  const props: Record<string, any> = {};
+const CSS_STYLE_KEYS = new Set([
+  "position",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "inset",
+  "z-index",
+  "display",
+  "overflow",
+  "float",
+  "margin",
+  "padding",
+  "width",
+  "height",
+  "transform",
+  "transition",
+  "opacity",
+  "flex",
+  "order",
+  "align-self",
+  "justify-self",
+]);
+
+export function parseModifiers(modifiers: Modifier[]): Record<string, unknown> {
+  const props: Record<string, unknown> = {};
 
   modifiers.forEach((mod) => {
     if (mod.type === "flag") {
       const mapping = MODIFIER_MAP[mod.value];
       if (mapping) {
-        Object.assign(props, mapping);
+        for (const [k, v] of Object.entries(mapping)) {
+          if (CSS_STYLE_KEYS.has(k)) {
+            const style = (props.__style || {}) as Record<string, string>;
+            style[k] = v as string;
+            props.__style = style;
+          } else {
+            props[k] = v;
+          }
+        }
       } else {
         throw new Error(
           `Unknown modifier "${mod.value}". ` +
@@ -62,12 +105,38 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, any> {
         );
       }
     } else if (mod.type === "pair") {
-      props[mod.key] = mod.value;
-    } else {
-      throw new Error(
-        `Unknown modifier type "${mod.type}". ` +
-          `Expected "flag" or "pair". Modifier: ${JSON.stringify(mod)}`,
-      );
+      if (CSS_STYLE_KEYS.has(mod.key)) {
+        const style = (props.__style || {}) as Record<string, string>;
+        style[mod.key] = mod.value;
+        props.__style = style;
+      } else {
+        props[mod.key] = mod.value;
+      }
+    } else if (mod.type === "event") {
+      if (!props.__events) props.__events = [];
+      (props.__events as Modifier[]).push(mod);
+    } else if (mod.type === "atcode") {
+      if (mod.name === "bind") {
+        props.__bind = mod.body;
+      } else if (mod.name === "style") {
+        props.__style = props.__style || {};
+        try {
+          const parsed = JSON.parse(mod.body);
+          if (typeof parsed === "object" && parsed !== null) {
+            Object.assign(props.__style as Record<string, string>, parsed);
+          }
+        } catch {
+          // Treat as raw CSS string
+          props.__rawStyle = mod.body;
+        }
+      } else if (mod.name === "if") {
+        props.__if = mod.body;
+      } else if (mod.name === "class") {
+        const existing = (props.class || "") as string;
+        props.class = existing ? `${existing} ${mod.body}` : mod.body;
+      } else if (mod.name === "each") {
+        props.__each = mod.body;
+      }
     }
   });
 

@@ -1,5 +1,4 @@
 import { SazamiComponent, component } from "./base";
-import { VARIANT_BG_RULES } from "./shared";
 
 const STYLES = `
 :host {

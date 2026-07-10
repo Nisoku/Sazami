@@ -69,6 +69,8 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   private _checkedSignal: Readable<boolean> | null = null;
   private _checkedBindingDispose: (() => void) | null = null;
   private _disabledSignal: Readable<boolean> | null = null;
+  private _checked: boolean | undefined;
+  private _disabled: boolean | undefined;
   private _disabledBindingDispose: (() => void) | null = null;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
@@ -93,11 +95,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   get checked(): boolean | Readable<boolean> {
-    return this._checkedSignal || (this as any)._checked || false;
+    return this._checkedSignal || this._checked || false;
   }
 
   private _setChecked(value: boolean) {
-    (this as any)._checked = value;
+    this._checked = value;
     if (value) {
       this.setAttribute("checked", "");
     } else {
@@ -123,11 +125,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled || false;
+    return this._disabledSignal || this._disabled || false;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabled = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -137,14 +139,14 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabled !== undefined) return !!this._disabled;
     return this.hasAttribute("disabled");
   }
 
   private _getIsChecked(): boolean {
     if (this._checkedSignal) return this._checkedSignal.get();
     if (this.hasAttribute("checked")) return true;
-    return !!(this as any)._checked;
+    return !!this._checked;
   }
 
   render() {
@@ -164,7 +166,9 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     if (!this._handlersInstalled) {
       this._handlersInstalled = true;
       this.addHandler("click", this._handleClick, { internal: true });
-      this.addHandler("keydown", this._handleKeydown, { internal: true });
+      this.addHandler("keydown", this._handleKeydown as EventListener, {
+        internal: true,
+      });
     }
   }
 
@@ -196,11 +200,11 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
         .querySelectorAll(`saz-radio[name="${escapedName}"]`)
         .forEach((el) => {
           if (el === this) return;
-          const siblingSignal = (el as any)._checkedSignal;
+          const siblingSignal = (el as unknown as SazamiRadio)._checkedSignal;
           if (siblingSignal && "set" in siblingSignal) {
             (siblingSignal as Signal<boolean>).set(false);
           } else {
-            (el as any).checked = false;
+            (el as unknown as SazamiRadio).checked = false;
           }
         });
     }

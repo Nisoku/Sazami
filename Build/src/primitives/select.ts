@@ -122,6 +122,8 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   private _valueBindingInitialized = false;
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledEffectDisposer: (() => void) | null = null;
+  private _value: string = "";
+  private _disabled: boolean | undefined;
   private _handleDocumentClick = (e: Event) => {
     if (!this.contains(e.target as Node)) {
       this.open = false;
@@ -146,19 +148,19 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._valueEffectDisposer();
         this._valueEffectDisposer = null;
       }
-      (this as any)._value = valueOrSignal;
+      this._value = valueOrSignal;
       this._updateDisplay();
       this._updateSelectedState();
     }
   }
 
   get value(): string | Readable<string> {
-    return this._valueSignal || (this as any)._value || "";
+    return this._valueSignal || this._value || "";
   }
 
   private _getValue(): string {
     if (this._valueSignal) return this._valueSignal.get();
-    return (this as any)._value || this.getAttribute("value") || "";
+    return this._value || this.getAttribute("value") || "";
   }
 
   private _setupValueBinding() {
@@ -166,12 +168,11 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       this._valueEffectDisposer();
     }
     const sig = this._valueSignal as Readable<string>;
-    const self = this;
     const dispose = effect(() => {
       const val = sig.get();
-      (self as any)._value = val;
-      self._updateDisplay();
-      self._updateSelectedState();
+      this._value = val;
+      this._updateDisplay();
+      this._updateSelectedState();
     });
     this._valueEffectDisposer = dispose;
     this._valueBindingInitialized = true;
@@ -203,11 +204,11 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   }
 
   get disabled(): boolean | Readable<boolean> {
-    return this._disabledSignal || (this as any)._disabled || false;
+    return this._disabledSignal || this._disabled || false;
   }
 
   private _setDisabled(value: boolean) {
-    (this as any)._disabled = value;
+    this._disabled = value;
     if (value) {
       this.setAttribute("disabled", "");
     } else {
@@ -218,7 +219,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
 
   private _getIsDisabled(): boolean {
     if (this._disabledSignal) return this._disabledSignal.get();
-    if ((this as any)._disabled !== undefined) return !!(this as any)._disabled;
+    if (this._disabled !== undefined) return !!this._disabled;
     return this.hasAttribute("disabled");
   }
 
@@ -251,7 +252,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         ${ICON_SVGS["chevron-down"] || ""}
       </div>
       <div class="dropdown" role="listbox">
-        ${this._options.map((opt, i) => `<div class="option${opt.value === currentValue ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === currentValue}">${escapeHtml(opt.label)}</div>`).join("")}
+        ${this._options.map((opt, _i) => `<div class="option${opt.value === currentValue ? " selected" : ""}" role="option" data-value="${escapeHtml(opt.value)}" aria-selected="${opt.value === currentValue}">${escapeHtml(opt.label)}</div>`).join("")}
       </div>
     `,
     );
@@ -291,7 +292,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
         this._navigateOption(e.key === "ArrowDown" ? 1 : -1);
       }
     };
-    this.addHandler("keydown", handleKeydown, {
+    this.addHandler("keydown", handleKeydown as EventListener, {
       internal: true,
       element: trigger as HTMLElement,
     });
@@ -304,17 +305,17 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
           if ("set" in this._valueSignal) {
             (this._valueSignal as Signal<string>).set(newValue);
           } else {
-            (this as any)._value = newValue;
+            this._value = newValue;
             this._updateDisplay();
             this._updateSelectedState();
           }
         } else {
-          (this as any)._value = newValue;
+          this._value = newValue;
           this._updateDisplay();
           this._updateSelectedState();
         }
         this.open = false;
-        (this.dispatchEventTyped as any)("change", { value: newValue });
+        this.dispatchEventTyped("change", { value: newValue });
       }
     };
     this.addHandler("click", handleDropdownClick, {
@@ -342,16 +343,16 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
       if ("set" in this._valueSignal) {
         (this._valueSignal as Signal<string>).set(newValue);
       } else {
-        (this as any)._value = newValue;
+        this._value = newValue;
         this._updateDisplay();
         this._updateSelectedState();
       }
     } else {
-      (this as any)._value = newValue;
+      this._value = newValue;
       this._updateDisplay();
       this._updateSelectedState();
     }
-    (this.dispatchEventTyped as any)("change", { value: newValue });
+    this.dispatchEventTyped("change", { value: newValue });
   }
 
   private _updateSelectedState() {
@@ -395,7 +396,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
     if (oldVal === newVal) return;
     if (name === "open") {
       const trigger = this.$(".trigger");
-      const dropdown = this.$(".dropdown");
+      const _dropdown = this.$(".dropdown");
       if (trigger) {
         trigger.setAttribute(
           "aria-expanded",

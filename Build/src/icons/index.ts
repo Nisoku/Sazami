@@ -1,4 +1,4 @@
-// @ts-expect-error
+// @ts-expect-error - Vite glob import type
 const iconModules = import.meta.glob("./*.svg", {
   query: "?raw",
   import: "default",

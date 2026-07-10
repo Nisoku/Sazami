@@ -477,7 +477,7 @@ Specialized image for album/media artwork. Fixed aspect ratio, square by default
 | ----------- | -------- | --------- | ------------- |
 | `src` | URL string | - | Image source |
 | `shape` | `square`, `round` | `square` | Border shape |
-| `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Dimensions (48–160px) |
+| `size` | `small`, `medium`, `large`, `xlarge` | `medium` | Dimensions (48-160px) |
 
 ```sako
 coverart(round): "album.jpg"

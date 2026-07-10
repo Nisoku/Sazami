@@ -43,6 +43,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
   private _srcSignal: Readable<string> | null = null;
   private _imgElement: HTMLImageElement | null = null;
   private _pendingSrc: string | null = null;
+  private _src: string | undefined;
   private _srcEffectDispose: (() => void) | null = null;
 
   private _isReadableStr(value: unknown): value is Readable<string> {
@@ -69,7 +70,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
         this._srcEffectDispose = null;
       }
       this._pendingSrc = value;
-      (this as any)._src = value;
+      this._src = value;
       if (!this._imgElement) {
         this.render();
       } else {
@@ -79,7 +80,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
   }
 
   get src(): string | Readable<string> {
-    return this._srcSignal || (this as any)._src || "";
+    return this._srcSignal || this._src || "";
   }
 
   private _updateSrc(value: string) {
@@ -105,7 +106,7 @@ export class SazamiCoverart extends SazamiComponent<typeof coverartConfig> {
     const currentSrc = this._srcSignal
       ? this._srcSignal.get()
       : this._pendingSrc ||
-        (this as any)._src ||
+        this._src ||
         this.getAttribute("src") ||
         this.textContent?.trim() ||
         "";

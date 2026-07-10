@@ -21,7 +21,10 @@ export { ICON_SVGS } from "./icons/index";
 
 export { escapeHtml, unescapeHtml, escapeUrl, escapeCss } from "./escape";
 
+export { ReactiveContext } from "./runtime/reactive-context";
+
 import { parseSakko } from "@nisoku/sakko";
+import type { AtcodeDeclaration } from "@nisoku/sakko";
 import {
   transformAST,
   VNode,
@@ -32,8 +35,13 @@ import { generateThemeCSS } from "./config/generator";
 import { enableCurvomorphism } from "./curvomorphism/index";
 import { registerComponents } from "./primitives/registry";
 import { parseModifiers as pmParseModifiers } from "./primitives/modifier-map";
+import { ReactiveContext } from "./runtime/reactive-context";
 
 let themeInjected = false;
+
+export function isThemeInjected(): boolean {
+  return themeInjected;
+}
 
 export function injectThemeCSS(customTokens?: Record<string, string>): void {
   if (typeof document === "undefined") return;
@@ -52,11 +60,39 @@ export function injectThemeCSS(customTokens?: Record<string, string>): void {
   themeInjected = true;
 }
 
+function processDeclarations(
+  declarations: AtcodeDeclaration[],
+  context: ReactiveContext,
+): void {
+  for (const decl of declarations) {
+    if (decl.type === "state") {
+      for (const { name, value } of decl.declarations) {
+        context.addState(name, value);
+      }
+    } else if (decl.type === "derived") {
+      for (const { name, expr } of decl.declarations) {
+        context.addDerived(name, expr);
+      }
+    } else if (decl.type === "effect") {
+      context.addEffect(decl.body);
+    }
+  }
+}
+
 export function compileSakko(
   source: string,
   target: HTMLElement,
-  options?: { tokens?: Record<string, string> },
+  options?: { tokens?: Record<string, string>; replace?: boolean },
 ): void {
+  if (options?.replace !== false) {
+    target.querySelectorAll("*").forEach((el) => {
+      const d = (el as Element & { __sazamiIfDisposer?: () => void })
+        .__sazamiIfDisposer;
+      if (d) d();
+    });
+    target.innerHTML = "";
+  }
+
   if (typeof customElements !== "undefined") {
     registerComponents();
   }
@@ -72,14 +108,20 @@ export function compileSakko(
 
   const ast = parseSakko(wrapped);
 
+  // Process reactive declarations
+  const context = new ReactiveContext(ast.name);
+  processDeclarations(ast.declarations, context);
+
   // Always render the root element as a component wrapper.
+  // If the root name isn't a registered Sazami component, wrap in a div.
+  const tag = getTagName(ast.name);
   const rootVNode: VNode = {
-    type: getTagName(ast.name),
+    type: tag.startsWith("saz-") && !customElements.get(tag) ? "div" : tag,
     props: ast.modifiers ? pmParseModifiers(ast.modifiers) : {},
     children: [],
   };
   for (const child of ast.children) {
-    const result = transformAST(child);
+    const result = transformAST(child, context);
     if (Array.isArray(result)) {
       rootVNode.children.push(...result);
     } else {
@@ -91,13 +133,14 @@ export function compileSakko(
   if (typeof window !== "undefined") {
     // Disconnect any observer from a previous compileSakko call on this target
     // so re-renders (e.g. playground live preview) don't leave stale observers.
-    const prev = (target as any).__sazamiRO as ResizeObserver | undefined;
+    const prev = (target as HTMLElement & { __sazamiRO?: ResizeObserver })
+      .__sazamiRO;
     if (prev) prev.disconnect();
 
     // Dispose any previous curvomorphism listeners
-    const prevDisposers = (target as any).__sazamiCurvoDisposers as
-      | Array<() => void>
-      | undefined;
+    const prevDisposers = (
+      target as HTMLElement & { __sazamiCurvoDisposers?: Array<() => void> }
+    ).__sazamiCurvoDisposers;
     if (prevDisposers) {
       prevDisposers.forEach((d) => {
         d();
@@ -141,8 +184,10 @@ export function compileSakko(
         });
       });
     });
-    (target as any).__sazamiRO = ro;
-    (target as any).__sazamiCurvoDisposers = disposers;
+    (target as HTMLElement & { __sazamiRO: ResizeObserver }).__sazamiRO = ro;
+    (
+      target as HTMLElement & { __sazamiCurvoDisposers: Array<() => void> }
+    ).__sazamiCurvoDisposers = disposers;
     ro.observe(target);
   }
 }
