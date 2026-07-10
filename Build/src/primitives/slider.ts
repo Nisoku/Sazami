@@ -114,7 +114,7 @@ export class SazamiSlider extends SazamiComponent<typeof sliderConfig> {
   private _rangeMin: number = 0;
   private _rangeMax: number = 100;
   private _value: number = 50;
-  private _disabled: boolean = false;
+  private _disabled: boolean | undefined;
 
   private _isReadableNum(value: unknown): value is Readable<number> {
     return isSignal(value) || value instanceof Derived;

@@ -144,7 +144,9 @@ export class SazamiIconButton extends SazamiComponent<typeof iconButtonConfig> {
     if (!this._handlersAdded) {
       this._handlersAdded = true;
       this.addHandler("click", this._handleClick, { internal: true });
-      this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
+      this.addHandler("keydown", this._handleKeydown as EventListener, {
+        internal: true,
+      });
     }
   }
 

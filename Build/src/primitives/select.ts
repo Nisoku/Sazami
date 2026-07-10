@@ -123,7 +123,7 @@ export class SazamiSelect extends SazamiComponent<typeof selectConfig> {
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledEffectDisposer: (() => void) | null = null;
   private _value: string = "";
-  private _disabled: boolean = false;
+  private _disabled: boolean | undefined;
   private _handleDocumentClick = (e: Event) => {
     if (!this.contains(e.target as Node)) {
       this.open = false;

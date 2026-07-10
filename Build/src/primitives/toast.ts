@@ -166,7 +166,9 @@ export class SazamiToast extends SazamiComponent<typeof toastConfig> {
 
     // Keyboard support: Escape to dismiss
     this.removeHandler("keydown", this._handleKeydown as EventListener);
-    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, {
+      internal: true,
+    });
 
     if (!this.hasAttribute("visible")) {
       this.setAttribute("visible", "");

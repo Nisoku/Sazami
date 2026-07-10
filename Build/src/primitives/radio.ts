@@ -166,7 +166,9 @@ export class SazamiRadio extends SazamiComponent<typeof radioConfig> {
     if (!this._handlersInstalled) {
       this._handlersInstalled = true;
       this.addHandler("click", this._handleClick, { internal: true });
-      this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
+      this.addHandler("keydown", this._handleKeydown as EventListener, {
+        internal: true,
+      });
     }
   }
 

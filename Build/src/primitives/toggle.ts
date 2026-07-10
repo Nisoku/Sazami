@@ -62,7 +62,7 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
   private _disabledSignal: Readable<boolean> | null = null;
   private _disabledBindingDispose: (() => void) | null = null;
   private _checked: boolean = false;
-  private _disabled: boolean = false;
+  private _disabled: boolean | undefined;
 
   private _isReadableBool(value: unknown): value is Readable<boolean> {
     return isSignal(value) || value instanceof Derived;
@@ -149,7 +149,9 @@ export class SazamiToggle extends SazamiComponent<typeof toggleConfig> {
     this._updateAria();
 
     this.addHandler("click", this._handleClick, { internal: true });
-    this.addHandler("keydown", this._handleKeydown as EventListener, { internal: true });
+    this.addHandler("keydown", this._handleKeydown as EventListener, {
+      internal: true,
+    });
   }
 
   private _handleClick = () => {

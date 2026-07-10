@@ -370,7 +370,11 @@ export class SazamiComponent<
           if ("set" in readable) {
             dispose = bindSelectValue(element, readable as Signal<string>);
           } else {
-            dispose = bindProperty(element, "value", readable as Readable<string>);
+            dispose = bindProperty(
+              element,
+              "value",
+              readable as Readable<string>,
+            );
           }
         } else {
           bindingError(
@@ -462,7 +466,11 @@ export class SazamiComponent<
       bindingError(`Element not found: ${selector}`, {});
       return;
     }
-    const dispose = bindProperty(element, prop as keyof HTMLElement, readable as Readable<HTMLElement[keyof HTMLElement]>);
+    const dispose = bindProperty(
+      element,
+      prop as keyof HTMLElement,
+      readable as Readable<HTMLElement[keyof HTMLElement]>,
+    );
     this._cleanupFns.push(dispose);
   }
 
