@@ -1,6 +1,5 @@
 import type { ASTNode, InterpolatedText } from "@nisoku/sakko";
 import { parseModifiers } from "../primitives/modifier-map";
-import { unknownComponentError } from "../errors";
 import type { Readable } from "@nisoku/sairin";
 import { ReactiveContext } from "./reactive-context";
 
@@ -57,7 +56,6 @@ const SAZAMI_REGISTRY: Record<string, { tag: string }> = {
 export function getTag(name: string): string {
   const entry = SAZAMI_REGISTRY[name];
   if (!entry) {
-    unknownComponentError(name);
     return `saz-${name}`;
   }
   return entry.tag;
@@ -94,6 +92,62 @@ function hasReactiveExpr(
         return re.test(p.value);
       }),
   );
+}
+
+function isReadable(v: unknown): v is Readable<string> {
+  if (v === null || typeof v !== "object") return false;
+  const maybe = v as { get?: unknown; subscribe?: unknown };
+  return (
+    typeof maybe.get === "function" && typeof maybe.subscribe === "function"
+  );
+}
+
+function renderVNode(
+  vnode: VNode | string | Readable<string>,
+  parent: HTMLElement,
+): void {
+  if (typeof vnode === "string") {
+    parent.appendChild(document.createTextNode(vnode));
+    return;
+  }
+  if (isReadable(vnode)) {
+    const textNode = document.createTextNode("");
+    parent.appendChild(textNode);
+    const update = () => { textNode.textContent = vnode.get(); };
+    update();
+    vnode.subscribe(update);
+    return;
+  }
+  const el = document.createElement(vnode.type);
+  if (vnode.props.__rawStyle) {
+    el.style.cssText = vnode.props.__rawStyle as string;
+  }
+  if (vnode.props.__style) {
+    for (const [key, val] of Object.entries(vnode.props.__style)) {
+      (el.style as unknown as Record<string, string>)[key] = String(val);
+    }
+  }
+  for (const [key, value] of Object.entries(vnode.props)) {
+    if (key.startsWith("__")) continue;
+    if (typeof value === "boolean" && value) {
+      el.setAttribute(key, "");
+    } else if (value !== undefined && value !== null && value !== false) {
+      el.setAttribute(key, String(value));
+    }
+  }
+  for (const child of vnode.children) {
+    if (Array.isArray(child)) {
+      (child as (VNode | string | Readable<string>)[]).forEach((item) =>
+        renderVNode(item, el),
+      );
+    } else {
+      renderVNode(child, el);
+    }
+  }
+  parent.appendChild(el);
+  if (vnode.afterRender) {
+    vnode.afterRender(el);
+  }
 }
 
 export function transformAST(
@@ -184,6 +238,56 @@ export function transformAST(
   }
 
   if (node.type === "element") {
+    const props = parseModifiers(node.modifiers);
+    const eachStr = props.__each as string | undefined;
+    delete props.__each;
+
+    if (eachStr) {
+      const match = eachStr.match(/^(\w+)\s+in\s+(\w+)$/);
+      if (!match) throw new Error(`Invalid @each syntax: "${eachStr}"`);
+      const [, itemVar, sourceName] = match;
+
+      const tag = getTag(node.name);
+      const rawTemplate = node.children;
+
+      return {
+        type: tag,
+        props,
+        children: [],
+        afterRender: (el) => {
+          const sourceSig = context?.getSignal(sourceName);
+          if (!sourceSig) return;
+
+          let disposers: Array<() => void> = [];
+
+          const renderList = () => {
+            disposers.forEach((d) => d());
+            disposers = [];
+            el.innerHTML = "";
+
+            const items = sourceSig.get();
+            if (!Array.isArray(items)) return;
+
+            for (const item of items) {
+              const subCtx = context!.forkWithSignal(itemVar, item);
+              for (const child of rawTemplate) {
+                const result = transformAST(child, subCtx);
+                if (Array.isArray(result)) {
+                  result.forEach((v) => renderVNode(v, el));
+                } else {
+                  renderVNode(result, el);
+                }
+              }
+            }
+          };
+
+          renderList();
+          const unsub = sourceSig.subscribe(renderList);
+          disposers.push(unsub);
+        },
+      };
+    }
+
     const children: (VNode | string | Readable<string>)[] = [];
     for (const child of node.children) {
       const result = transformAST(child, context);

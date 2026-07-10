@@ -4,7 +4,6 @@ import {
   effect,
   path,
   bindInputValue,
-  bindInputChecked,
   type Readable,
   type Signal,
 } from "@nisoku/sairin";
@@ -124,6 +123,7 @@ export class ReactiveContext {
   private signals = new Map<string, ReturnType<typeof signal>>();
   private deriveds = new Map<string, ReturnType<typeof derived>>();
   readonly rootName: string;
+  private interpCounter = 0;
 
   constructor(rootName: string) {
     this.rootName = rootName;
@@ -185,9 +185,40 @@ export class ReactiveContext {
     return this.signals.get(name) ?? this.deriveds.get(name);
   }
 
+  getSignals(): Map<string, SignalLike> {
+    const all = new Map<string, SignalLike>();
+    for (const [k, v] of this.signals) all.set(k, v);
+    for (const [k, v] of this.deriveds) all.set(k, v);
+    return all;
+  }
+
+  /**
+   * Register a read-only signal for `name` in this context.
+   * Used by @each to expose the iteration variable to template children.
+   */
+  setSignalValue(name: string, initial: unknown): void {
+    if (this.signals.has(name) || this.deriveds.has(name)) return;
+    const sig = signal(
+      path("component", this.rootName, `__each_${name}`),
+      initial,
+    );
+    this.signals.set(name, sig);
+  }
+
+  /** Create a child context with all parent signals plus a new signal. */
+  forkWithSignal(name: string, initial: unknown): ReactiveContext {
+    const child = new ReactiveContext(this.rootName);
+    child.interpCounter = this.interpCounter;
+    for (const [k, v] of this.signals) child.signals.set(k, v);
+    for (const [k, v] of this.deriveds) child.deriveds.set(k, v);
+    child.setSignalValue(name, initial);
+    return child;
+  }
+
   createInterpolated(parts: InterpolatedTextPart[]): Readable<string> {
     const allNames = this.getAllSignalNames();
     const allRefd = new Set<string>();
+    const id = this.interpCounter++;
 
     for (const part of parts) {
       if (part.type === "expr") {
@@ -210,19 +241,18 @@ export class ReactiveContext {
         fn(...partRefd.map((n) => signalMap[n]));
     });
 
+    const interpPath = path("component", this.rootName, `__interp_${id}`);
+
     if (refd.length === 0) {
       const staticVal = parts
         .map((p) =>
           p.type === "text" ? p.value : String(evaluateStatic(p.value)),
         )
         .join("");
-      return derived(
-        path("component", this.rootName, "__interp"),
-        () => staticVal,
-      );
+      return derived(interpPath, () => staticVal);
     }
 
-    const d = derived(path("component", this.rootName, "__interp"), () => {
+    const d = derived(interpPath, () => {
       const signalMap: Record<string, SignalLike> = {};
       for (const name of refd) {
         const sig = this.getSignal(name)!;
@@ -259,13 +289,18 @@ export class ReactiveContext {
   ): ((el: HTMLElement) => void) | null {
     const sig = this.getSignal(signalName);
     if (!sig) return null;
-    if (elementType === "checkbox" || elementType === "saz-checkbox") {
-      return (el: HTMLElement) => {
-        bindInputChecked(el as HTMLInputElement, sig as Signal<boolean>);
-      };
-    }
+    const tag = (el: HTMLElement) => el.tagName.toLowerCase();
     return (el: HTMLElement) => {
-      bindInputValue(el as HTMLInputElement, sig as Signal<string>);
+      const t = tag(el);
+      if (t === "saz-checkbox" || t === "saz-switch" || t === "saz-toggle") {
+        (el as unknown as Record<string, unknown>).checked = sig;
+      } else if (
+        t === "saz-input" || t === "saz-select" || t === "saz-textarea"
+      ) {
+        (el as unknown as Record<string, unknown>).value = sig;
+      } else {
+        bindInputValue(el as HTMLInputElement, sig as Signal<string>);
+      }
     };
   }
 }

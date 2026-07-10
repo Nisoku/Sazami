@@ -29,9 +29,10 @@ describe("Full Pipeline - Advanced", () => {
   test("applies @style string as inline CSS", () => {
     const container = document.createElement("div");
     compileSakko(`<page { div(@style "color: red; font-size: 20px"): "Red" }>`, container);
-    const div = container.querySelector("div") as HTMLElement;
-    expect(div.style.color).toBe("red");
-    expect(div.style.fontSize).toBe("20px");
+    const allDivs = container.querySelectorAll("div");
+    expect(allDivs.length).toBe(2);
+    expect(allDivs[1].style.color).toBe("red");
+    expect(allDivs[1].style.fontSize).toBe("20px");
   });
 
   test("compiles the music player example", () => {

@@ -131,6 +131,11 @@ export function parseModifiers(modifiers: Modifier[]): Record<string, unknown> {
         }
       } else if (mod.name === "if") {
         props.__if = mod.body;
+      } else if (mod.name === "class") {
+        const existing = (props.class || "") as string;
+        props.class = existing ? `${existing} ${mod.body}` : mod.body;
+      } else if (mod.name === "each") {
+        props.__each = mod.body;
       }
     }
   });

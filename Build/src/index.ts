@@ -113,8 +113,10 @@ export function compileSakko(
   processDeclarations(ast.declarations, context);
 
   // Always render the root element as a component wrapper.
+  // If the root name isn't a registered Sazami component, wrap in a div.
+  const tag = getTagName(ast.name);
   const rootVNode: VNode = {
-    type: getTagName(ast.name),
+    type: tag.startsWith("saz-") && !customElements.get(tag) ? "div" : tag,
     props: ast.modifiers ? pmParseModifiers(ast.modifiers) : {},
     children: [],
   };
